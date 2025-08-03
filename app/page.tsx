@@ -1,320 +1,381 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useState } from 'react'
 import { 
-  FileText, 
-  CheckCircle, 
-  Clock, 
-  AlertCircle, 
-  Building,
-  Plus,
-  Search,
-  Filter,
-  Calendar,
-  Users,
+  Home,
+  FileText,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
   TrendingUp,
+  Activity,
+  Users,
+  Calendar,
   BarChart3,
-  ArrowRight,
-  Shield
+  Building2,
+  Search
 } from 'lucide-react'
 
-interface PermitApplication {
-  id: string
-  permitNumber: string
-  projectName: string
-  applicant: string
-  type: string
-  status: 'draft' | 'submitted' | 'in_review' | 'approved' | 'rejected' | 'issued'
-  submittedDate: string
-  lastUpdated: string
-  assignedTo?: string
-  progress: number
+interface DashboardStat {
+  label: string
+  value: string | number
+  description?: string
+  trend?: 'up' | 'down' | 'neutral'
+  trendValue?: string
+  icon: React.ElementType
+  color: 'blue' | 'green' | 'yellow' | 'red' | 'purple'
 }
 
-interface DashboardStats {
-  totalApplications: number
-  pending: number
-  approved: number
-  inReview: number
-  avgProcessingTime: number
-  complianceRate: number
+interface ProjectSummary {
+  permitNumber: string
+  projectName: string
+  address: string
+  applicant: string
+  status: 'intake' | 'in_review' | 'approved' | 'rejected' | 'issued'
+  disciplines: DisciplineStatus[]
+  submittedDate: string
+  lastUpdated: string
+}
+
+interface DisciplineStatus {
+  name: string
+  status: 'pending' | 'approved' | 'rejected' | 'in_review'
+  issues: number
+  conditions: number
+  notes: number
 }
 
 export default function DashboardPage() {
-  const [applications, setApplications] = useState<PermitApplication[]>([
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const stats: DashboardStat[] = [
     {
-      id: '1',
+      label: 'Total Applications',
+      value: 3,
+      icon: FileText,
+      color: 'blue',
+      description: 'Active permits in system'
+    },
+    {
+      label: 'Pending Review',
+      value: 1,
+      icon: Clock,
+      color: 'yellow',
+      description: 'Awaiting review'
+    },
+    {
+      label: 'Approved',
+      value: 1,
+      icon: CheckCircle,
+      color: 'green',
+      description: 'This month'
+    },
+    {
+      label: 'Avg. Processing',
+      value: '7 days',
+      icon: TrendingUp,
+      color: 'purple',
+      trend: 'down',
+      trendValue: '-2 days'
+    }
+  ]
+
+  const recentProjects: ProjectSummary[] = [
+    {
       permitNumber: 'PER-2024-0156',
       projectName: 'Medical Office Building',
+      address: '1234 Healthcare Blvd',
       applicant: 'Healthcare Properties LLC',
-      type: 'Commercial New Construction',
       status: 'in_review',
-      submittedDate: '2024-01-15',
+      submittedDate: '2024-01-14',
       lastUpdated: '2024-01-18',
-      assignedTo: 'John Smith',
-      progress: 65
+      disciplines: [
+        { name: 'Building', status: 'in_review', issues: 2, conditions: 1, notes: 0 },
+        { name: 'Electrical', status: 'approved', issues: 0, conditions: 0, notes: 1 },
+        { name: 'Fire', status: 'pending', issues: 0, conditions: 0, notes: 0 },
+        { name: 'Mechanical', status: 'in_review', issues: 1, conditions: 0, notes: 0 },
+        { name: 'Plumbing', status: 'approved', issues: 0, conditions: 0, notes: 0 }
+      ]
     },
     {
-      id: '2',
       permitNumber: 'PER-2024-0157',
       projectName: 'Residential Addition',
+      address: '567 Oak Street',
       applicant: 'Johnson Family Trust',
-      type: 'Residential Addition',
-      status: 'submitted',
-      submittedDate: '2024-01-18',
-      lastUpdated: '2024-01-18',
-      progress: 25
+      status: 'intake',
+      submittedDate: '2024-01-17',
+      lastUpdated: '2024-01-17',
+      disciplines: [
+        { name: 'Building', status: 'pending', issues: 0, conditions: 0, notes: 0 },
+        { name: 'Electrical', status: 'pending', issues: 0, conditions: 0, notes: 0 }
+      ]
     },
     {
-      id: '3',
       permitNumber: 'PER-2024-0155',
-      projectName: 'Retail Store Renovation',
-      applicant: 'ABC Retail Corp',
-      type: 'Commercial Alteration',
+      projectName: 'Retail Plaza Renovation',
+      address: '890 Commerce Way',
+      applicant: 'Plaza Holdings Inc',
       status: 'approved',
       submittedDate: '2024-01-10',
-      lastUpdated: '2024-01-17',
-      assignedTo: 'Sarah Davis',
-      progress: 100
+      lastUpdated: '2024-01-16',
+      disciplines: [
+        { name: 'Building', status: 'approved', issues: 0, conditions: 2, notes: 3 },
+        { name: 'Fire', status: 'approved', issues: 0, conditions: 1, notes: 0 }
+      ]
     }
-  ])
+  ]
 
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
-
-  const stats: DashboardStats = {
-    totalApplications: applications.length,
-    pending: applications.filter(a => a.status === 'submitted').length,
-    approved: applications.filter(a => a.status === 'approved' || a.status === 'issued').length,
-    inReview: applications.filter(a => a.status === 'in_review').length,
-    avgProcessingTime: 7,
-    complianceRate: 94
+  const getStatusBadge = (status: string) => {
+    const styles = {
+      intake: 'bg-sky-500 text-white',
+      in_review: 'bg-yellow-500 text-white',
+      approved: 'bg-green-500 text-white',
+      rejected: 'bg-red-500 text-white',
+      issued: 'bg-purple-500 text-white'
+    }
+    return styles[status as keyof typeof styles] || 'bg-gray-500 text-white'
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800'
-      case 'submitted': return 'bg-blue-100 text-blue-800'
-      case 'in_review': return 'bg-yellow-100 text-yellow-800'
-      case 'approved': return 'bg-green-100 text-green-800'
-      case 'rejected': return 'bg-red-100 text-red-800'
-      case 'issued': return 'bg-purple-100 text-purple-800'
-      default: return 'bg-gray-100 text-gray-800'
+  const getDisciplineBadge = (discipline: string) => {
+    const colors = {
+      Building: 'bg-sky-500',
+      Electrical: 'bg-yellow-500',
+      Fire: 'bg-red-500',
+      Mechanical: 'bg-purple-500',
+      Plumbing: 'bg-blue-500'
     }
+    return colors[discipline as keyof typeof colors] || 'bg-gray-500'
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'draft': return <FileText className="h-4 w-4" />
-      case 'submitted': return <Clock className="h-4 w-4" />
-      case 'in_review': return <AlertCircle className="h-4 w-4" />
-      case 'approved': return <CheckCircle className="h-4 w-4" />
-      case 'rejected': return <AlertCircle className="h-4 w-4" />
-      case 'issued': return <Shield className="h-4 w-4" />
-      default: return <FileText className="h-4 w-4" />
+  const getStatColorClasses = (color: string) => {
+    const colors = {
+      blue: 'bg-sky-50 text-sky-600 border-sky-200',
+      green: 'bg-green-50 text-green-600 border-green-200',
+      yellow: 'bg-yellow-50 text-yellow-600 border-yellow-200',
+      red: 'bg-red-50 text-red-600 border-red-200',
+      purple: 'bg-purple-50 text-purple-600 border-purple-200'
     }
+    return colors[color as keyof typeof colors] || 'bg-gray-50 text-gray-600 border-gray-200'
   }
 
-  const filteredApplications = applications.filter(app => {
-    const matchesSearch = app.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         app.permitNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         app.applicant.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || app.status === filterStatus
-    return matchesSearch && matchesStatus
-  })
+  const filteredProjects = recentProjects.filter(project =>
+    project.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.permitNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.applicant.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Page Header */}
-      <div className="mb-8">
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-1">Overview of permit applications and inspection activities</p>
       </div>
 
-      {/* Main Content */}
-      <div className="space-y-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Applications</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalApplications}</p>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon
+          const colorClasses = getStatColorClasses(stat.color)
+          
+          return (
+            <div key={index} className={`bg-white rounded-lg p-6 border-2 ${colorClasses}`}>
+              <div className="flex items-start justify-between mb-4">
+                <Icon className="h-8 w-8" />
+                {stat.trend && (
+                  <div className={`text-xs font-medium ${
+                    stat.trend === 'up' ? 'text-green-600' : 
+                    stat.trend === 'down' ? 'text-red-600' : 
+                    'text-gray-600'
+                  }`}>
+                    {stat.trendValue}
+                  </div>
+                )}
               </div>
-              <div className="bg-indigo-100 rounded-full p-3">
-                <FileText className="h-6 w-6 text-indigo-600" />
+              <div>
+                <p className="text-sm font-medium opacity-80">{stat.label}</p>
+                <p className="text-2xl font-bold mt-1">{stat.value}</p>
+                {stat.description && (
+                  <p className="text-xs opacity-60 mt-1">{stat.description}</p>
+                )}
               </div>
             </div>
-          </div>
+          )
+        })}
+      </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending Review</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-              </div>
-              <div className="bg-yellow-100 rounded-full p-3">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Approved</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.approved}</p>
-              </div>
-              <div className="bg-green-100 rounded-full p-3">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Avg. Processing</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.avgProcessingTime} days</p>
-              </div>
-              <div className="bg-blue-100 rounded-full p-3">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
-              </div>
+      {/* Recent Applications Table */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Applications</h2>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search applications..."
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-lg p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <FileText className="h-10 w-10 text-white/80" />
-              <span className="text-3xl font-bold">{stats.totalApplications}</span>
-            </div>
-            <h3 className="text-lg font-semibold mb-1">Active Permits</h3>
-            <p className="text-indigo-100 text-sm">Total permit applications in system</p>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Permit Number
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Project Details
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Disciplines
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Issues/Conditions/Notes
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Submitted
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredProjects.map((project) => {
+                const totalIssues = project.disciplines.reduce((sum, d) => sum + d.issues, 0)
+                const totalConditions = project.disciplines.reduce((sum, d) => sum + d.conditions, 0)
+                const totalNotes = project.disciplines.reduce((sum, d) => sum + d.notes, 0)
 
-          <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg shadow-lg p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <Users className="h-10 w-10 text-white/80" />
-              <span className="text-3xl font-bold">12</span>
-            </div>
-            <h3 className="text-lg font-semibold mb-1">Active Inspections</h3>
-            <p className="text-yellow-100 text-sm">Ongoing VBA inspections today</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <TrendingUp className="h-10 w-10 text-white/80" />
-              <span className="text-3xl font-bold">{stats.complianceRate}%</span>
-            </div>
-            <h3 className="text-lg font-semibold mb-1">Compliance Rate</h3>
-            <p className="text-green-100 text-sm">Overall inspection pass rate</p>
-          </div>
-        </div>
-
-        {/* Recent Applications */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Applications</h2>
-              <div className="flex gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search applications..."
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <select
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                >
-                  <option value="all">All Status</option>
-                  <option value="draft">Draft</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="in_review">In Review</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="issued">Issued</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Permit Number
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Project Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Applicant
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Progress
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Submitted
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredApplications.map((application) => (
-                  <tr key={application.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {application.permitNumber}
+                return (
+                  <tr key={project.permitNumber} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{project.permitNumber}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {application.projectName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {application.applicant}
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{project.projectName}</div>
+                        <div className="text-sm text-gray-500">{project.address}</div>
+                        <div className="text-xs text-gray-400 mt-1">{project.applicant}</div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(application.status)}`}>
-                        {getStatusIcon(application.status)}
-                        {application.status.replace('_', ' ')}
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(project.status)}`}>
+                        {project.status.replace('_', ' ').toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${application.progress}%` }}
-                        />
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {project.disciplines.map((discipline) => (
+                          <span
+                            key={discipline.name}
+                            className={`inline-flex px-2 py-1 text-xs font-medium text-white rounded ${getDisciplineBadge(discipline.name)}`}
+                          >
+                            {discipline.name.toUpperCase()}
+                          </span>
+                        ))}
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">{application.progress}%</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex gap-3 text-sm">
+                        <span className="text-red-600 font-medium">{totalIssues}</span>
+                        <span className="text-gray-400">/</span>
+                        <span className="text-yellow-600 font-medium">{totalConditions}</span>
+                        <span className="text-gray-400">/</span>
+                        <span className="text-blue-600 font-medium">{totalNotes}</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(application.submittedDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link href={`/permits/${application.id}`} className="text-indigo-600 hover:text-indigo-900 inline-flex items-center">
-                        View
-                        <ArrowRight className="ml-1 h-4 w-4" />
-                      </Link>
+                      {new Date(project.submittedDate).toLocaleDateString()}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Additional Info Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        {/* Active Permits Summary */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Permits</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Commercial</span>
+              <span className="text-sm font-medium text-gray-900">2</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Residential</span>
+              <span className="text-sm font-medium text-gray-900">1</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Industrial</span>
+              <span className="text-sm font-medium text-gray-900">0</span>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-900">Total Active</span>
+              <span className="text-lg font-bold text-sky-600">3</span>
+            </div>
+          </div>
+        </div>
+
+        {/* VBA Inspections */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">VBA Inspections</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Scheduled Today</span>
+              <span className="text-sm font-medium text-gray-900">5</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">In Progress</span>
+              <span className="text-sm font-medium text-gray-900">2</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Completed</span>
+              <span className="text-sm font-medium text-gray-900">8</span>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-900">Compliance Rate</span>
+              <span className="text-lg font-bold text-green-600">94%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Performance Metrics */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance</h3>
+          <div className="space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-gray-600">Review Progress</span>
+                <span className="text-sm font-medium text-gray-900">78%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-sky-500 h-2 rounded-full" style={{ width: '78%' }}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm text-gray-600">On-Time Rate</span>
+                <span className="text-sm font-medium text-gray-900">92%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-green-500 h-2 rounded-full" style={{ width: '92%' }}></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

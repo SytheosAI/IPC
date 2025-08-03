@@ -17,7 +17,9 @@ import {
   AlertCircle,
   XCircle,
   ArrowUpDown,
-  MoreVertical
+  MoreVertical,
+  Home,
+  ChevronRight
 } from 'lucide-react'
 
 interface Submittal {
@@ -115,34 +117,34 @@ export default function SubmittalsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800'
-      case 'submitted': return 'bg-blue-100 text-blue-800'
-      case 'under_review': return 'bg-yellow-100 text-yellow-800'
-      case 'approved': return 'bg-green-100 text-green-800'
-      case 'rejected': return 'bg-red-100 text-red-800'
-      case 'revisions_required': return 'bg-orange-100 text-orange-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'draft': return 'bg-gray-100 text-gray-700 border-gray-300'
+      case 'submitted': return 'bg-sky-100 text-sky-700 border-sky-300'
+      case 'under_review': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+      case 'approved': return 'bg-green-100 text-green-700 border-green-300'
+      case 'rejected': return 'bg-red-100 text-red-700 border-red-300'
+      case 'revisions_required': return 'bg-orange-100 text-orange-700 border-orange-300'
+      default: return 'bg-gray-100 text-gray-700 border-gray-300'
     }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'draft': return <Edit2 className="h-4 w-4" />
-      case 'submitted': return <Clock className="h-4 w-4" />
-      case 'under_review': return <AlertCircle className="h-4 w-4" />
-      case 'approved': return <CheckCircle className="h-4 w-4" />
-      case 'rejected': return <XCircle className="h-4 w-4" />
-      case 'revisions_required': return <AlertCircle className="h-4 w-4" />
-      default: return <FileText className="h-4 w-4" />
+      case 'draft': return <Edit2 className="h-3.5 w-3.5" />
+      case 'submitted': return <Clock className="h-3.5 w-3.5" />
+      case 'under_review': return <AlertCircle className="h-3.5 w-3.5" />
+      case 'approved': return <CheckCircle className="h-3.5 w-3.5" />
+      case 'rejected': return <XCircle className="h-3.5 w-3.5" />
+      case 'revisions_required': return <AlertCircle className="h-3.5 w-3.5" />
+      default: return <FileText className="h-3.5 w-3.5" />
     }
   }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'commercial': return 'bg-purple-100 text-purple-800'
-      case 'residential': return 'bg-blue-100 text-blue-800'
-      case 'industrial': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'commercial': return 'bg-purple-100 text-purple-700 border-purple-300'
+      case 'residential': return 'bg-blue-100 text-blue-700 border-blue-300'
+      case 'industrial': return 'bg-gray-100 text-gray-700 border-gray-300'
+      default: return 'bg-gray-100 text-gray-700 border-gray-300'
     }
   }
 
@@ -182,16 +184,23 @@ export default function SubmittalsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+        <Home className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4" />
+        <span className="font-medium text-gray-900">Submittals</span>
+      </div>
+
       {/* Page Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Permit Submittals</h1>
           <p className="text-gray-600 mt-1">Manage and track all permit applications</p>
         </div>
         <Link
           href="/submittals/new"
-          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
         >
           <Plus className="h-5 w-5 mr-2" />
           New Submittal
@@ -199,14 +208,14 @@ export default function SubmittalsPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search by project name, number, or address..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -214,7 +223,7 @@ export default function SubmittalsPage() {
           
           <div className="flex gap-3">
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -228,7 +237,7 @@ export default function SubmittalsPage() {
             </select>
 
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
             >
@@ -238,12 +247,12 @@ export default function SubmittalsPage() {
               <option value="industrial">Industrial</option>
             </select>
 
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
               <Filter className="h-5 w-5" />
               More Filters
             </button>
 
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
               <Download className="h-5 w-5" />
               Export
             </button>
@@ -252,14 +261,14 @@ export default function SubmittalsPage() {
       </div>
 
       {/* Submittals Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left">
                   <button
-                    className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                    className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider hover:text-gray-900"
                     onClick={() => toggleSort('dateSubmitted')}
                   >
                     Submittal #
@@ -268,45 +277,45 @@ export default function SubmittalsPage() {
                 </th>
                 <th className="px-6 py-3 text-left">
                   <button
-                    className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                    className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider hover:text-gray-900"
                     onClick={() => toggleSort('projectName')}
                   >
                     Project
                     <ArrowUpDown className="h-4 w-4" />
                   </button>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Category
                 </th>
                 <th className="px-6 py-3 text-left">
                   <button
-                    className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                    className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider hover:text-gray-900"
                     onClick={() => toggleSort('status')}
                   >
                     Status
                     <ArrowUpDown className="h-4 w-4" />
                   </button>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Completeness
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Documents
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Submitted
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Reviewer
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedSubmittals.map((submittal) => (
-                <tr key={submittal.id} className="hover:bg-gray-50">
+                <tr key={submittal.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{submittal.submittalNumber}</div>
                   </td>
@@ -314,16 +323,16 @@ export default function SubmittalsPage() {
                     <div>
                       <div className="text-sm font-medium text-gray-900">{submittal.projectName}</div>
                       <div className="text-xs text-gray-500">{submittal.projectAddress}</div>
-                      <div className="text-xs text-gray-500 mt-1">Applicant: {submittal.applicant}</div>
+                      <div className="text-xs text-gray-400 mt-1">Applicant: {submittal.applicant}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(submittal.category)}`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getCategoryColor(submittal.category)}`}>
                       {submittal.category}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(submittal.status)}`}>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(submittal.status)}`}>
                       {getStatusIcon(submittal.status)}
                       {submittal.status.replace('_', ' ')}
                     </span>
@@ -333,8 +342,8 @@ export default function SubmittalsPage() {
                       <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
                         <div 
                           className={`h-2 rounded-full transition-all duration-300 ${
-                            submittal.completeness === 100 ? 'bg-green-600' : 
-                            submittal.completeness >= 70 ? 'bg-yellow-600' : 'bg-red-600'
+                            submittal.completeness === 100 ? 'bg-green-500' : 
+                            submittal.completeness >= 70 ? 'bg-yellow-500' : 'bg-red-500'
                           }`}
                           style={{ width: `${submittal.completeness}%` }}
                         />
@@ -347,7 +356,7 @@ export default function SubmittalsPage() {
                       <FileText className="h-4 w-4 text-gray-400" />
                       <span className="text-sm text-gray-900">{submittal.documents}</span>
                       {submittal.comments > 0 && (
-                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
                           {submittal.comments} comments
                         </span>
                       )}
@@ -363,14 +372,14 @@ export default function SubmittalsPage() {
                     <div className="flex items-center justify-end gap-2">
                       <Link
                         href={`/submittals/${submittal.id}`}
-                        className="text-indigo-600 hover:text-indigo-900"
+                        className="text-sky-600 hover:text-sky-900 transition-colors"
                       >
                         <Eye className="h-4 w-4" />
                       </Link>
-                      <button className="text-gray-600 hover:text-gray-900">
+                      <button className="text-gray-600 hover:text-gray-900 transition-colors">
                         <Edit2 className="h-4 w-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900">
+                      <button className="text-gray-600 hover:text-gray-900 transition-colors">
                         <MoreVertical className="h-4 w-4" />
                       </button>
                     </div>

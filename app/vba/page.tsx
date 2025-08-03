@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { 
   Search, 
   Plus, 
-  Building, 
+  Building2, 
   CheckCircle, 
   AlertCircle, 
   XCircle, 
@@ -20,8 +20,12 @@ import {
   Clock, 
   Filter, 
   ChevronRight,
+  ChevronLeft,
   MoreVertical,
-  Eye
+  Eye,
+  Home,
+  MapPin,
+  Activity
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -122,13 +126,13 @@ export default function VBAPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-600" />
+        return <CheckCircle className="h-4 w-4 text-green-600" />
       case 'in_progress':
-        return <Clock className="h-5 w-5 text-blue-600" />
+        return <Clock className="h-4 w-4 text-blue-600" />
       case 'scheduled':
-        return <Calendar className="h-5 w-5 text-gray-600" />
+        return <Calendar className="h-4 w-4 text-gray-600" />
       case 'failed':
-        return <XCircle className="h-5 w-5 text-red-600" />
+        return <XCircle className="h-4 w-4 text-red-600" />
       default:
         return null
     }
@@ -137,15 +141,15 @@ export default function VBAPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-700 border-green-300'
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-700 border-blue-300'
       case 'scheduled':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-700 border-gray-300'
       case 'failed':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 text-red-700 border-red-300'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-700 border-gray-300'
     }
   }
 
@@ -156,16 +160,23 @@ export default function VBAPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+        <Home className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4" />
+        <span className="font-medium text-gray-900">VBA</span>
+      </div>
+
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Virtual Building Authority</h1>
           <p className="text-gray-600 mt-1">Digital inspection platform for real-time compliance monitoring</p>
         </div>
         <button
           onClick={() => setShowNewProjectModal(true)}
-          className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
         >
           <Plus className="h-5 w-5 mr-2" />
           New Inspection
@@ -173,11 +184,11 @@ export default function VBAPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-lg shadow-sm p-6 border-2 border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Calendar className="h-6 w-6 text-blue-600" />
+            <div className="p-2 bg-sky-100 rounded-lg">
+              <Calendar className="h-6 w-6 text-sky-600" />
             </div>
             <span className="text-2xl font-bold text-gray-900">{inspectionStats.totalInspections}</span>
           </div>
@@ -185,7 +196,7 @@ export default function VBAPage() {
           <p className="text-xs text-gray-500 mt-1">All scheduled inspections</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <div className="bg-white rounded-lg shadow-sm p-6 border-2 border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-green-100 rounded-lg">
               <CheckCircle className="h-6 w-6 text-green-600" />
@@ -196,7 +207,7 @@ export default function VBAPage() {
           <p className="text-xs text-gray-500 mt-1">Successfully finished</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <div className="bg-white rounded-lg shadow-sm p-6 border-2 border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Clock className="h-6 w-6 text-yellow-600" />
@@ -207,10 +218,10 @@ export default function VBAPage() {
           <p className="text-xs text-gray-500 mt-1">Awaiting inspection</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <div className="bg-white rounded-lg shadow-sm p-6 border-2 border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-indigo-600" />
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <TrendingUp className="h-6 w-6 text-purple-600" />
             </div>
             <span className="text-2xl font-bold text-gray-900">{inspectionStats.averageComplianceScore}%</span>
           </div>
@@ -221,27 +232,27 @@ export default function VBAPage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Link href="/vba/inspection-guidelines" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-gray-300 transition-all group">
+        <Link href="/vba/inspection-guidelines" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-sky-300 hover:shadow-md transition-all group">
           <div className="flex items-center justify-between mb-4">
-            <FileText className="h-8 w-8 text-indigo-600" />
+            <FileText className="h-8 w-8 text-sky-600" />
             <ChevronRight className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900">Inspection Guidelines</h3>
           <p className="text-sm text-gray-600 mt-1">View standards and requirements</p>
         </Link>
 
-        <Link href="/vba/compliance-standards" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-gray-300 transition-all group">
+        <Link href="/vba/compliance-standards" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-sky-300 hover:shadow-md transition-all group">
           <div className="flex items-center justify-between mb-4">
-            <Shield className="h-8 w-8 text-indigo-600" />
+            <Shield className="h-8 w-8 text-sky-600" />
             <ChevronRight className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900">Compliance Standards</h3>
           <p className="text-sm text-gray-600 mt-1">Building codes and regulations</p>
         </Link>
 
-        <Link href="/vba/inspector-directory" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-gray-300 transition-all group">
+        <Link href="/vba/inspector-directory" className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-sky-300 hover:shadow-md transition-all group">
           <div className="flex items-center justify-between mb-4">
-            <Users className="h-8 w-8 text-indigo-600" />
+            <Users className="h-8 w-8 text-sky-600" />
             <ChevronRight className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900">Inspector Directory</h3>
@@ -250,14 +261,14 @@ export default function VBAPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search inspections..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -265,7 +276,7 @@ export default function VBAPage() {
           
           <div className="flex gap-3">
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -276,12 +287,12 @@ export default function VBAPage() {
               <option value="failed">Failed</option>
             </select>
             
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
               <Filter className="h-5 w-5" />
               More Filters
             </button>
             
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
               <Download className="h-5 w-5" />
               Export
             </button>
@@ -290,36 +301,36 @@ export default function VBAPage() {
       </div>
 
       {/* Projects List */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Job #
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Project
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Inspection Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Compliance
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Inspector
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Scheduled
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   AI Enabled
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -328,34 +339,37 @@ export default function VBAPage() {
               {isLoading ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading inspections...</p>
                   </td>
                 </tr>
               ) : filteredProjects.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center">
-                    <Building className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-600">No inspections found</p>
                   </td>
                 </tr>
               ) : (
                 filteredProjects.map((project) => (
-                  <tr key={project.id} className="hover:bg-gray-50">
+                  <tr key={project.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {project.jobNumber || `J${project.id.slice(-4)}`}
                     </td>
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">{project.projectName}</div>
-                        <div className="text-xs text-gray-500">{project.address}</div>
+                        <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                          <MapPin className="h-3 w-3" />
+                          {project.address}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {project.inspectionType}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>
                         {getStatusIcon(project.status)}
                         {project.status.replace('_', ' ')}
                       </span>
@@ -379,7 +393,7 @@ export default function VBAPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {project.virtualInspectorEnabled ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
                           <Brain className="h-3 w-3 mr-1" />
                           Enabled
                         </span>
@@ -391,11 +405,11 @@ export default function VBAPage() {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/vba/project/${project.id}`}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className="text-sky-600 hover:text-sky-900 transition-colors"
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        <button className="text-gray-600 hover:text-gray-900">
+                        <button className="text-gray-600 hover:text-gray-900 transition-colors">
                           <MoreVertical className="h-4 w-4" />
                         </button>
                       </div>
@@ -409,19 +423,88 @@ export default function VBAPage() {
       </div>
 
       {/* AI Feature Highlight */}
-      <div className="mt-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 text-white">
+      <div className="mt-8 bg-gradient-to-r from-purple-50 to-sky-50 rounded-lg p-6 border border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-lg">
-              <Brain className="h-8 w-8 text-white" />
+            <div className="p-3 bg-white rounded-lg shadow-sm">
+              <Brain className="h-8 w-8 text-purple-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">AI-Powered Compliance Detection</h3>
-              <p className="text-indigo-100">Automatically identify code violations using computer vision</p>
+              <h3 className="text-lg font-semibold text-gray-900">AI-Powered Compliance Detection</h3>
+              <p className="text-gray-600">Automatically identify code violations using computer vision</p>
             </div>
           </div>
-          <button className="bg-white text-indigo-600 px-6 py-2 rounded-lg hover:bg-indigo-50 font-medium">
+          <button className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 font-medium transition-colors">
             Learn More
+          </button>
+        </div>
+      </div>
+
+      {/* Calendar View */}
+      <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Inspection Calendar</h3>
+          <div className="flex items-center gap-2">
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <ChevronLeft className="h-5 w-5 text-gray-600" />
+            </button>
+            <span className="text-sm font-medium text-gray-900 min-w-[120px] text-center">
+              {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </span>
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <ChevronRight className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-px bg-gray-200">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+            <div key={day} className="bg-gray-50 p-2 text-center">
+              <span className="text-xs font-medium text-gray-600">{day}</span>
+            </div>
+          ))}
+          {Array.from({ length: 35 }, (_, i) => {
+            const date = i - new Date().getDay() + 1
+            const isToday = date === new Date().getDate()
+            const hasInspections = [3, 7, 12, 15, 21, 28].includes(date)
+            
+            return (
+              <div
+                key={i}
+                className={`bg-white p-2 min-h-[80px] border border-gray-100 ${
+                  isToday ? 'bg-sky-50' : ''
+                } ${hasInspections ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+              >
+                <div className={`text-sm font-medium ${
+                  isToday ? 'text-sky-600' : 'text-gray-900'
+                } ${date < 1 || date > 31 ? 'text-gray-400' : ''}`}>
+                  {date > 0 && date <= 31 ? date : ''}
+                </div>
+                {hasInspections && date > 0 && date <= 31 && (
+                  <div className="mt-1 space-y-1">
+                    <div className="text-xs bg-sky-100 text-sky-700 px-1 py-0.5 rounded truncate">
+                      2 inspections
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        
+        <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-sky-100 rounded"></div>
+              <span>Scheduled</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-100 rounded"></div>
+              <span>Completed</span>
+            </div>
+          </div>
+          <button className="text-sky-600 hover:text-sky-700 font-medium">
+            View Full Calendar
           </button>
         </div>
       </div>
@@ -576,7 +659,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
               <label className="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 value={projectData.jobNumber}
                 onChange={(e) => setProjectData({ ...projectData, jobNumber: e.target.value })}
                 required
@@ -587,7 +670,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
               <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 value={projectData.projectName}
                 onChange={(e) => setProjectData({ ...projectData, projectName: e.target.value })}
                 required
@@ -598,7 +681,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
               <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 value={projectData.address}
                 onChange={(e) => setProjectData({ ...projectData, address: e.target.value })}
                 required
@@ -609,7 +692,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
               <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 value={projectData.owner}
                 onChange={(e) => setProjectData({ ...projectData, owner: e.target.value })}
               />
@@ -619,7 +702,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
               <label className="block text-sm font-medium text-gray-700 mb-1">Contractor</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-indigo-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 value={projectData.contractor}
                 onChange={(e) => setProjectData({ ...projectData, contractor: e.target.value })}
               />
@@ -634,7 +717,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
                   <label key={inspection} className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="rounded text-indigo-600 focus:ring-indigo-500"
+                      className="rounded text-sky-600 focus:ring-sky-500"
                       checked={selectedInspections.includes(inspection)}
                       onChange={() => toggleInspection(inspection)}
                     />
@@ -658,7 +741,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
               disabled={!projectData.projectName || !projectData.jobNumber || selectedInspections.length === 0}
             >
               Create Project
