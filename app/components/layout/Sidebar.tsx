@@ -7,6 +7,10 @@ import {
   LayoutGrid,
   FileText,
   Building2,
+  FileArchive,
+  Users,
+  FolderOpen,
+  Settings,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react'
@@ -26,10 +30,34 @@ const navigation = [
     description: 'Permit Applications'
   },
   { 
+    name: 'Plans', 
+    href: '/plans', 
+    icon: FileArchive,
+    description: 'Project Plans'
+  },
+  { 
+    name: 'Documents', 
+    href: '/documents', 
+    icon: FolderOpen,
+    description: 'Document Library'
+  },
+  { 
+    name: 'Members', 
+    href: '/members', 
+    icon: Users,
+    description: 'Team Contacts'
+  },
+  { 
     name: 'VBA', 
     href: '/vba', 
     icon: Building2,
     description: 'Virtual Building Authority'
+  },
+  { 
+    name: 'Settings', 
+    href: '/settings', 
+    icon: Settings,
+    description: 'App Settings'
   },
 ]
 

@@ -33,17 +33,11 @@ interface ProjectSummary {
   address: string
   applicant: string
   status: 'intake' | 'in_review' | 'approved' | 'rejected' | 'issued'
-  disciplines: DisciplineStatus[]
   submittedDate: string
   lastUpdated: string
-}
-
-interface DisciplineStatus {
-  name: string
-  status: 'pending' | 'approved' | 'rejected' | 'in_review'
-  issues: number
-  conditions: number
-  notes: number
+  totalIssues: number
+  totalConditions: number
+  totalNotes: number
 }
 
 export default function DashboardPage() {
@@ -90,13 +84,9 @@ export default function DashboardPage() {
       status: 'in_review',
       submittedDate: '2024-01-14',
       lastUpdated: '2024-01-18',
-      disciplines: [
-        { name: 'Building', status: 'in_review', issues: 2, conditions: 1, notes: 0 },
-        { name: 'Electrical', status: 'approved', issues: 0, conditions: 0, notes: 1 },
-        { name: 'Fire', status: 'pending', issues: 0, conditions: 0, notes: 0 },
-        { name: 'Mechanical', status: 'in_review', issues: 1, conditions: 0, notes: 0 },
-        { name: 'Plumbing', status: 'approved', issues: 0, conditions: 0, notes: 0 }
-      ]
+      totalIssues: 3,
+      totalConditions: 1,
+      totalNotes: 1
     },
     {
       permitNumber: 'PER-2024-0157',
@@ -106,10 +96,9 @@ export default function DashboardPage() {
       status: 'intake',
       submittedDate: '2024-01-17',
       lastUpdated: '2024-01-17',
-      disciplines: [
-        { name: 'Building', status: 'pending', issues: 0, conditions: 0, notes: 0 },
-        { name: 'Electrical', status: 'pending', issues: 0, conditions: 0, notes: 0 }
-      ]
+      totalIssues: 0,
+      totalConditions: 0,
+      totalNotes: 0
     },
     {
       permitNumber: 'PER-2024-0155',
@@ -119,10 +108,9 @@ export default function DashboardPage() {
       status: 'approved',
       submittedDate: '2024-01-10',
       lastUpdated: '2024-01-16',
-      disciplines: [
-        { name: 'Building', status: 'approved', issues: 0, conditions: 2, notes: 3 },
-        { name: 'Fire', status: 'approved', issues: 0, conditions: 1, notes: 0 }
-      ]
+      totalIssues: 0,
+      totalConditions: 3,
+      totalNotes: 3
     }
   ]
 
@@ -137,16 +125,6 @@ export default function DashboardPage() {
     return styles[status as keyof typeof styles] || 'bg-gray-500 text-white'
   }
 
-  const getDisciplineBadge = (discipline: string) => {
-    const colors = {
-      Building: 'bg-sky-500',
-      Electrical: 'bg-yellow-500',
-      Fire: 'bg-red-500',
-      Mechanical: 'bg-purple-500',
-      Plumbing: 'bg-blue-500'
-    }
-    return colors[discipline as keyof typeof colors] || 'bg-gray-500'
-  }
 
   const getStatColorClasses = (color: string) => {
     const colors = {
@@ -237,9 +215,6 @@ export default function DashboardPage() {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Disciplines
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Issues/Conditions/Notes
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -248,55 +223,37 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProjects.map((project) => {
-                const totalIssues = project.disciplines.reduce((sum, d) => sum + d.issues, 0)
-                const totalConditions = project.disciplines.reduce((sum, d) => sum + d.conditions, 0)
-                const totalNotes = project.disciplines.reduce((sum, d) => sum + d.notes, 0)
-
-                return (
-                  <tr key={project.permitNumber} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{project.permitNumber}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{project.projectName}</div>
-                        <div className="text-sm text-gray-500">{project.address}</div>
-                        <div className="text-xs text-gray-400 mt-1">{project.applicant}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(project.status)}`}>
-                        {project.status.replace('_', ' ').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {project.disciplines.map((discipline) => (
-                          <span
-                            key={discipline.name}
-                            className={`inline-flex px-2 py-1 text-xs font-medium text-white rounded ${getDisciplineBadge(discipline.name)}`}
-                          >
-                            {discipline.name.toUpperCase()}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex gap-3 text-sm">
-                        <span className="text-red-600 font-medium">{totalIssues}</span>
-                        <span className="text-gray-400">/</span>
-                        <span className="text-yellow-600 font-medium">{totalConditions}</span>
-                        <span className="text-gray-400">/</span>
-                        <span className="text-blue-600 font-medium">{totalNotes}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(project.submittedDate).toLocaleDateString()}
-                    </td>
-                  </tr>
-                )
-              })}
+              {filteredProjects.map((project) => (
+                <tr key={project.permitNumber} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{project.permitNumber}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{project.projectName}</div>
+                      <div className="text-sm text-gray-500">{project.address}</div>
+                      <div className="text-xs text-gray-400 mt-1">{project.applicant}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(project.status)}`}>
+                      {project.status.replace('_', ' ').toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex gap-3 text-sm">
+                      <span className="text-red-600 font-medium">{project.totalIssues}</span>
+                      <span className="text-gray-400">/</span>
+                      <span className="text-yellow-600 font-medium">{project.totalConditions}</span>
+                      <span className="text-gray-400">/</span>
+                      <span className="text-blue-600 font-medium">{project.totalNotes}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(project.submittedDate).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
