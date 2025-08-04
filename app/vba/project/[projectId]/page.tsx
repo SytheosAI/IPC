@@ -486,9 +486,10 @@ export default function ProjectHub() {
 
       {/* Debug Info - Remove after testing */}
       <div className="bg-yellow-100 border border-yellow-400 p-4 rounded mb-4">
-        <p className="text-sm">Debug: You are on the NEW Project Hub page</p>
+        <p className="text-sm font-bold">Debug: You are on the NEW Project Hub page</p>
         <p className="text-sm">Project ID: {projectId}</p>
         <p className="text-sm">URL: /vba/project/{projectId}</p>
+        <p className="text-sm">Generated at: {new Date().toISOString()}</p>
       </div>
 
       {/* Project Metrics */}
