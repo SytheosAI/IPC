@@ -205,11 +205,7 @@ export default function ProjectsPage() {
             <input
               type="text"
               placeholder="Search by project name, number, city, or permit..."
-              className="w-full pl-9 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 hover:border-gray-400 dark:hover:border-gray-500 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm"
-              style={{ 
-                '--tw-ring-color': 'var(--accent-500)' as any,
-                borderColor: 'var(--accent-500)' 
-              }}
+              className="w-full pl-9 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 hover:border-gray-400 dark:hover:border-gray-500 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:ring-sky-500 focus:border-sky-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -217,8 +213,7 @@ export default function ProjectsPage() {
           
           <div className="flex flex-wrap gap-2">
             <select
-              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2"
-              style={{ '--tw-ring-color': 'var(--accent-500)' as any }}
+              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -231,8 +226,7 @@ export default function ProjectsPage() {
             </select>
 
             <select
-              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2"
-              style={{ '--tw-ring-color': 'var(--accent-500)' as any }}
+              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
             >
