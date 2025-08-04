@@ -200,7 +200,7 @@ export default function SubmittalsPage() {
         </div>
         <Link
           href="/submittals/new"
-          className="inline-flex items-center px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
+          className="btn-primary"
         >
           <Plus className="h-5 w-5 mr-2" />
           New Submittal
@@ -208,14 +208,14 @@ export default function SubmittalsPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search by project name, number, or address..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="input-modern pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -223,7 +223,7 @@ export default function SubmittalsPage() {
           
           <div className="flex gap-3">
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="input-modern"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -237,7 +237,7 @@ export default function SubmittalsPage() {
             </select>
 
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="input-modern"
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
             >
@@ -247,12 +247,12 @@ export default function SubmittalsPage() {
               <option value="industrial">Industrial</option>
             </select>
 
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
+            <button className="btn-secondary">
               <Filter className="h-5 w-5" />
               More Filters
             </button>
 
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
+            <button className="btn-secondary">
               <Download className="h-5 w-5" />
               Export
             </button>
@@ -261,7 +261,7 @@ export default function SubmittalsPage() {
       </div>
 
       {/* Submittals Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">

@@ -112,10 +112,10 @@ export default function Sidebar() {
                 key={item.name}
                 href={item.href}
                 className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden',
                   {
-                    'bg-sky-500 text-white': isActive,
-                    'hover:bg-gray-200 text-gray-700': !isActive,
+                    'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg': isActive,
+                    'hover:bg-gray-200 text-gray-700 hover:border-2 hover:border-sky-400': !isActive,
                   }
                 )}
               >

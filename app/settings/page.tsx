@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useUser } from '../contexts/UserContext'
 import { 
   Settings,
   User,
@@ -16,35 +17,27 @@ import {
   Mail,
   Smartphone,
   Building,
-  CreditCard
+  CreditCard,
+  Sparkles,
+  CheckCircle,
+  Camera
 } from 'lucide-react'
 
 export default function SettingsPage() {
+  const { profile, notifications, security, theme, updateProfile, updateNotifications, updateSecurity, updateTheme } = useUser()
   const [activeTab, setActiveTab] = useState('profile')
-  const [profile, setProfile] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '(305) 555-0100',
-    title: 'Administrator',
-    company: 'IPC Development Corp',
-    address: '123 Main Street, Miami, FL 33101'
-  })
+  const [localProfile, setLocalProfile] = useState(profile)
+  const [localNotifications, setLocalNotifications] = useState(notifications)
+  const [localSecurity, setLocalSecurity] = useState(security)
+  const [localTheme, setLocalTheme] = useState(theme)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
 
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    smsNotifications: false,
-    permitUpdates: true,
-    inspectionReminders: true,
-    documentUploads: true,
-    newMembers: false,
-    systemAlerts: true
-  })
-
-  const [security, setSecurity] = useState({
-    twoFactorAuth: false,
-    sessionTimeout: '30',
-    passwordExpiry: '90'
-  })
+  useEffect(() => {
+    setLocalProfile(profile)
+    setLocalNotifications(notifications)
+    setLocalSecurity(security)
+    setLocalTheme(theme)
+  }, [profile, notifications, security, theme])
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -54,20 +47,37 @@ export default function SettingsPage() {
     { id: 'system', label: 'System', icon: Database }
   ]
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle save logic here
-    alert('Profile settings saved!')
+    setSaveStatus('saving')
+    updateProfile(localProfile)
+    await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API call
+    setSaveStatus('saved')
+    setTimeout(() => setSaveStatus('idle'), 2000)
   }
 
-  const handleSaveNotifications = () => {
-    // Handle save logic here
-    alert('Notification settings saved!')
+  const handleSaveNotifications = async () => {
+    setSaveStatus('saving')
+    updateNotifications(localNotifications)
+    await new Promise(resolve => setTimeout(resolve, 500))
+    setSaveStatus('saved')
+    setTimeout(() => setSaveStatus('idle'), 2000)
   }
 
-  const handleSaveSecurity = () => {
-    // Handle save logic here
-    alert('Security settings saved!')
+  const handleSaveSecurity = async () => {
+    setSaveStatus('saving')
+    updateSecurity(localSecurity)
+    await new Promise(resolve => setTimeout(resolve, 500))
+    setSaveStatus('saved')
+    setTimeout(() => setSaveStatus('idle'), 2000)
+  }
+
+  const handleSaveTheme = async () => {
+    setSaveStatus('saving')
+    updateTheme(localTheme)
+    await new Promise(resolve => setTimeout(resolve, 500))
+    setSaveStatus('saved')
+    setTimeout(() => setSaveStatus('idle'), 2000)
   }
 
   return (
@@ -88,19 +98,24 @@ export default function SettingsPage() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
         <div className="lg:w-64">
-          <nav className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <nav className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 relative group ${
                   activeTab === tab.id
-                    ? 'bg-sky-50 text-sky-600 border-l-4 border-sky-600'
-                    : 'hover:bg-gray-50 text-gray-700'
+                    ? 'bg-gradient-to-r from-sky-50 to-sky-100 text-sky-600 border-l-4 border-sky-600'
+                    : 'hover:bg-gray-50 text-gray-700 hover:pl-6'
                 }`}
               >
-                <tab.icon className="h-5 w-5" />
+                <tab.icon className={`h-5 w-5 transition-transform duration-200 ${
+                  activeTab === tab.id ? 'scale-110' : 'group-hover:scale-110'
+                }`} />
                 <span className="font-medium">{tab.label}</span>
+                {activeTab === tab.id && (
+                  <div className="absolute right-2 w-2 h-2 bg-sky-500 rounded-full animate-pulse" />
+                )}
               </button>
             ))}
           </nav>
@@ -108,7 +123,25 @@ export default function SettingsPage() {
 
         {/* Content */}
         <div className="flex-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 relative overflow-hidden">
+            {/* Save Status */}
+            {saveStatus !== 'idle' && (
+              <div className={`absolute top-4 right-4 px-4 py-2 rounded-lg flex items-center gap-2 text-white font-medium z-10 shadow-lg transition-all duration-300 ${
+                saveStatus === 'saving' ? 'bg-gradient-to-r from-sky-500 to-sky-600' : 'bg-gradient-to-r from-green-500 to-green-600'
+              }`}>
+                {saveStatus === 'saving' ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Saved!
+                  </>
+                )}
+              </div>
+            )}
             {/* Profile Tab */}
             {activeTab === 'profile' && (
               <div className="p-6">
@@ -122,8 +155,8 @@ export default function SettingsPage() {
                         <input
                           type="text"
                           className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                          value={profile.name}
-                          onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                          value={localProfile.name}
+                          onChange={(e) => setLocalProfile({ ...localProfile, name: e.target.value })}
                         />
                       </div>
                     </div>
@@ -135,8 +168,8 @@ export default function SettingsPage() {
                         <input
                           type="email"
                           className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                          value={profile.email}
-                          onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                          value={localProfile.email}
+                          onChange={(e) => setLocalProfile({ ...localProfile, email: e.target.value })}
                         />
                       </div>
                     </div>
@@ -148,8 +181,8 @@ export default function SettingsPage() {
                         <input
                           type="tel"
                           className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                          value={profile.phone}
-                          onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                          value={localProfile.phone}
+                          onChange={(e) => setLocalProfile({ ...localProfile, phone: e.target.value })}
                         />
                       </div>
                     </div>

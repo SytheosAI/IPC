@@ -14,7 +14,10 @@ import {
   Calendar,
   BarChart3,
   Building2,
-  Search
+  Search,
+  Sparkles,
+  Brain,
+  Zap
 } from 'lucide-react'
 
 interface DashboardStat {
@@ -147,8 +150,18 @@ export default function DashboardPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Overview of permit applications and inspection activities</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600 mt-1">Overview of permit applications and inspection activities</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="ai-badge">
+              <Sparkles className="h-3 w-3 mr-1" />
+              AI Insights Available
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -158,25 +171,50 @@ export default function DashboardPage() {
           const colorClasses = getStatColorClasses(stat.color)
           
           return (
-            <div key={index} className={`bg-white rounded-lg p-6 border-2 ${colorClasses}`}>
-              <div className="flex items-start justify-between mb-4">
-                <Icon className="h-8 w-8" />
-                {stat.trend && (
-                  <div className={`text-xs font-medium ${
-                    stat.trend === 'up' ? 'text-green-600' : 
-                    stat.trend === 'down' ? 'text-red-600' : 
-                    'text-gray-600'
+            <div key={index} className="relative group bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br opacity-5 group-hover:opacity-10 transition-opacity duration-300" 
+                style={{
+                  backgroundImage: stat.color === 'blue' ? 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)' :
+                                  stat.color === 'green' ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' :
+                                  stat.color === 'yellow' ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' :
+                                  stat.color === 'red' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' :
+                                  'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)'
+                }}
+              />
+              <div className="relative z-10">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-3 rounded-lg shadow-sm ${
+                    stat.color === 'blue' ? 'bg-sky-100' :
+                    stat.color === 'green' ? 'bg-green-100' :
+                    stat.color === 'yellow' ? 'bg-yellow-100' :
+                    stat.color === 'red' ? 'bg-red-100' :
+                    'bg-purple-100'
                   }`}>
-                    {stat.trendValue}
+                    <Icon className={`h-8 w-8 ${
+                      stat.color === 'blue' ? 'text-sky-600' :
+                      stat.color === 'green' ? 'text-green-600' :
+                      stat.color === 'yellow' ? 'text-yellow-600' :
+                      stat.color === 'red' ? 'text-red-600' :
+                      'text-purple-600'
+                    }`} />
                   </div>
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-medium opacity-80">{stat.label}</p>
-                <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                {stat.description && (
-                  <p className="text-xs opacity-60 mt-1">{stat.description}</p>
-                )}
+                  {stat.trend && (
+                    <div className={`text-xs font-medium flex items-center gap-1 px-2 py-1 rounded-full ${
+                      stat.trend === 'up' ? 'bg-green-100 text-green-600' : 
+                      stat.trend === 'down' ? 'bg-red-100 text-red-600' : 
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {stat.trendValue}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                  <p className="text-3xl font-bold mt-1 text-gray-900">{stat.value}</p>
+                  {stat.description && (
+                    <p className="text-xs text-gray-500 mt-2">{stat.description}</p>
+                  )}
+                </div>
               </div>
             </div>
           )
@@ -184,7 +222,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Applications Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Recent Applications</h2>
@@ -262,7 +300,7 @@ export default function DashboardPage() {
       {/* Additional Info Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         {/* Active Permits Summary */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Permits</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -287,7 +325,7 @@ export default function DashboardPage() {
         </div>
 
         {/* VBA Inspections */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">VBA Inspections</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -312,7 +350,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Performance Metrics */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance</h3>
           <div className="space-y-3">
             <div>
@@ -333,6 +371,48 @@ export default function DashboardPage() {
                 <div className="bg-green-500 h-2 rounded-full" style={{ width: '92%' }}></div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Insights Section */}
+      <div className="mt-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 text-white shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+              <Brain className="h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold">AI-Powered Insights</h3>
+              <p className="text-white/80 text-sm">Intelligent recommendations based on your permit data</p>
+            </div>
+          </div>
+          <button className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur-sm transition-colors flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Generate Report
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Trend Analysis
+            </h4>
+            <p className="text-sm text-white/90">Permit approvals are 23% faster this month compared to last month</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Risk Detection
+            </h4>
+            <p className="text-sm text-white/90">2 permits require immediate attention due to missing documentation</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              Optimization
+            </h4>
+            <p className="text-sm text-white/90">Automating document validation could save 4 hours per week</p>
           </div>
         </div>
       </div>
