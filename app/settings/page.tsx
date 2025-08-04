@@ -192,8 +192,8 @@ export default function SettingsPage() {
                       <input
                         type="text"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        value={profile.title}
-                        onChange={(e) => setProfile({ ...profile, title: e.target.value })}
+                        value={localProfile.title}
+                        onChange={(e) => setLocalProfile({ ...localProfile, title: e.target.value })}
                       />
                     </div>
 
@@ -204,8 +204,8 @@ export default function SettingsPage() {
                         <input
                           type="text"
                           className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                          value={profile.company}
-                          onChange={(e) => setProfile({ ...profile, company: e.target.value })}
+                          value={localProfile.company}
+                          onChange={(e) => setLocalProfile({ ...localProfile, company: e.target.value })}
                         />
                       </div>
                     </div>
@@ -215,8 +215,8 @@ export default function SettingsPage() {
                       <input
                         type="text"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        value={profile.address}
-                        onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                        value={localProfile.address}
+                        onChange={(e) => setLocalProfile({ ...localProfile, address: e.target.value })}
                       />
                     </div>
                   </div>
@@ -246,8 +246,8 @@ export default function SettingsPage() {
                         <input
                           type="checkbox"
                           className="rounded text-sky-600 focus:ring-sky-500 mr-3"
-                          checked={notifications.emailNotifications}
-                          onChange={(e) => setNotifications({ ...notifications, emailNotifications: e.target.checked })}
+                          checked={localNotifications.emailNotifications}
+                          onChange={(e) => setLocalNotifications({ ...localNotifications, emailNotifications: e.target.checked })}
                         />
                         <span className="text-sm text-gray-700">Email notifications</span>
                       </label>
@@ -255,8 +255,8 @@ export default function SettingsPage() {
                         <input
                           type="checkbox"
                           className="rounded text-sky-600 focus:ring-sky-500 mr-3"
-                          checked={notifications.smsNotifications}
-                          onChange={(e) => setNotifications({ ...notifications, smsNotifications: e.target.checked })}
+                          checked={localNotifications.smsNotifications}
+                          onChange={(e) => setLocalNotifications({ ...localNotifications, smsNotifications: e.target.checked })}
                         />
                         <span className="text-sm text-gray-700">SMS notifications</span>
                       </label>
@@ -270,8 +270,8 @@ export default function SettingsPage() {
                         <input
                           type="checkbox"
                           className="rounded text-sky-600 focus:ring-sky-500 mr-3"
-                          checked={notifications.permitUpdates}
-                          onChange={(e) => setNotifications({ ...notifications, permitUpdates: e.target.checked })}
+                          checked={localNotifications.permitUpdates}
+                          onChange={(e) => setLocalNotifications({ ...localNotifications, permitUpdates: e.target.checked })}
                         />
                         <span className="text-sm text-gray-700">Permit status updates</span>
                       </label>
@@ -279,8 +279,8 @@ export default function SettingsPage() {
                         <input
                           type="checkbox"
                           className="rounded text-sky-600 focus:ring-sky-500 mr-3"
-                          checked={notifications.inspectionReminders}
-                          onChange={(e) => setNotifications({ ...notifications, inspectionReminders: e.target.checked })}
+                          checked={localNotifications.inspectionReminders}
+                          onChange={(e) => setLocalNotifications({ ...localNotifications, inspectionReminders: e.target.checked })}
                         />
                         <span className="text-sm text-gray-700">Inspection reminders</span>
                       </label>
@@ -288,8 +288,8 @@ export default function SettingsPage() {
                         <input
                           type="checkbox"
                           className="rounded text-sky-600 focus:ring-sky-500 mr-3"
-                          checked={notifications.documentUploads}
-                          onChange={(e) => setNotifications({ ...notifications, documentUploads: e.target.checked })}
+                          checked={localNotifications.documentUploads}
+                          onChange={(e) => setLocalNotifications({ ...localNotifications, documentUploads: e.target.checked })}
                         />
                         <span className="text-sm text-gray-700">New document uploads</span>
                       </label>
@@ -297,8 +297,8 @@ export default function SettingsPage() {
                         <input
                           type="checkbox"
                           className="rounded text-sky-600 focus:ring-sky-500 mr-3"
-                          checked={notifications.newMembers}
-                          onChange={(e) => setNotifications({ ...notifications, newMembers: e.target.checked })}
+                          checked={localNotifications.newMembers}
+                          onChange={(e) => setLocalNotifications({ ...localNotifications, newMembers: e.target.checked })}
                         />
                         <span className="text-sm text-gray-700">New team members</span>
                       </label>
@@ -306,8 +306,8 @@ export default function SettingsPage() {
                         <input
                           type="checkbox"
                           className="rounded text-sky-600 focus:ring-sky-500 mr-3"
-                          checked={notifications.systemAlerts}
-                          onChange={(e) => setNotifications({ ...notifications, systemAlerts: e.target.checked })}
+                          checked={localNotifications.systemAlerts}
+                          onChange={(e) => setLocalNotifications({ ...localNotifications, systemAlerts: e.target.checked })}
                         />
                         <span className="text-sm text-gray-700">System alerts and updates</span>
                       </label>
@@ -340,13 +340,13 @@ export default function SettingsPage() {
                       </div>
                       <button
                         className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                          security.twoFactorAuth ? 'bg-sky-600' : 'bg-gray-200'
+                          localSecurity.twoFactorAuth ? 'bg-sky-600' : 'bg-gray-200'
                         }`}
-                        onClick={() => setSecurity({ ...security, twoFactorAuth: !security.twoFactorAuth })}
+                        onClick={() => setLocalSecurity({ ...localSecurity, twoFactorAuth: !localSecurity.twoFactorAuth })}
                       >
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                            security.twoFactorAuth ? 'translate-x-6' : 'translate-x-1'
+                            localSecurity.twoFactorAuth ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </button>
@@ -357,8 +357,8 @@ export default function SettingsPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Session Timeout (minutes)</label>
                     <select
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                      value={security.sessionTimeout}
-                      onChange={(e) => setSecurity({ ...security, sessionTimeout: e.target.value })}
+                      value={localSecurity.sessionTimeout}
+                      onChange={(e) => setLocalSecurity({ ...localSecurity, sessionTimeout: e.target.value })}
                     >
                       <option value="15">15 minutes</option>
                       <option value="30">30 minutes</option>
@@ -371,8 +371,8 @@ export default function SettingsPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password Expiry (days)</label>
                     <select
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                      value={security.passwordExpiry}
-                      onChange={(e) => setSecurity({ ...security, passwordExpiry: e.target.value })}
+                      value={localSecurity.passwordExpiry}
+                      onChange={(e) => setLocalSecurity({ ...localSecurity, passwordExpiry: e.target.value })}
                     >
                       <option value="30">30 days</option>
                       <option value="60">60 days</option>
