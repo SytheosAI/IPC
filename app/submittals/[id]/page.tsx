@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { 
   ArrowLeft,
   FileText,
@@ -38,8 +39,9 @@ interface ChecklistItem {
   required: boolean
 }
 
-export default async function SubmittalDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default function SubmittalDetailPage() {
+  const params = useParams()
+  const id = params?.id as string
   const [activeTab, setActiveTab] = useState<'plans' | 'documents' | 'checklist'>('checklist')
   const [expandedCategories, setExpandedCategories] = useState<string[]>([])
   
