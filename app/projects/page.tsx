@@ -118,7 +118,7 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterCategory, setFilterCategory] = useState('all')
-  const [sortField, setSortField] = useState<'progress' | 'priority' | 'expectedCompletion'>('expectedCompletion')
+  const [sortField, setSortField] = useState<'progress' | 'priority' | 'expectedCompletion' | 'projectName'>('expectedCompletion')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   const getStatusColor = (status: string) => {
@@ -176,6 +176,9 @@ export default function ProjectsPage() {
         break
       case 'expectedCompletion':
         comparison = new Date(a.expectedCompletion).getTime() - new Date(b.expectedCompletion).getTime()
+        break
+      case 'projectName':
+        comparison = a.projectName.localeCompare(b.projectName)
         break
     }
     return sortOrder === 'asc' ? comparison : -comparison
@@ -263,7 +266,7 @@ export default function ProjectsPage() {
                       if (sortField === 'projectName') {
                         setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                       } else {
-                        setSortField('projectName' as any)
+                        setSortField('projectName')
                         setSortOrder('asc')
                       }
                     }}
