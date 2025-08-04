@@ -551,7 +551,10 @@ export default function VBAPage() {
                   <tr 
                     key={project.id} 
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/vba/project/${project.id}`)}
+                    onClick={() => {
+                      console.log('Navigating to:', `/vba/project/${project.id}`)
+                      router.push(`/vba/project/${project.id}`)
+                    }}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {project.jobNumber || `J${project.id.slice(-4)}`}

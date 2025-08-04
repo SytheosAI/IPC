@@ -484,6 +484,13 @@ export default function ProjectHub() {
         </button>
       </div>
 
+      {/* Debug Info - Remove after testing */}
+      <div className="bg-yellow-100 border border-yellow-400 p-4 rounded mb-4">
+        <p className="text-sm">Debug: You are on the NEW Project Hub page</p>
+        <p className="text-sm">Project ID: {projectId}</p>
+        <p className="text-sm">URL: /vba/project/{projectId}</p>
+      </div>
+
       {/* Project Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
