@@ -86,7 +86,7 @@ export default function Sidebar() {
           {!isCollapsed && (
             <div>
               <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">IPC</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Permit Control</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Inspection & Permit Control</p>
             </div>
           )}
         </div>
