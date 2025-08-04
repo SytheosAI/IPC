@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
   Search, 
   Plus, 
@@ -92,6 +93,7 @@ interface NewsItem {
 }
 
 export default function VBAPage() {
+  const router = useRouter()
   const [projects, setProjects] = useState<VBAProject[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
@@ -546,14 +548,18 @@ export default function VBAPage() {
                 </tr>
               ) : (
                 filteredProjects.map((project) => (
-                  <tr key={project.id} className="hover:bg-gray-50 transition-colors cursor-pointer">
+                  <tr 
+                    key={project.id} 
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/vba/project/${project.id}`)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {project.jobNumber || `J${project.id.slice(-4)}`}
                     </td>
                     <td className="px-6 py-4">
-                      <Link href={`/vba/project/${project.id}`} className="text-sm font-medium text-gray-900 hover:text-sky-600">
+                      <div className="text-sm font-medium text-gray-900 hover:text-sky-600">
                         {project.projectName}
-                      </Link>
+                      </div>
                       <div className="text-xs text-gray-500 mt-1">{project.address}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
