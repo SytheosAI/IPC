@@ -1,19 +1,51 @@
-// Example database setup for Vercel Postgres
-import { sql } from '@vercel/postgres'
+// Database abstraction layer
+// Currently using localStorage, but can be swapped for real database later
 
 export async function getProjects() {
-  const { rows } = await sql`SELECT * FROM projects ORDER BY created_at DESC`
-  return rows
+  if (typeof window === 'undefined') return []
+  
+  const data = localStorage.getItem('projects')
+  return data ? JSON.parse(data) : []
 }
 
 export async function createProject(project: any) {
-  const { rows } = await sql`
-    INSERT INTO projects (name, city, submittal_number, permit_number, status)
-    VALUES (${project.name}, ${project.city}, ${project.submittalNumber}, ${project.permitNumber}, ${project.status})
-    RETURNING *
-  `
-  return rows[0]
+  if (typeof window === 'undefined') return null
+  
+  const projects = await getProjects()
+  const newProject = {
+    ...project,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString()
+  }
+  
+  projects.push(newProject)
+  localStorage.setItem('projects', JSON.stringify(projects))
+  
+  return newProject
 }
 
-// For development without database, use localStorage
-export const useLocalStorage = process.env.NODE_ENV === 'development'
+export async function getSubmittals() {
+  if (typeof window === 'undefined') return []
+  
+  const data = localStorage.getItem('submittals')
+  return data ? JSON.parse(data) : []
+}
+
+export async function createSubmittal(submittal: any) {
+  if (typeof window === 'undefined') return null
+  
+  const submittals = await getSubmittals()
+  const newSubmittal = {
+    ...submittal,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString()
+  }
+  
+  submittals.push(newSubmittal)
+  localStorage.setItem('submittals', JSON.stringify(submittals))
+  
+  return newSubmittal
+}
+
+// For future database integration
+export const useLocalStorage = true
