@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function TestPage() {
   return (
     <div className="p-6">
@@ -7,10 +9,10 @@ export default function TestPage() {
       <div className="mt-8">
         <h2 className="text-lg font-semibold">Navigation Links:</h2>
         <ul className="mt-2 space-y-2">
-          <li><a href="/" className="text-blue-500 hover:underline">Home</a></li>
-          <li><a href="/mobile" className="text-blue-500 hover:underline">Mobile Landing</a></li>
-          <li><a href="/vba" className="text-blue-500 hover:underline">VBA</a></li>
-          <li><a href="/settings" className="text-blue-500 hover:underline">Settings</a></li>
+          <li><Link href="/" className="text-blue-500 hover:underline">Home</Link></li>
+          <li><Link href="/mobile" className="text-blue-500 hover:underline">Mobile Landing</Link></li>
+          <li><Link href="/vba" className="text-blue-500 hover:underline">VBA</Link></li>
+          <li><Link href="/settings" className="text-blue-500 hover:underline">Settings</Link></li>
         </ul>
       </div>
     </div>
