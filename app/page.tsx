@@ -150,17 +150,12 @@ export default function DashboardPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">Overview of permit applications and inspection activities</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="ai-badge">
-              <Sparkles className="h-3 w-3 mr-1" />
-              AI Insights Available
-            </span>
-          </div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center">Dashboard</h1>
+        <div className="flex justify-center mt-2">
+          <span className="ai-badge">
+            <Sparkles className="h-3 w-3 mr-1" />
+            AI Insights Available
+          </span>
         </div>
       </div>
 

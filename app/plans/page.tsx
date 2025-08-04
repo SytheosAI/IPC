@@ -127,26 +127,18 @@ export default function PlansPage() {
 
   return (
     <div className="p-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-        <Home className="h-4 w-4" />
-        <ChevronRight className="h-4 w-4" />
-        <span className="font-medium text-gray-900">Plans</span>
-      </div>
-
       {/* Page Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Project Plans</h1>
-          <p className="text-gray-600 mt-1">Manage architectural and engineering plans</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">Project Plans</h1>
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="btn-primary"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Add Plan
+          </button>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Add Plan
-        </button>
       </div>
 
       {/* Filters and Search */}

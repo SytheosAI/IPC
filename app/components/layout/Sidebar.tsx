@@ -15,6 +15,7 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { clsx } from 'clsx'
+import { useUser } from '../../contexts/UserContext'
 
 const navigation = [
   { 
@@ -64,6 +65,7 @@ const navigation = [
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
+  const { profile, theme } = useUser()
 
   return (
     <div
@@ -147,15 +149,20 @@ export default function Sidebar() {
       </nav>
 
       {/* User Profile */}
-      {!isCollapsed && (
+      {!isCollapsed && profile.name && (
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">JD</span>
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
+              style={{ background: `linear-gradient(to right, var(--accent-500), var(--accent-600))` }}
+            >
+              <span className="text-sm">
+                {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </span>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">John Doe</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{profile.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{profile.title || 'User'}</p>
             </div>
           </div>
         </div>

@@ -305,9 +305,8 @@ export default function VBAPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold text-gray-900">Virtual Building Authority</h1>
-        <p className="text-gray-600 mt-1">Digital Inspection Platform</p>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center">Virtual Building Authority</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

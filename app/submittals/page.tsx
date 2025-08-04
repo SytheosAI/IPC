@@ -185,26 +185,18 @@ export default function SubmittalsPage() {
 
   return (
     <div className="p-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-        <Home className="h-4 w-4" />
-        <ChevronRight className="h-4 w-4" />
-        <span className="font-medium text-gray-900">Submittals</span>
-      </div>
-
       {/* Page Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Permit Submittals</h1>
-          <p className="text-gray-600 mt-1">Manage and track all permit applications</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">Permit Submittals</h1>
+        <div className="flex justify-end">
+          <Link
+            href="/submittals/new"
+            className="btn-primary"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            New Submittal
+          </Link>
         </div>
-        <Link
-          href="/submittals/new"
-          className="btn-primary"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          New Submittal
-        </Link>
       </div>
 
       {/* Filters and Search */}

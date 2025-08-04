@@ -164,20 +164,10 @@ export default function MembersPage() {
 
   return (
     <div className="p-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-6">
-        <Home className="h-4 w-4" />
-        <ChevronRight className="h-4 w-4" />
-        <span className="font-medium text-gray-900 dark:text-gray-100">Members</span>
-      </div>
-
       {/* Page Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Team Members & Contacts</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage project participants and internal communications</p>
-        </div>
-        <div className="flex gap-3">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">Team Members & Contacts</h1>
+        <div className="flex justify-end gap-3">
           <button
             onClick={() => setShowMessaging(!showMessaging)}
             className="btn-secondary"

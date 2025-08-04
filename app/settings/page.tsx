@@ -82,17 +82,9 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-        <Home className="h-4 w-4" />
-        <ChevronRight className="h-4 w-4" />
-        <span className="font-medium text-gray-900">Settings</span>
-      </div>
-
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-1">Manage your account and application preferences</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center">Settings</h1>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
