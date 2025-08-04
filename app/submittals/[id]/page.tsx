@@ -38,13 +38,14 @@ interface ChecklistItem {
   required: boolean
 }
 
-export default function SubmittalDetailPage({ params }: { params: { id: string } }) {
+export default async function SubmittalDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const [activeTab, setActiveTab] = useState<'plans' | 'documents' | 'checklist'>('checklist')
   const [expandedCategories, setExpandedCategories] = useState<string[]>([])
   
   // Mock data - in production this would come from your database
   const submittal = {
-    id: params.id,
+    id: id,
     permitNumber: 'PER-2024-0156',
     projectName: 'Medical Office Building',
     projectAddress: '1234 Healthcare Blvd, Miami, FL 33130',
