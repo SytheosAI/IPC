@@ -32,7 +32,11 @@ import {
   ExternalLink,
   Newspaper,
   ArrowUp,
-  X
+  X,
+  Sun,
+  CloudRain,
+  CloudSnow,
+  Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -102,7 +106,7 @@ export default function VBAPage() {
     timesSaved: 0
   })
   const [isLoading, setIsLoading] = useState(true)
-  const [weatherData] = useState<WeatherData>({
+  const [weatherData, setWeatherData] = useState<WeatherData>({
     temp: 82,
     condition: 'Partly Cloudy',
     feelsLike: 88,
@@ -113,6 +117,7 @@ export default function VBAPage() {
       { day: 'Fri', high: 90, low: 79, condition: 'cloudy' }
     ]
   })
+  const [weatherLoading, setWeatherLoading] = useState(true)
   const [newsItems] = useState<NewsItem[]>([
     {
       id: '1',
@@ -132,7 +137,74 @@ export default function VBAPage() {
 
   useEffect(() => {
     loadVBAProjects()
+    fetchWeatherData()
   }, [])
+
+  const fetchWeatherData = async () => {
+    try {
+      setWeatherLoading(true)
+      
+      // Fort Myers, FL coordinates
+      const lat = 26.6406
+      const lon = -81.8723
+      
+      const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
+      
+      if (!apiKey) {
+        console.error('Weather API key not found')
+        return
+      }
+
+      // Fetch current weather
+      const currentResponse = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`
+      )
+      const currentData = await currentResponse.json()
+
+      // Fetch 5-day forecast
+      const forecastResponse = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial&cnt=24`
+      )
+      const forecastData = await forecastResponse.json()
+
+      // Process forecast data to get daily highs/lows
+      const dailyForecasts: any = {}
+      forecastData.list.forEach((item: any) => {
+        const date = new Date(item.dt * 1000)
+        const dayKey = date.toLocaleDateString('en-US', { weekday: 'short' })
+        
+        if (!dailyForecasts[dayKey]) {
+          dailyForecasts[dayKey] = {
+            high: item.main.temp_max,
+            low: item.main.temp_min,
+            condition: item.weather[0].main
+          }
+        } else {
+          dailyForecasts[dayKey].high = Math.max(dailyForecasts[dayKey].high, item.main.temp_max)
+          dailyForecasts[dayKey].low = Math.min(dailyForecasts[dayKey].low, item.main.temp_min)
+        }
+      })
+
+      const forecastArray = Object.entries(dailyForecasts).slice(0, 3).map(([day, data]: [string, any], index) => ({
+        day: index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : day,
+        high: Math.round(data.high),
+        low: Math.round(data.low),
+        condition: data.condition.toLowerCase()
+      }))
+
+      setWeatherData({
+        temp: Math.round(currentData.main.temp),
+        condition: currentData.weather[0].main,
+        feelsLike: Math.round(currentData.main.feels_like),
+        humidity: currentData.main.humidity,
+        forecast: forecastArray
+      })
+    } catch (error) {
+      console.error('Failed to fetch weather data:', error)
+    } finally {
+      setWeatherLoading(false)
+    }
+  }
 
   const loadVBAProjects = async () => {
     try {
@@ -214,6 +286,22 @@ export default function VBAPage() {
     return 'text-red-600'
   }
 
+  const getWeatherIcon = (condition: string) => {
+    const cond = condition.toLowerCase()
+    if (cond.includes('clear') || cond.includes('sun')) return <Sun className="h-16 w-16" />
+    if (cond.includes('rain') || cond.includes('drizzle')) return <CloudRain className="h-16 w-16" />
+    if (cond.includes('snow')) return <CloudSnow className="h-16 w-16" />
+    return <Cloud className="h-16 w-16" />
+  }
+
+  const getSmallWeatherIcon = (condition: string) => {
+    const cond = condition.toLowerCase()
+    if (cond.includes('clear') || cond.includes('sun')) return <Sun className="h-4 w-4" />
+    if (cond.includes('rain') || cond.includes('drizzle')) return <CloudRain className="h-4 w-4" />
+    if (cond.includes('snow')) return <CloudSnow className="h-4 w-4" />
+    return <Cloud className="h-4 w-4" />
+  }
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -235,13 +323,19 @@ export default function VBAPage() {
             </button>
           </div>
           
-          <div className="flex items-center gap-4 mb-6">
-            <Cloud className="h-16 w-16" />
-            <div>
-              <div className="text-5xl font-bold">{weatherData.temp}°</div>
-              <div className="text-sm opacity-80">{weatherData.condition}</div>
+          {weatherLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-4 mb-6">
+              {getWeatherIcon(weatherData.condition)}
+              <div>
+                <div className="text-5xl font-bold">{weatherData.temp}°</div>
+                <div className="text-sm opacity-80">{weatherData.condition}</div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-gray-700 rounded-lg p-3">
@@ -264,7 +358,7 @@ export default function VBAPage() {
             {weatherData.forecast.map((day) => (
               <div key={day.day} className="flex items-center justify-between text-sm">
                 <span className="opacity-70">{day.day}</span>
-                <Cloud className="h-4 w-4" />
+                {getSmallWeatherIcon(day.condition)}
                 <span>{day.high}° / {day.low}°</span>
               </div>
             ))}
