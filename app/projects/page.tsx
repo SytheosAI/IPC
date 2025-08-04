@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   FileText,
   Plus,
@@ -23,129 +23,97 @@ import {
   Users,
   Percent,
   TrendingUp,
-  Activity
+  Activity,
+  X,
+  MoreVertical,
+  ArrowUpDown
 } from 'lucide-react'
 
 interface Project {
   id: string
   projectNumber: string
   projectName: string
-  projectAddress: string
-  client: string
-  projectManager: string
+  city: string
+  submittalNumber: string
+  permitNumber: string
   status: 'in_queue' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled'
   priority: 'low' | 'medium' | 'high' | 'urgent'
   startDate: string
   expectedCompletion: string
   actualCompletion?: string
   progress: number
-  budget: number
-  spent: number
-  teamSize: number
   category: 'residential' | 'commercial' | 'industrial' | 'municipal'
-  permitStatus: 'pending' | 'approved' | 'expired' | 'rejected'
   lastActivity: string
 }
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: '1',
-      projectNumber: 'PRJ-2024-001',
-      projectName: 'Sunrise Medical Center',
-      projectAddress: '1234 Healthcare Blvd, Miami, FL',
-      client: 'Healthcare Properties LLC',
-      projectManager: 'Sarah Johnson',
-      status: 'in_progress',
-      priority: 'high',
-      startDate: '2024-01-15',
-      expectedCompletion: '2024-08-15',
-      progress: 65,
-      budget: 2500000,
-      spent: 1625000,
-      teamSize: 12,
-      category: 'commercial',
-      permitStatus: 'approved',
-      lastActivity: '2024-01-19'
-    },
-    {
-      id: '2',
-      projectNumber: 'PRJ-2024-002',
-      projectName: 'Oak Grove Residential',
-      projectAddress: '567 Oak Street, Miami, FL',
-      client: 'Johnson Family Trust',
-      projectManager: 'Mike Chen',
-      status: 'completed',
-      priority: 'medium',
-      startDate: '2023-11-01',
-      expectedCompletion: '2024-01-15',
-      actualCompletion: '2024-01-12',
-      progress: 100,
-      budget: 450000,
-      spent: 438000,
-      teamSize: 6,
-      category: 'residential',
-      permitStatus: 'approved',
-      lastActivity: '2024-01-12'
-    },
-    {
-      id: '3',
-      projectNumber: 'PRJ-2024-003',
-      projectName: 'Downtown Office Complex',
-      projectAddress: '890 Commerce Way, Miami, FL',
-      client: 'Plaza Holdings Inc',
-      projectManager: 'Lisa Rodriguez',
+  const [projects, setProjects] = useState<Project[]>([])
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false)
+  const [newProject, setNewProject] = useState({
+    projectName: '',
+    city: '',
+    submittalNumber: '',
+    permitNumber: '',
+    status: 'in_queue' as 'in_queue' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled',
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
+    category: 'commercial' as 'residential' | 'commercial' | 'industrial' | 'municipal',
+    startDate: new Date().toISOString().split('T')[0],
+    expectedCompletion: ''
+  })
+  
+  // Load projects from localStorage on mount
+  useEffect(() => {
+    const savedProjects = localStorage.getItem('projects')
+    if (savedProjects) {
+      setProjects(JSON.parse(savedProjects))
+    }
+  }, [])
+  
+  // Generate project number
+  const generateProjectNumber = () => {
+    const year = new Date().getFullYear()
+    const count = projects.filter(p => p.projectNumber.startsWith(`PRJ-${year}`)).length + 1
+    return `PRJ-${year}-${String(count).padStart(3, '0')}`
+  }
+  
+  // Handle new project creation
+  const handleCreateProject = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const project: Project = {
+      id: Date.now().toString(),
+      projectNumber: generateProjectNumber(),
+      projectName: newProject.projectName,
+      city: newProject.city,
+      submittalNumber: newProject.submittalNumber,
+      permitNumber: newProject.permitNumber,
+      status: newProject.status,
+      priority: newProject.priority,
+      category: newProject.category,
+      startDate: newProject.startDate,
+      expectedCompletion: newProject.expectedCompletion,
+      progress: newProject.status === 'completed' ? 100 : 0,
+      lastActivity: new Date().toISOString().split('T')[0]
+    }
+    
+    const updatedProjects = [project, ...projects]
+    setProjects(updatedProjects)
+    localStorage.setItem('projects', JSON.stringify(updatedProjects))
+    
+    // Reset form
+    setNewProject({
+      projectName: '',
+      city: '',
+      submittalNumber: '',
+      permitNumber: '',
       status: 'in_queue',
       priority: 'medium',
-      startDate: '2024-02-01',
-      expectedCompletion: '2024-12-01',
-      progress: 0,
-      budget: 3200000,
-      spent: 0,
-      teamSize: 15,
       category: 'commercial',
-      permitStatus: 'pending',
-      lastActivity: '2024-01-18'
-    },
-    {
-      id: '4',
-      projectNumber: 'PRJ-2024-004',
-      projectName: 'Industrial Warehouse',
-      projectAddress: '2345 Industry Park, Miami, FL',
-      client: 'Logistics Corp',
-      projectManager: 'David Kim',
-      status: 'on_hold',
-      priority: 'low',
-      startDate: '2024-01-20',
-      expectedCompletion: '2024-06-20',
-      progress: 25,
-      budget: 1800000,
-      spent: 450000,
-      teamSize: 8,
-      category: 'industrial',
-      permitStatus: 'expired',
-      lastActivity: '2024-01-16'
-    },
-    {
-      id: '5',
-      projectNumber: 'PRJ-2024-005',
-      projectName: 'City Hall Renovation',
-      projectAddress: '100 Government Plaza, Miami, FL',
-      client: 'City of Miami',
-      projectManager: 'Sarah Johnson',
-      status: 'in_progress',
-      priority: 'urgent',
-      startDate: '2024-01-01',
-      expectedCompletion: '2024-05-01',
-      progress: 45,
-      budget: 950000,
-      spent: 427500,
-      teamSize: 10,
-      category: 'municipal',
-      permitStatus: 'approved',
-      lastActivity: '2024-01-19'
-    }
-  ])
+      startDate: new Date().toISOString().split('T')[0],
+      expectedCompletion: ''
+    })
+    setShowNewProjectModal(false)
+  }
 
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -188,7 +156,9 @@ export default function ProjectsPage() {
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.projectNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.client.toLowerCase().includes(searchQuery.toLowerCase())
+                         project.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         project.submittalNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         project.permitNumber.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = filterStatus === 'all' || project.status === filterStatus
     const matchesCategory = filterCategory === 'all' || project.category === filterCategory
     return matchesSearch && matchesStatus && matchesCategory
@@ -211,112 +181,44 @@ export default function ProjectsPage() {
     return sortOrder === 'asc' ? comparison : -comparison
   })
 
-  const stats = {
-    total: projects.length,
-    inProgress: projects.filter(p => p.status === 'in_progress').length,
-    completed: projects.filter(p => p.status === 'completed').length,
-    inQueue: projects.filter(p => p.status === 'in_queue').length,
-    totalBudget: projects.reduce((sum, p) => sum + p.budget, 0),
-    totalSpent: projects.reduce((sum, p) => sum + p.spent, 0)
-  }
-
   return (
     <div className="p-6">
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">Project Queue</h1>
         <div className="flex justify-end">
-          <button className="btn-primary">
+          <button 
+            onClick={() => setShowNewProjectModal(true)}
+            className="btn-primary"
+          >
             <Plus className="h-5 w-5 mr-2" />
             New Project
           </button>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Projects</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.total}</p>
-            </div>
-            <Activity className="h-8 w-8 text-gray-400" />
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">In Progress</p>
-              <p className="text-2xl font-bold text-green-600">{stats.inProgress}</p>
-            </div>
-            <PlayCircle className="h-8 w-8 text-green-400" />
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Completed</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.completed}</p>
-            </div>
-            <CheckCircle className="h-8 w-8 text-blue-400" />
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">In Queue</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.inQueue}</p>
-            </div>
-            <Clock className="h-8 w-8 text-yellow-400" />
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Budget</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                ${(stats.totalBudget / 1000000).toFixed(1)}M
-              </p>
-            </div>
-            <DollarSign className="h-8 w-8 text-gray-400" />
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Spent</p>
-              <p className="text-lg font-bold text-purple-600">
-                ${(stats.totalSpent / 1000000).toFixed(1)}M
-              </p>
-            </div>
-            <TrendingUp className="h-8 w-8 text-purple-400" />
-          </div>
-        </div>
-      </div>
-
       {/* Filters and Search */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 mb-6">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 mb-6">
+        <div className="flex flex-col lg:flex-row gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search projects..."
-              className="input-modern pl-10 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+              placeholder="Search by project name, number, city, or permit..."
+              className="w-full pl-9 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 hover:border-gray-400 dark:hover:border-gray-500 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm"
+              style={{ 
+                '--tw-ring-color': 'var(--accent-500)' as any,
+                borderColor: 'var(--accent-500)' 
+              }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2">
             <select
-              className="input-modern text-gray-900 dark:text-gray-100"
+              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2"
+              style={{ '--tw-ring-color': 'var(--accent-500)' as any }}
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -329,7 +231,8 @@ export default function ProjectsPage() {
             </select>
 
             <select
-              className="input-modern text-gray-900 dark:text-gray-100"
+              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2"
+              style={{ '--tw-ring-color': 'var(--accent-500)' as any }}
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
             >
@@ -340,112 +243,289 @@ export default function ProjectsPage() {
               <option value="municipal">Municipal</option>
             </select>
 
-            <button className="btn-secondary">
-              <Filter className="h-5 w-5" />
-              More Filters
+            <button className="btn-secondary flex items-center gap-1 px-3 py-2 text-sm">
+              <Filter className="h-4 w-4" />
+              Filters
             </button>
 
-            <button className="btn-secondary">
-              <Download className="h-5 w-5" />
+            <button className="btn-secondary flex items-center gap-1 px-3 py-2 text-sm">
+              <Download className="h-4 w-4" />
               Export
             </button>
           </div>
         </div>
       </div>
 
-      {/* Projects Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {sortedProjects.map((project) => (
-          <div 
-            key={project.id} 
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer card-hover"
-            onClick={() => window.location.href = `/projects/${project.id}`}
-          >
-            {/* Project Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                  {project.projectName}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{project.projectNumber}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(project.priority)}`}>
-                  {project.priority.toUpperCase()}
-                </span>
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>
-                  {getStatusIcon(project.status)}
-                  {project.status.replace('_', ' ').toUpperCase()}
-                </span>
-              </div>
-            </div>
-
-            {/* Project Details */}
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <MapPin className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{project.projectAddress}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <Building className="h-4 w-4 flex-shrink-0" />
-                <span>{project.client}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <User className="h-4 w-4 flex-shrink-0" />
-                <span>PM: {project.projectManager}</span>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progress</span>
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{project.progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    project.progress === 100 ? 'bg-green-500' : 
-                    project.progress >= 75 ? 'bg-blue-500' :
-                    project.progress >= 50 ? 'bg-yellow-500' : 
-                    project.progress >= 25 ? 'bg-orange-500' : 'bg-red-500'
-                  }`}
-                  style={{ width: `${project.progress}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Project Stats */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  <DollarSign className="h-3 w-3" />
-                  Budget
-                </div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  ${(project.budget / 1000000).toFixed(1)}M
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  <Users className="h-3 w-3" />
-                  Team
-                </div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{project.teamSize}</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  <Calendar className="h-3 w-3" />
-                  Due
-                </div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {new Date(project.expectedCompletion).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Projects Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left">
+                  <button
+                    className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider hover:text-gray-900 dark:hover:text-gray-100"
+                    onClick={() => {
+                      if (sortField === 'projectName') {
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+                      } else {
+                        setSortField('projectName' as any)
+                        setSortOrder('asc')
+                      }
+                    }}
+                  >
+                    Project Name
+                    <ArrowUpDown className="h-4 w-4" />
+                  </button>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  City
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  Submittal #
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  Permit #
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  Priority
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {sortedProjects.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-24 text-center">
+                    <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No projects found</p>
+                    <p className="text-gray-500 dark:text-gray-500 text-sm mb-4">Get started by creating your first project</p>
+                    <button
+                      onClick={() => setShowNewProjectModal(true)}
+                      className="btn-primary"
+                    >
+                      <Plus className="h-5 w-5 mr-2" />
+                      Create New Project
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                sortedProjects.map((project) => (
+                  <tr 
+                    key={project.id} 
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                    onClick={() => window.location.href = `/projects/${project.id}`}
+                  >
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{project.projectName}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{project.projectNumber}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1 text-sm text-gray-900 dark:text-gray-100">
+                        <MapPin className="h-3 w-3 text-gray-400" />
+                        {project.city}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.submittalNumber || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.permitNumber || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>
+                        {getStatusIcon(project.status)}
+                        {project.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(project.priority)}`}>
+                        {project.priority}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.location.href = `/projects/${project.id}`
+                          }}
+                          className="text-sky-600 hover:text-sky-900 dark:hover:text-sky-300 transition-colors"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* New Project Modal */}
+      {showNewProjectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">New Project</h3>
+                <button
+                  onClick={() => setShowNewProjectModal(false)}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateProject} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Name *</label>
+                  <input
+                    type="text"
+                    className="input-modern text-gray-900 dark:text-gray-100"
+                    value={newProject.projectName}
+                    onChange={(e) => setNewProject({ ...newProject, projectName: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City *</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      className="input-modern pl-10 text-gray-900 dark:text-gray-100"
+                      value={newProject.city}
+                      onChange={(e) => setNewProject({ ...newProject, city: e.target.value })}
+                      placeholder="e.g., Miami"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Submittal Number</label>
+                  <input
+                    type="text"
+                    className="input-modern text-gray-900 dark:text-gray-100"
+                    value={newProject.submittalNumber}
+                    onChange={(e) => setNewProject({ ...newProject, submittalNumber: e.target.value })}
+                    placeholder="e.g., 2024-0804-001"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Permit Number</label>
+                  <input
+                    type="text"
+                    className="input-modern text-gray-900 dark:text-gray-100"
+                    value={newProject.permitNumber}
+                    onChange={(e) => setNewProject({ ...newProject, permitNumber: e.target.value })}
+                    placeholder="e.g., PER-2024-0123"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                    <select
+                      className="input-modern text-gray-900 dark:text-gray-100"
+                      value={newProject.status}
+                      onChange={(e) => setNewProject({ ...newProject, status: e.target.value as any })}
+                    >
+                      <option value="in_queue">In Queue</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="on_hold">On Hold</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                    <select
+                      className="input-modern text-gray-900 dark:text-gray-100"
+                      value={newProject.priority}
+                      onChange={(e) => setNewProject({ ...newProject, priority: e.target.value as any })}
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                  <select
+                    className="input-modern text-gray-900 dark:text-gray-100"
+                    value={newProject.category}
+                    onChange={(e) => setNewProject({ ...newProject, category: e.target.value as any })}
+                  >
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="industrial">Industrial</option>
+                    <option value="municipal">Municipal</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Completion *</label>
+                  <input
+                    type="date"
+                    className="input-modern text-gray-900 dark:text-gray-100"
+                    value={newProject.expectedCompletion}
+                    onChange={(e) => setNewProject({ ...newProject, expectedCompletion: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowNewProjectModal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={!newProject.projectName || !newProject.city || !newProject.expectedCompletion}
+                >
+                  Create Project
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

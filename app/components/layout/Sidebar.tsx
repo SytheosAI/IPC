@@ -12,7 +12,8 @@ import {
   FolderOpen,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Zap
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useUser } from '../../contexts/UserContext'
@@ -80,13 +81,13 @@ export default function Sidebar() {
       {/* Header */}
       <div className="h-16 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded flex items-center justify-center" style={{ background: 'linear-gradient(to right, var(--accent-500), var(--accent-600))' }}>
-            <Building2 className="h-5 w-5 text-white" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--accent-500), var(--accent-600))' }}>
+            <Zap className="h-5 w-5 text-white" />
           </div>
           {!isCollapsed && (
             <div>
               <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">IPC</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Inspection & Permit Control</p>
+              <p className="text-[10px] leading-tight text-gray-500 dark:text-gray-400">Inspection & Permit Control</p>
             </div>
           )}
         </div>
