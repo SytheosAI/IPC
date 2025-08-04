@@ -31,10 +31,10 @@ const navigation = [
     description: 'Permit Applications'
   },
   { 
-    name: 'Plans', 
-    href: '/plans', 
+    name: 'Projects', 
+    href: '/projects', 
     icon: FileArchive,
-    description: 'Project Plans'
+    description: 'Project Queue'
   },
   { 
     name: 'Documents', 

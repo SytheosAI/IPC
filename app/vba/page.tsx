@@ -311,11 +311,15 @@ export default function VBAPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Weather Widget */}
-        <div className="bg-gray-800 text-white rounded-lg p-6">
+        <div 
+          className="bg-gray-800 text-white rounded-lg p-6 cursor-pointer hover:bg-gray-700 transition-colors duration-200"
+          onClick={() => window.open('https://earth.nullschool.net/', '_blank')}
+        >
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               <span className="text-sm">Fort Myers</span>
+              <span className="ml-2 text-xs bg-blue-600 px-2 py-1 rounded-full">Live Satellite</span>
             </div>
             <button className="p-1 hover:bg-gray-700 rounded">
               <X className="h-4 w-4" />
