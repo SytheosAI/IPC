@@ -412,39 +412,62 @@ export default function SettingsPage() {
                   <div>
                     <h3 className="text-sm font-medium text-gray-900 mb-4">Theme</h3>
                     <div className="grid grid-cols-3 gap-4">
-                      <label className="cursor-pointer">
-                        <input type="radio" name="theme" value="light" defaultChecked className="sr-only" />
-                        <div className="border-2 border-sky-600 rounded-lg p-4 text-center hover:bg-gray-50">
-                          <div className="w-full h-20 bg-gray-100 rounded mb-2"></div>
-                          <span className="text-sm font-medium">Light</span>
-                        </div>
-                      </label>
-                      <label className="cursor-pointer">
-                        <input type="radio" name="theme" value="dark" className="sr-only" />
-                        <div className="border-2 border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50">
-                          <div className="w-full h-20 bg-gray-800 rounded mb-2"></div>
-                          <span className="text-sm font-medium">Dark</span>
-                        </div>
-                      </label>
-                      <label className="cursor-pointer">
-                        <input type="radio" name="theme" value="auto" className="sr-only" />
-                        <div className="border-2 border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50">
-                          <div className="w-full h-20 bg-gradient-to-r from-gray-100 to-gray-800 rounded mb-2"></div>
-                          <span className="text-sm font-medium">Auto</span>
-                        </div>
-                      </label>
+                      {(['light', 'dark', 'auto'] as const).map((themeOption) => (
+                        <label key={themeOption} className="cursor-pointer">
+                          <input 
+                            type="radio" 
+                            name="theme" 
+                            value={themeOption} 
+                            checked={localTheme.theme === themeOption}
+                            onChange={() => setLocalTheme({ ...localTheme, theme: themeOption })}
+                            className="sr-only" 
+                          />
+                          <div className={`border-2 rounded-lg p-4 text-center hover:bg-gray-50 transition-all ${
+                            localTheme.theme === themeOption ? 'border-sky-600 bg-sky-50' : 'border-gray-300'
+                          }`}>
+                            <div className={`w-full h-20 rounded mb-2 ${
+                              themeOption === 'light' ? 'bg-gray-100' :
+                              themeOption === 'dark' ? 'bg-gray-800' :
+                              'bg-gradient-to-r from-gray-100 to-gray-800'
+                            }`}></div>
+                            <span className="text-sm font-medium capitalize">{themeOption}</span>
+                          </div>
+                        </label>
+                      ))}
                     </div>
                   </div>
 
                   <div>
                     <h3 className="text-sm font-medium text-gray-900 mb-4">Accent Color</h3>
                     <div className="flex gap-3">
-                      <button className="w-10 h-10 bg-sky-500 rounded-full border-2 border-sky-600"></button>
-                      <button className="w-10 h-10 bg-blue-500 rounded-full border-2 border-transparent hover:border-gray-400"></button>
-                      <button className="w-10 h-10 bg-purple-500 rounded-full border-2 border-transparent hover:border-gray-400"></button>
-                      <button className="w-10 h-10 bg-green-500 rounded-full border-2 border-transparent hover:border-gray-400"></button>
-                      <button className="w-10 h-10 bg-red-500 rounded-full border-2 border-transparent hover:border-gray-400"></button>
+                      {[
+                        { name: 'sky', color: 'bg-sky-500', border: 'border-sky-600' },
+                        { name: 'blue', color: 'bg-blue-500', border: 'border-blue-600' },
+                        { name: 'purple', color: 'bg-purple-500', border: 'border-purple-600' },
+                        { name: 'green', color: 'bg-green-500', border: 'border-green-600' },
+                        { name: 'red', color: 'bg-red-500', border: 'border-red-600' }
+                      ].map((accentOption) => (
+                        <button
+                          key={accentOption.name}
+                          onClick={() => setLocalTheme({ ...localTheme, accentColor: accentOption.name })}
+                          className={`w-10 h-10 ${accentOption.color} rounded-full border-2 transition-all ${
+                            localTheme.accentColor === accentOption.name 
+                              ? accentOption.border + ' scale-110' 
+                              : 'border-transparent hover:border-gray-400'
+                          }`}
+                        />
+                      ))}
                     </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSaveTheme}
+                      className="btn-primary"
+                    >
+                      <Save className="h-5 w-5 mr-2" />
+                      Save Theme Settings
+                    </button>
                   </div>
                 </div>
               </div>

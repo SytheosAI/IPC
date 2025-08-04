@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Sidebar from './components/layout/Sidebar'
 import { UserProvider } from './contexts/UserContext'
+import { ThemeInitializer } from './components/ThemeInitializer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,7 +21,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <UserProvider>
-          <div className="flex h-screen bg-gray-100">
+          <ThemeInitializer />
+          <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
             <Sidebar />
             <main className="flex-1 overflow-y-auto ml-16 lg:ml-64 transition-all duration-300">
               {children}
