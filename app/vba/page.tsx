@@ -31,7 +31,8 @@ import {
   Wind,
   ExternalLink,
   Newspaper,
-  ArrowUp
+  ArrowUp,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 
