@@ -302,29 +302,29 @@ export default function InspectionReportTemplate() {
     pdf.text(`Date & Time of Inspection: ${reportData.inspectionDate}, ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`, margin + 5, yPosition)
     yPosition += 6
     
-    pdf.text(`Inspector Name: ${reportData.inspectorName || 'Not specified'}`, margin + 5, yPosition)
+    pdf.text(`Inspector Name: ${reportData.inspectorName || ''}`, margin + 5, yPosition)
     yPosition += 6
     
-    pdf.text(`Weather Conditions: ${reportData.weather || 'Not specified'}`, margin + 5, yPosition)
+    pdf.text(`Weather Conditions: ${reportData.weather || ''}`, margin + 5, yPosition)
     yPosition += 6
     
     const temp = reportData.weather ? reportData.weather.match(/\d+°F/) : null
     pdf.text(`Temperature: ${temp ? temp[0] : '80F'}`, margin + 5, yPosition)
     yPosition += 6
     
-    pdf.text(`Work Zone: ${reportData.workZone || 'Not specified'}`, margin + 5, yPosition)
+    pdf.text(`Work Zone: ${reportData.workZone || ''}`, margin + 5, yPosition)
     yPosition += 6
     
-    pdf.text(`Work Performed: ${reportData.workPerformed || 'Not specified'}`, margin + 5, yPosition)
+    pdf.text(`Work Performed: ${reportData.workPerformed || ''}`, margin + 5, yPosition)
     yPosition += 6
     
-    pdf.text(`Plans Used: ${reportData.projectName || 'Not specified'}`, margin + 5, yPosition)
+    pdf.text(`Plans Used: ${reportData.projectName || ''}`, margin + 5, yPosition)
     yPosition += 6
     
     pdf.text(`Current Date/Revision: ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, margin + 5, yPosition)
     yPosition += 6
     
-    pdf.text(`Drawing Page: ${reportData.drawingPage || 'Not specified'}`, margin + 5, yPosition)
+    pdf.text(`Drawing Page: ${reportData.drawingPage || ''}`, margin + 5, yPosition)
     yPosition += 10
     
     // HBS project number if available
@@ -337,17 +337,15 @@ export default function InspectionReportTemplate() {
     
     // Inspector Information Section
     checkPageBreak(20)
-    pdf.setLineWidth(0.5)
-    pdf.line(margin, yPosition, pageWidth - margin, yPosition)
     yPosition += 10
     
     addWrappedText('INSPECTOR INFORMATION', 14, true)
     yPosition += 5
     
     const inspectorInfo = [
-      ['Inspector Name:', reportData.inspectorName || 'Not specified'],
-      ['License Number:', reportData.inspectorLicense || 'Not specified'],
-      ['Company:', reportData.companyName || 'Not specified']
+      ['Inspector Name:', reportData.inspectorName || ''],
+      ['License Number:', reportData.inspectorLicense || ''],
+      ['Company:', reportData.companyName || '']
     ]
     
     inspectorInfo.forEach(([label, value]) => {
@@ -365,8 +363,6 @@ export default function InspectionReportTemplate() {
     // General Context
     if (reportData.generalContext) {
       checkPageBreak(20)
-      pdf.setLineWidth(0.5)
-      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
       yPosition += 10
       
       addWrappedText('GENERAL CONTEXT', 14, true)
@@ -378,8 +374,6 @@ export default function InspectionReportTemplate() {
     // Observations Section
     if (reportData.observations) {
       checkPageBreak(20)
-      pdf.setLineWidth(0.5)
-      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
       yPosition += 10
       
       addWrappedText('OBSERVATIONS', 14, true)
@@ -391,8 +385,6 @@ export default function InspectionReportTemplate() {
     // Recommendations Section
     if (reportData.recommendations) {
       checkPageBreak(20)
-      pdf.setLineWidth(0.5)
-      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
       yPosition += 10
       
       addWrappedText('RECOMMENDATIONS', 14, true)
@@ -404,8 +396,6 @@ export default function InspectionReportTemplate() {
     // Photos Section - embed actual photos
     if (actualPhotos && actualPhotos.length > 0) {
       checkPageBreak(30)
-      pdf.setLineWidth(0.5)
-      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
       yPosition += 10
       
       addWrappedText('INSPECTION PHOTOS', 14, true)
@@ -451,8 +441,6 @@ export default function InspectionReportTemplate() {
     // Digital Signature
     if (reportData.digitalSignature) {
       checkPageBreak(50)
-      pdf.setLineWidth(0.5)
-      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
       yPosition += 10
       
       pdf.setFontSize(10)
@@ -484,30 +472,22 @@ export default function InspectionReportTemplate() {
       pdf.text(new Date().toLocaleDateString('en-US'), margin, yPosition)
     }
     
-    // Company footer on every page
+    // Remove footer - no longer needed
     const addFooter = () => {
-      pdf.setFontSize(9)
-      pdf.setFont('helvetica', 'normal')
-      const footerY = pageHeight - 20
-      pdf.text(reportData.companyName || 'HBS Consultants', margin, footerY)
-      pdf.text('368 Ashbury Way', pageWidth / 2 - 20, footerY)
-      pdf.text('Naples, FL 34110', pageWidth - margin - 30, footerY)
-      pdf.setFontSize(8)
-      pdf.text('239.326.7846', pageWidth / 2, footerY + 5, { align: 'center' })
+      // Footer removed per request
     }
     
-    // Add page numbers and footer to all pages
+    // Add page numbers to bottom of all pages
     const totalPages = pdf.internal.getNumberOfPages()
     for (let i = 1; i <= totalPages; i++) {
       pdf.setPage(i)
-      addFooter()
       pdf.setFontSize(8)
       pdf.setFont('helvetica', 'normal')
       pdf.text(
         `Page ${i} of ${totalPages}`,
-        pageWidth - margin,
-        10,
-        { align: 'right' }
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: 'center' }
       )
     }
     
@@ -523,16 +503,30 @@ export default function InspectionReportTemplate() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     
-    // Also save reference in localStorage for the inspection-reports folder
-    const reports = JSON.parse(localStorage.getItem(`vba-inspection-reports-${projectId}`) || '[]')
+    // Save reference in localStorage for the Reports folder
+    const reports = JSON.parse(localStorage.getItem(`vba-reports-${projectId}`) || '[]')
     reports.push({
       id: Date.now().toString(),
       filename: `${filename}.pdf`,
       date: new Date().toISOString(),
       inspectionType: reportData.inspectionType,
-      sequence: reportData.reportSequence
+      sequence: reportData.reportSequence,
+      type: 'inspection'
     })
-    localStorage.setItem(`vba-inspection-reports-${projectId}`, JSON.stringify(reports))
+    localStorage.setItem(`vba-reports-${projectId}`, JSON.stringify(reports))
+    
+    // Also save to main reports list
+    const allReports = JSON.parse(localStorage.getItem('vba-all-reports') || '[]')
+    allReports.push({
+      id: Date.now().toString(),
+      projectId: projectId,
+      filename: `${filename}.pdf`,
+      date: new Date().toISOString(),
+      inspectionType: reportData.inspectionType,
+      sequence: reportData.reportSequence,
+      type: 'inspection'
+    })
+    localStorage.setItem('vba-all-reports', JSON.stringify(allReports))
     
     // Show success message
     alert(`Report generated successfully!\n\nFile saved as: ${filename}.pdf`)
@@ -555,8 +549,8 @@ export default function InspectionReportTemplate() {
           ...prev,
           photos: inspectionPhotos.map((photo: any) => ({
             id: photo.id,
-            url: photo.url || '#', // In real app, this would be the actual photo URL
-            caption: photo.name
+            url: photo.data || photo.url || '', // Use actual photo data
+            caption: photo.name || ''
           }))
         }))
       }
@@ -621,7 +615,7 @@ export default function InspectionReportTemplate() {
                 rows={5}
                 value={reportData.reference}
                 onChange={(e) => setReportData({ ...reportData, reference: e.target.value })}
-                placeholder="Project Reference (e.g., Building and Permit Services\n1500 Monroe St\nFort Myers, FL 33901)"
+                placeholder=""
               />
             </div>
             
@@ -632,7 +626,7 @@ export default function InspectionReportTemplate() {
                 rows={5}
                 value={reportData.attention}
                 onChange={(e) => setReportData({ ...reportData, attention: e.target.value })}
-                placeholder="Recipient details (e.g., Lee County Public Works\nBuilding Department)"
+                placeholder=""
               />
             </div>
             
@@ -666,17 +660,17 @@ export default function InspectionReportTemplate() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-50 p-3 rounded">
               <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-              <p className="text-gray-900">{reportData.projectName || 'Not specified'}</p>
+              <p className="text-gray-900">{reportData.projectName || ''}</p>
             </div>
             
             <div className="bg-gray-50 p-3 rounded">
               <label className="block text-sm font-medium text-gray-700 mb-1">Project Address</label>
-              <p className="text-gray-900">{reportData.projectAddress || 'Not specified'}</p>
+              <p className="text-gray-900">{reportData.projectAddress || ''}</p>
             </div>
             
             <div className="bg-gray-50 p-3 rounded">
               <label className="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
-              <p className="text-gray-900">{reportData.jobNumber || 'Not specified'}</p>
+              <p className="text-gray-900">{reportData.jobNumber || ''}</p>
             </div>
             
             <div className="bg-gray-50 p-3 rounded">
@@ -719,7 +713,7 @@ export default function InspectionReportTemplate() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 value={reportData.workZone}
                 onChange={(e) => setReportData({ ...reportData, workZone: e.target.value })}
-                placeholder="e.g., Concourse"
+                placeholder=""
               />
             </div>
             
@@ -730,7 +724,7 @@ export default function InspectionReportTemplate() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 value={reportData.workPerformed}
                 onChange={(e) => setReportData({ ...reportData, workPerformed: e.target.value })}
-                placeholder="e.g., Concrete Placement"
+                placeholder=""
               />
             </div>
             
@@ -741,13 +735,13 @@ export default function InspectionReportTemplate() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 value={reportData.drawingPage}
                 onChange={(e) => setReportData({ ...reportData, drawingPage: e.target.value })}
-                placeholder="e.g., Concourse"
+                placeholder=""
               />
             </div>
             
             <div className="bg-gray-50 p-3 rounded">
               <label className="block text-sm font-medium text-gray-700 mb-1">Weather</label>
-              <p className="text-gray-900">{reportData.weather || 'Weather data unavailable'}</p>
+              <p className="text-gray-900">{reportData.weather || ''}</p>
             </div>
           </div>
         </div>
@@ -765,7 +759,7 @@ export default function InspectionReportTemplate() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   value={reportData.inspectorName}
                   onChange={(e) => setReportData({ ...reportData, inspectorName: e.target.value })}
-                  placeholder="John Doe, P.E."
+                  placeholder=""
                 />
               </div>
             </div>
@@ -778,7 +772,7 @@ export default function InspectionReportTemplate() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   value={reportData.inspectorLicense}
                   onChange={(e) => setReportData({ ...reportData, inspectorLicense: e.target.value })}
-                  placeholder="PE12345"
+                  placeholder=""
                 />
               </div>
             </div>
@@ -791,7 +785,7 @@ export default function InspectionReportTemplate() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   value={reportData.companyName}
                   onChange={(e) => setReportData({ ...reportData, companyName: e.target.value })}
-                  placeholder="Engineering Associates, Inc."
+                  placeholder=""
                 />
               </div>
             </div>
@@ -804,7 +798,7 @@ export default function InspectionReportTemplate() {
                   rows={6}
                   value={reportData.observations}
                   onChange={(e) => setReportData({ ...reportData, observations: e.target.value })}
-                  placeholder="Enter inspection observations..."
+                  placeholder=""
                 />
               </div>
             </div>
@@ -817,7 +811,7 @@ export default function InspectionReportTemplate() {
                   rows={6}
                   value={reportData.recommendations}
                   onChange={(e) => setReportData({ ...reportData, recommendations: e.target.value })}
-                  placeholder="Enter recommendations..."
+                  placeholder=""
                 />
               </div>
             </div>
@@ -849,8 +843,12 @@ export default function InspectionReportTemplate() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {reportData.photos.map((photo) => (
                 <div key={photo.id} className="border border-gray-200 rounded-lg p-2">
-                  <div className="bg-gray-100 h-32 rounded flex items-center justify-center mb-2">
-                    <Camera className="h-8 w-8 text-gray-400" />
+                  <div className="bg-gray-100 h-32 rounded flex items-center justify-center mb-2 overflow-hidden">
+                    {photo.url && photo.url.startsWith('data:image') ? (
+                      <img src={photo.url} alt={photo.caption} className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="h-8 w-8 text-gray-400" />
+                    )}
                   </div>
                   <p className="text-xs text-gray-600 truncate">{photo.caption}</p>
                 </div>
@@ -858,7 +856,7 @@ export default function InspectionReportTemplate() {
             </div>
           ) : (
             <p className="text-center py-8 text-gray-500">
-              No inspection photos available. Photos taken during inspections will appear here automatically.
+              Select an inspection type to view photos.
             </p>
           )}
         </div>

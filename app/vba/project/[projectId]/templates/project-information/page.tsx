@@ -156,7 +156,7 @@ export default function ProjectInformationTemplate() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={projectInfo.reference}
                 onChange={(e) => setProjectInfo({ ...projectInfo, reference: e.target.value })}
-                placeholder="Southwest Florida International Airport Terminal Expansion\n11000 Terminal Access Road, Fort Myers, FL 33913\nHBS Project Number: 25-008"
+                placeholder=""
               />
             </div>
 
@@ -170,7 +170,7 @@ export default function ProjectInformationTemplate() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={projectInfo.attention}
                 onChange={(e) => setProjectInfo({ ...projectInfo, attention: e.target.value })}
-                placeholder="Lee County Public Works\nBuilding and Permit Services\n1500 Monroe St\nFort Myers, FL 33901"
+                placeholder=""
               />
             </div>
 
