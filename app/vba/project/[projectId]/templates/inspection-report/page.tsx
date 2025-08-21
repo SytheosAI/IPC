@@ -329,19 +329,6 @@ export default function InspectionReportTemplate() {
       yPosition += 10
     }
     
-    projectInfo.forEach(([label, value]) => {
-      checkPageBreak(8)
-      pdf.setFontSize(10)
-      pdf.setFont('helvetica', 'bold')
-      pdf.text(label, margin, yPosition)
-      pdf.setFont('helvetica', 'normal')
-      const lines = pdf.splitTextToSize(value, contentWidth - 50)
-      pdf.text(lines, margin + 35, yPosition)
-      yPosition += Math.max(8, lines.length * 5)
-    })
-    
-    yPosition += 5
-    
     // Inspector Information Section
     checkPageBreak(20)
     pdf.setLineWidth(0.5)
