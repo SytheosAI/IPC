@@ -55,8 +55,10 @@ interface FieldReport {
   photos?: {
     id: string
     url: string
+    data?: string // Base64 encoded image data
     caption: string
     timestamp: string
+    category?: 'before' | 'during' | 'after' | 'issue' | 'safety' | 'general'
   }[]
   personnel?: {
     name: string
@@ -799,6 +801,63 @@ export default function FieldReportsPage() {
                 </div>
               )}
               
+              {/* Photos Section */}
+              {selectedReport.photos && selectedReport.photos.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-gray-700 mb-4">Photos & Documentation</h3>
+                  
+                  {/* Photo Categories */}
+                  <div className="space-y-6">
+                    {['before', 'during', 'after', 'issue', 'safety', 'general'].map((category) => {
+                      const categoryPhotos = selectedReport.photos?.filter(p => (p.category || 'general') === category)
+                      if (!categoryPhotos || categoryPhotos.length === 0) return null
+                      
+                      return (
+                        <div key={category} className="border border-gray-200 rounded-lg p-4">
+                          <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize">
+                            {category === 'general' ? 'General Documentation' : `${category} Photos`}
+                          </h4>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            {categoryPhotos.map((photo) => (
+                              <div key={photo.id} className="space-y-2">
+                                <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '300px' }}>
+                                  {photo.data ? (
+                                    <img
+                                      src={photo.data}
+                                      alt={photo.caption || 'Field photo'}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  ) : (
+                                    <div className="flex items-center justify-center h-full text-gray-400">
+                                      <Camera className="h-12 w-12" />
+                                    </div>
+                                  )}
+                                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2">
+                                    <p className="text-xs">{new Date(photo.timestamp).toLocaleString()}</p>
+                                  </div>
+                                </div>
+                                {photo.caption && (
+                                  <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{photo.caption}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  
+                  {/* Print Layout Notice */}
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-xs text-blue-700">
+                      <strong>Note:</strong> When downloading or printing this report, photos will be automatically formatted 
+                      to fit properly on standard letter-size pages with appropriate margins and captions.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
                 <button className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
@@ -854,7 +913,15 @@ function NewFieldReportModal({ onClose, onSave }: { onClose: () => void; onSave:
       windSpeed: 5
     },
     workCompleted: [''],
-    safetyObservations: ['']
+    safetyObservations: [''],
+    photos: [] as Array<{
+      id: string
+      url: string
+      data?: string
+      caption: string
+      timestamp: string
+      category: 'before' | 'during' | 'after' | 'issue' | 'safety' | 'general'
+    }>
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -873,10 +940,49 @@ function NewFieldReportModal({ onClose, onSave }: { onClose: () => void; onSave:
       priority: reportData.priority,
       weather: reportData.weather,
       workCompleted: reportData.workCompleted.filter(w => w.trim() !== ''),
-      safetyObservations: reportData.safetyObservations.filter(s => s.trim() !== '')
+      safetyObservations: reportData.safetyObservations.filter(s => s.trim() !== ''),
+      photos: reportData.photos
     }
     
     onSave(newReport)
+  }
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, category: 'before' | 'during' | 'after' | 'issue' | 'safety' | 'general') => {
+    const files = e.target.files
+    if (!files) return
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const newPhoto = {
+          id: Date.now().toString() + Math.random().toString(36),
+          url: file.name,
+          data: event.target?.result as string,
+          caption: '',
+          timestamp: new Date().toISOString(),
+          category
+        }
+        setReportData(prev => ({
+          ...prev,
+          photos: [...prev.photos, newPhoto]
+        }))
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const removePhoto = (photoId: string) => {
+    setReportData(prev => ({
+      ...prev,
+      photos: prev.photos.filter(p => p.id !== photoId)
+    }))
+  }
+
+  const updatePhotoCaption = (photoId: string, caption: string) => {
+    setReportData(prev => ({
+      ...prev,
+      photos: prev.photos.map(p => p.id === photoId ? { ...p, caption } : p)
+    }))
   }
 
   const addWorkItem = () => {
@@ -1092,6 +1198,88 @@ function NewFieldReportModal({ onClose, onSave }: { onClose: () => void; onSave:
                 onChange={(e) => updateSafetyObservation(index, e.target.value)}
               />
             ))}
+          </div>
+          
+          {/* Photo Upload Section */}
+          <div className="mb-6 border-t pt-6">
+            <h4 className="text-sm font-medium text-gray-700 mb-4">Photos & Documentation</h4>
+            
+            {/* Photo Upload Categories */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+              {[
+                { category: 'before' as const, label: 'Before', icon: Camera },
+                { category: 'during' as const, label: 'During', icon: Camera },
+                { category: 'after' as const, label: 'After', icon: Camera },
+                { category: 'issue' as const, label: 'Issues', icon: AlertTriangle },
+                { category: 'safety' as const, label: 'Safety', icon: Shield },
+                { category: 'general' as const, label: 'General', icon: FileText }
+              ].map(({ category, label, icon: Icon }) => (
+                <div key={category}>
+                  <label className="block cursor-pointer">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-sky-500 transition-colors text-center">
+                      <Icon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <span className="text-sm font-medium text-gray-700">{label}</span>
+                      <p className="text-xs text-gray-500 mt-1">Click to upload</p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, category)}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+            
+            {/* Uploaded Photos Preview */}
+            {reportData.photos.length > 0 && (
+              <div className="space-y-4">
+                <h5 className="text-sm font-medium text-gray-700">Uploaded Photos ({reportData.photos.length})</h5>
+                <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+                  {reportData.photos.map((photo) => (
+                    <div key={photo.id} className="relative group">
+                      <div className="bg-gray-100 rounded-lg overflow-hidden" style={{ height: '200px' }}>
+                        <img
+                          src={photo.data}
+                          alt={photo.caption || 'Uploaded photo'}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="mt-2">
+                        <input
+                          type="text"
+                          placeholder="Add caption..."
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                          value={photo.caption}
+                          onChange={(e) => updatePhotoCaption(photo.id, e.target.value)}
+                        />
+                      </div>
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(photo.id)}
+                          className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="absolute bottom-12 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                        {photo.category}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-600">
+                <strong>Tip:</strong> Upload photos in appropriate categories for better organization. 
+                Photos will be displayed in full size in the report and automatically paginated when printed.
+              </p>
+            </div>
           </div>
           
           <div className="flex justify-end gap-3">
