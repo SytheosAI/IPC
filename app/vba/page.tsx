@@ -400,7 +400,7 @@ export default function VBAPage() {
         virtualInspectorUsage: loadedProjects.length > 0 ? Math.round(
           (loadedProjects.filter((p: VBAProject) => p.virtualInspectorEnabled).length / loadedProjects.length) * 100
         ) : 0,
-        timesSaved: 48 // Mock hours saved
+        timesSaved: 0
       }
 
       setInspectionStats(stats)
@@ -548,30 +548,40 @@ export default function VBAPage() {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Inspections Completed</span>
-                <span className="text-lg font-semibold text-gray-900">32</span>
+                <span className="text-lg font-semibold text-gray-900">{weeklyMetrics.completed}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-sky-500 h-2 rounded-full" style={{ width: '80%' }}></div>
+                <div className="bg-sky-500 h-2 rounded-full" style={{ width: `${Math.min(weeklyMetrics.completed * 10, 100)}%` }}></div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600">Scheduled This Week</span>
+                <span className="text-lg font-semibold text-gray-900">{weeklyMetrics.scheduled}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min(weeklyMetrics.scheduled * 10, 100)}%` }}></div>
               </div>
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Pass Rate</span>
-                <span className="text-lg font-semibold text-gray-900">94%</span>
+                <span className="text-lg font-semibold text-gray-900">{weeklyMetrics.passRate}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full" style={{ width: '94%' }}></div>
+                <div className="bg-green-500 h-2 rounded-full" style={{ width: `${weeklyMetrics.passRate}%` }}></div>
               </div>
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Average Duration</span>
-                <span className="text-lg font-semibold text-gray-900">45 min</span>
+                <span className="text-sm text-gray-600">Compliance Average</span>
+                <span className="text-lg font-semibold text-gray-900">{weeklyMetrics.complianceAvg}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-500 h-2 rounded-full" style={{ width: '45%' }}></div>
+                <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${weeklyMetrics.complianceAvg}%` }}></div>
               </div>
             </div>
           </div>
