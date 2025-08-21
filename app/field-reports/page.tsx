@@ -38,8 +38,9 @@ interface FieldReport {
   date: string
   time: string
   reportedBy: string
-  status: 'draft' | 'submitted' | 'reviewed' | 'approved' | 'rejected'
+  status: 'draft' | 'submitted'
   priority: 'low' | 'medium' | 'high' | 'critical'
+  notificationEmails?: string[]
   weather?: {
     temperature: number
     conditions: string
@@ -73,8 +74,6 @@ interface FieldReport {
   safetyObservations?: string[]
   nextSteps?: string[]
   signature?: string
-  reviewedBy?: string
-  reviewDate?: string
   attachments?: {
     id: string
     name: string
@@ -98,9 +97,17 @@ export default function FieldReportsPage() {
     start: '',
     end: ''
   })
+  const [notificationEmails, setNotificationEmails] = useState<string[]>([])
 
   useEffect(() => {
     loadFieldReports()
+    // Load notification emails from localStorage
+    if (typeof window !== 'undefined') {
+      const savedEmails = localStorage.getItem('field-report-emails') || ''
+      if (savedEmails) {
+        setNotificationEmails(savedEmails.split(',').filter(e => e.trim()))
+      }
+    }
   }, [])
 
   const loadFieldReports = () => {
@@ -158,7 +165,7 @@ export default function FieldReportsPage() {
           date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
           time: '10:00',
           reportedBy: 'Emily Davis',
-          status: 'approved',
+          status: 'submitted',
           priority: 'high',
           weather: {
             temperature: 78,
@@ -208,14 +215,8 @@ export default function FieldReportsPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved':
-        return <CheckCircle className="h-4 w-4 text-green-600" />
       case 'submitted':
-        return <Clock className="h-4 w-4 text-blue-600" />
-      case 'reviewed':
-        return <Eye className="h-4 w-4 text-purple-600" />
-      case 'rejected':
-        return <XCircle className="h-4 w-4 text-red-600" />
+        return <CheckCircle className="h-4 w-4 text-green-600" />
       case 'draft':
         return <Edit className="h-4 w-4 text-gray-600" />
       default:
@@ -225,14 +226,8 @@ export default function FieldReportsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-700 border-green-300'
       case 'submitted':
-        return 'bg-blue-100 text-blue-700 border-blue-300'
-      case 'reviewed':
-        return 'bg-purple-100 text-purple-700 border-purple-300'
-      case 'rejected':
-        return 'bg-red-100 text-red-700 border-red-300'
+        return 'bg-green-100 text-green-700 border-green-300'
       case 'draft':
         return 'bg-gray-100 text-gray-700 border-gray-300'
       default:
@@ -347,9 +342,6 @@ export default function FieldReportsPage() {
               <option value="all">All Status</option>
               <option value="draft">Draft</option>
               <option value="submitted">Submitted</option>
-              <option value="reviewed">Reviewed</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
             </select>
 
             {/* Priority Filter */}
@@ -389,53 +381,54 @@ export default function FieldReportsPage() {
           </div>
         </div>
 
-        {/* Reports Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Reports</p>
-                <p className="text-2xl font-semibold text-gray-900">{reports.length}</p>
-              </div>
-              <FileText className="h-8 w-8 text-gray-400" />
+        {/* Email Notification Settings */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-sky-600" />
+              <h3 className="text-sm font-medium text-gray-900">Report Notification Recipients</h3>
             </div>
+            <button
+              onClick={() => {
+                const newEmail = prompt('Add email address:', '')
+                if (newEmail && newEmail.includes('@')) {
+                  const updatedEmails = [...notificationEmails, newEmail]
+                  setNotificationEmails(updatedEmails)
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('field-report-emails', updatedEmails.join(','))
+                  }
+                }
+              }}
+              className="text-sky-600 hover:text-sky-700 text-sm font-medium"
+            >
+              + Add Email
+            </button>
           </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending Review</p>
-                <p className="text-2xl font-semibold text-blue-600">
-                  {reports.filter(r => r.status === 'submitted').length}
-                </p>
+          <div className="flex flex-wrap gap-2">
+            {notificationEmails.map((email, index) => (
+              <div key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-sky-50 text-sky-700 rounded-full text-sm">
+                <span>{email}</span>
+                <button
+                  onClick={() => {
+                    const updatedEmails = notificationEmails.filter((_, i) => i !== index)
+                    setNotificationEmails(updatedEmails)
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('field-report-emails', updatedEmails.join(','))
+                    }
+                  }}
+                  className="ml-1 hover:text-sky-900"
+                >
+                  <XCircle className="h-3 w-3" />
+                </button>
               </div>
-              <Clock className="h-8 w-8 text-blue-400" />
-            </div>
+            ))}
+            {notificationEmails.length === 0 && (
+              <p className="text-sm text-gray-500">No notification recipients configured. Click &quot;+ Add Email&quot; to add recipients.</p>
+            )}
           </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Critical Issues</p>
-                <p className="text-2xl font-semibold text-red-600">
-                  {reports.filter(r => r.priority === 'critical').length}
-                </p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-red-400" />
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Approved</p>
-                <p className="text-2xl font-semibold text-green-600">
-                  {reports.filter(r => r.status === 'approved').length}
-                </p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-400" />
-            </div>
-          </div>
+          <p className="text-xs text-gray-500 mt-3">
+            These email addresses will receive notifications when new field reports are submitted.
+          </p>
         </div>
 
         {/* View Toggle */}
@@ -685,18 +678,6 @@ export default function FieldReportsPage() {
                         {selectedReport.priority}
                       </span>
                     </div>
-                    {selectedReport.reviewedBy && (
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Reviewed By:</span>
-                          <span className="text-sm font-medium text-gray-900">{selectedReport.reviewedBy}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Review Date:</span>
-                          <span className="text-sm font-medium text-gray-900">{selectedReport.reviewDate}</span>
-                        </div>
-                      </>
-                    )}
                   </div>
                 </div>
               </div>
@@ -868,12 +849,19 @@ export default function FieldReportsPage() {
                   <Download className="h-4 w-4 inline mr-2" />
                   Download PDF
                 </button>
-                <button className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                <button 
+                  onClick={() => {
+                    if (notificationEmails.length > 0) {
+                      alert(`Report will be sent to: ${notificationEmails.join(', ')}`)
+                      // In a real app, this would trigger an API call to send emails
+                    } else {
+                      alert('Please configure notification recipients first')
+                    }
+                  }}
+                  className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
+                >
                   <Send className="h-4 w-4 inline mr-2" />
-                  Share
-                </button>
-                <button className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700">
-                  Approve Report
+                  Send Report
                 </button>
               </div>
             </div>
@@ -942,6 +930,14 @@ function NewFieldReportModal({ onClose, onSave }: { onClose: () => void; onSave:
       workCompleted: reportData.workCompleted.filter(w => w.trim() !== ''),
       safetyObservations: reportData.safetyObservations.filter(s => s.trim() !== ''),
       photos: reportData.photos
+    }
+    
+    // Get notification emails
+    const emails = localStorage.getItem('field-report-emails') || ''
+    if (emails) {
+      newReport.notificationEmails = emails.split(',').filter(e => e.trim())
+      // In a real app, this would trigger email notifications
+      console.log('Sending notifications to:', newReport.notificationEmails)
     }
     
     onSave(newReport)
