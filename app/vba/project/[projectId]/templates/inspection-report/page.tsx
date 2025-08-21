@@ -83,7 +83,7 @@ export default function InspectionReportTemplate() {
           logo: projectInfo.companyLogo,
           projectName: projectInfo.projectName,
           projectAddress: projectInfo.projectAddress,
-          licenseNumber: projectInfo.licenseNumber,
+          inspectorLicense: projectInfo.licenseNumber,
           companyName: projectInfo.companyName,
           digitalSignature: projectInfo.digitalSignature
         }))
@@ -132,12 +132,20 @@ export default function InspectionReportTemplate() {
         const response = await fetch(
           `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`
         )
-        const data = await response.json()
         
-        setReportData(prev => ({
-          ...prev,
-          weather: `${data.weather[0].main}, ${Math.round(data.main.temp)}°F, Humidity: ${data.main.humidity}%`
-        }))
+        if (response.ok) {
+          const data = await response.json()
+          if (data.weather && data.weather[0] && data.main) {
+            setReportData(prev => ({
+              ...prev,
+              weather: `${data.weather[0].main}, ${Math.round(data.main.temp)}°F, Humidity: ${data.main.humidity}%`
+            }))
+          } else {
+            throw new Error('Invalid weather data')
+          }
+        } else {
+          throw new Error('Weather API request failed')
+        }
       } else {
         // Fallback weather
         setReportData(prev => ({
@@ -293,17 +301,17 @@ export default function InspectionReportTemplate() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gray-50 p-3 rounded">
               <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-              <p className="text-gray-900">{reportData.projectName}</p>
+              <p className="text-gray-900">{reportData.projectName || 'Not specified'}</p>
             </div>
             
             <div className="bg-gray-50 p-3 rounded">
               <label className="block text-sm font-medium text-gray-700 mb-1">Project Address</label>
-              <p className="text-gray-900">{reportData.projectAddress}</p>
+              <p className="text-gray-900">{reportData.projectAddress || 'Not specified'}</p>
             </div>
             
             <div className="bg-gray-50 p-3 rounded">
               <label className="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
-              <p className="text-gray-900">{reportData.jobNumber}</p>
+              <p className="text-gray-900">{reportData.jobNumber || 'Not specified'}</p>
             </div>
             
             <div className="bg-gray-50 p-3 rounded">
@@ -341,7 +349,7 @@ export default function InspectionReportTemplate() {
             
             <div className="md:col-span-2 bg-gray-50 p-3 rounded">
               <label className="block text-sm font-medium text-gray-700 mb-1">Weather</label>
-              <p className="text-gray-900">{reportData.weather}</p>
+              <p className="text-gray-900">{reportData.weather || 'Weather data unavailable'}</p>
             </div>
           </div>
         </div>
