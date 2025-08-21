@@ -655,38 +655,70 @@ export default function SettingsPage() {
             {/* Backup & Export Tab */}
             {activeTab === 'backup' && (
               <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Backup & Data Export</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Backup & Data Management</h2>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                       <Download className="h-5 w-5" />
-                      Quick Export
+                      Export Data
                     </h3>
                     <div className="space-y-3">
-                      <button className="w-full text-left p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                      <button 
+                        onClick={() => {
+                          // Export all localStorage data
+                          const allData: any = {}
+                          for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i)
+                            if (key) {
+                              allData[key] = localStorage.getItem(key)
+                            }
+                          }
+                          const dataStr = JSON.stringify(allData, null, 2)
+                          const dataBlob = new Blob([dataStr], { type: 'application/json' })
+                          const url = URL.createObjectURL(dataBlob)
+                          const link = document.createElement('a')
+                          link.href = url
+                          link.download = `IPC-backup-${new Date().toISOString().split('T')[0]}.json`
+                          link.click()
+                          URL.revokeObjectURL(url)
+                          alert('Data exported successfully!')
+                        }}
+                        className="w-full text-left p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                      >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">All Data</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Projects, documents, settings</p>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">Export All Data</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Download complete backup as JSON</p>
                           </div>
                           <Download className="h-4 w-4 text-gray-400" />
                         </div>
                       </button>
-                      <button className="w-full text-left p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                      <button 
+                        onClick={() => {
+                          // Export specific data types
+                          const exportData: any = {
+                            fieldReports: localStorage.getItem('field-reports'),
+                            documents: localStorage.getItem('documents-list'),
+                            vbaProjects: localStorage.getItem('vba-projects'),
+                            dashboardProjects: localStorage.getItem('dashboard-projects')
+                          }
+                          const dataStr = JSON.stringify(exportData, null, 2)
+                          const dataBlob = new Blob([dataStr], { type: 'application/json' })
+                          const url = URL.createObjectURL(dataBlob)
+                          const link = document.createElement('a')
+                          link.href = url
+                          link.download = `IPC-projects-${new Date().toISOString().split('T')[0]}.json`
+                          link.click()
+                          URL.revokeObjectURL(url)
+                          alert('Projects exported successfully!')
+                        }}
+                        className="w-full text-left p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                      >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">Documents Only</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">PDF files and attachments</p>
-                          </div>
-                          <Download className="h-4 w-4 text-gray-400" />
-                        </div>
-                      </button>
-                      <button className="w-full text-left p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">Settings Backup</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">User preferences and configuration</p>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">Export Projects Only</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Field reports, VBA projects, documents</p>
                           </div>
                           <Download className="h-4 w-4 text-gray-400" />
                         </div>
@@ -696,72 +728,74 @@ export default function SettingsPage() {
 
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                      <RefreshCw className="h-5 w-5" />
-                      Automatic Backups
+                      <Upload className="h-5 w-5" />
+                      Import Data
                     </h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">Daily Backups</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Runs every day at 2:00 AM</p>
-                        </div>
-                        <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-sky-600">
-                          <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-6" />
-                        </button>
+                      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
+                        <input
+                          type="file"
+                          accept=".json"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              const reader = new FileReader()
+                              reader.onload = (event) => {
+                                try {
+                                  const data = JSON.parse(event.target?.result as string)
+                                  const confirmImport = confirm('This will replace all existing data. Are you sure you want to continue?')
+                                  if (confirmImport) {
+                                    // Clear existing data
+                                    localStorage.clear()
+                                    // Import new data
+                                    Object.keys(data).forEach(key => {
+                                      localStorage.setItem(key, data[key])
+                                    })
+                                    alert('Data imported successfully! The page will reload.')
+                                    window.location.reload()
+                                  }
+                                } catch (error) {
+                                  alert('Error importing data. Please check the file format.')
+                                }
+                              }
+                              reader.readAsText(file)
+                            }
+                          }}
+                          className="hidden"
+                          id="import-file"
+                        />
+                        <label 
+                          htmlFor="import-file"
+                          className="cursor-pointer flex flex-col items-center justify-center"
+                        >
+                          <Upload className="h-12 w-12 text-gray-400 mb-3" />
+                          <p className="font-medium text-gray-900 dark:text-gray-100 mb-1">Click to upload backup file</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">JSON files only</p>
+                        </label>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">Weekly Reports</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Email backup status weekly</p>
-                        </div>
-                        <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700">
-                          <span className="inline-block h-4 w-4 transform rounded-full bg-white transition translate-x-1" />
-                        </button>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Retention Period</label>
-                        <select className="input-modern text-gray-900 dark:text-gray-100">
-                          <option value="7">7 days</option>
-                          <option value="30" selected>30 days</option>
-                          <option value="90">90 days</option>
-                          <option value="365">1 year</option>
-                        </select>
+                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Important Notes:</h4>
+                        <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                          <li>• Export your data regularly to prevent data loss</li>
+                          <li>• Data is stored locally in your browser</li>
+                          <li>• Clearing browser data will delete all information</li>
+                          <li>• Import will replace ALL existing data</li>
+                        </ul>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Backup History</h3>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {backupHistory.map((backup) => (
-                        <div key={backup.id} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${
-                              backup.status === 'completed' ? 'bg-green-500' : 'bg-red-500'
-                            }`} />
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-gray-100">{backup.date}</p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {backup.size} • {backup.type} backup
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              backup.status === 'completed' 
-                                ? 'bg-green-100 text-green-800 border border-green-200' 
-                                : 'bg-red-100 text-red-800 border border-red-200'
-                            }`}>
-                              {backup.status}
-                            </span>
-                            <button className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                              <Download className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800 p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">Data Persistence Notice</h3>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                        Currently, data is stored locally in your browser. To persist data across deployments and devices, 
+                        regularly export your data using the backup feature above. For permanent cloud storage, consider 
+                        upgrading to a database solution.
+                      </p>
                     </div>
                   </div>
                 </div>

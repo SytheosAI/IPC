@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Home,
   FileText,
@@ -45,77 +45,60 @@ interface ProjectSummary {
 
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [recentProjects, setRecentProjects] = useState<ProjectSummary[]>([])
+  const [stats, setStats] = useState<DashboardStat[]>([])
 
-  const stats: DashboardStat[] = [
-    {
-      label: 'Total Applications',
-      value: 3,
-      icon: FileText,
-      color: 'blue',
-      description: 'Active permits in system'
-    },
-    {
-      label: 'Pending Review',
-      value: 1,
-      icon: Clock,
-      color: 'yellow',
-      description: 'Awaiting review'
-    },
-    {
-      label: 'Approved',
-      value: 1,
-      icon: CheckCircle,
-      color: 'green',
-      description: 'This month'
-    },
-    {
-      label: 'Avg. Processing',
-      value: '7 days',
-      icon: TrendingUp,
-      color: 'purple',
-      trend: 'down',
-      trendValue: '-2 days'
-    }
-  ]
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
 
-  const recentProjects: ProjectSummary[] = [
-    {
-      permitNumber: 'PER-2024-0156',
-      projectName: 'Medical Office Building',
-      address: '1234 Healthcare Blvd',
-      applicant: 'Healthcare Properties LLC',
-      status: 'in_review',
-      submittedDate: '2024-01-14',
-      lastUpdated: '2024-01-18',
-      totalIssues: 3,
-      totalConditions: 1,
-      totalNotes: 1
-    },
-    {
-      permitNumber: 'PER-2024-0157',
-      projectName: 'Residential Addition',
-      address: '567 Oak Street',
-      applicant: 'Johnson Family Trust',
-      status: 'intake',
-      submittedDate: '2024-01-17',
-      lastUpdated: '2024-01-17',
-      totalIssues: 0,
-      totalConditions: 0,
-      totalNotes: 0
-    },
-    {
-      permitNumber: 'PER-2024-0155',
-      projectName: 'Retail Plaza Renovation',
-      address: '890 Commerce Way',
-      applicant: 'Plaza Holdings Inc',
-      status: 'approved',
-      submittedDate: '2024-01-10',
-      lastUpdated: '2024-01-16',
-      totalIssues: 0,
-      totalConditions: 3,
-      totalNotes: 3
-    }
-  ]
+  const loadDashboardData = () => {
+    // Load projects from localStorage
+    const savedProjects = localStorage.getItem('dashboard-projects')
+    const projects = savedProjects ? JSON.parse(savedProjects) : []
+    setRecentProjects(projects)
+
+    // Calculate stats based on actual data
+    const pendingCount = projects.filter((p: ProjectSummary) => p.status === 'in_review').length
+    const approvedCount = projects.filter((p: ProjectSummary) => p.status === 'approved').length
+    
+    // Calculate average processing time (simplified)
+    const avgDays = projects.length > 0 ? 7 : 0 // This would be calculated from actual dates
+
+    const calculatedStats: DashboardStat[] = [
+      {
+        label: 'Total Applications',
+        value: projects.length,
+        icon: FileText,
+        color: 'blue',
+        description: 'Active permits in system'
+      },
+      {
+        label: 'Pending Review',
+        value: pendingCount,
+        icon: Clock,
+        color: 'yellow',
+        description: 'Awaiting review'
+      },
+      {
+        label: 'Approved',
+        value: approvedCount,
+        icon: CheckCircle,
+        color: 'green',
+        description: 'This month'
+      },
+      {
+        label: 'Avg. Processing',
+        value: avgDays > 0 ? `${avgDays} days` : 'N/A',
+        icon: TrendingUp,
+        color: 'purple',
+        trend: 'neutral',
+        trendValue: ''
+      }
+    ]
+    
+    setStats(calculatedStats)
+  }
 
   const getStatusBadge = (status: string) => {
     const styles = {

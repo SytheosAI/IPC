@@ -115,79 +115,8 @@ export default function FieldReportsPage() {
     if (savedReports) {
       setReports(JSON.parse(savedReports))
     } else {
-      // Sample data
-      const sampleReports: FieldReport[] = [
-        {
-          id: '1',
-          reportNumber: 'FR-2024-001',
-          projectName: 'Sunset Plaza Development',
-          projectAddress: '1234 Main St, Fort Myers, FL',
-          reportType: 'Daily',
-          date: new Date().toISOString().split('T')[0],
-          time: '14:30',
-          reportedBy: 'John Smith',
-          status: 'submitted',
-          priority: 'medium',
-          weather: {
-            temperature: 82,
-            conditions: 'Partly Cloudy',
-            windSpeed: 10
-          },
-          workCompleted: [
-            'Foundation concrete pour - Section A',
-            'Rebar installation - Section B',
-            'Site grading - North lot'
-          ],
-          issues: [
-            {
-              id: '1',
-              description: 'Delayed material delivery for roofing',
-              severity: 'minor',
-              resolved: false
-            }
-          ],
-          personnel: [
-            { name: 'John Smith', role: 'Foreman', hours: 8 },
-            { name: 'Mike Johnson', role: 'Electrician', hours: 8 },
-            { name: 'Sarah Williams', role: 'Plumber', hours: 6 }
-          ],
-          safetyObservations: [
-            'All personnel wearing required PPE',
-            'Safety briefing conducted at 7:00 AM'
-          ]
-        },
-        {
-          id: '2',
-          reportNumber: 'FR-2024-002',
-          projectName: 'Harbor View Apartments',
-          projectAddress: '5678 Beach Rd, Naples, FL',
-          reportType: 'Inspection',
-          date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-          time: '10:00',
-          reportedBy: 'Emily Davis',
-          status: 'submitted',
-          priority: 'high',
-          weather: {
-            temperature: 78,
-            conditions: 'Clear'
-          },
-          workCompleted: [
-            'Electrical system inspection completed',
-            'Fire safety systems checked',
-            'Structural integrity verified'
-          ],
-          issues: [
-            {
-              id: '1',
-              description: 'Emergency exit signage needs replacement',
-              severity: 'major',
-              resolved: true
-            }
-          ]
-        }
-      ]
-      setReports(sampleReports)
-      localStorage.setItem('field-reports', JSON.stringify(sampleReports))
+      // Start with empty data
+      setReports([])
     }
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   FileText,
   Plus,
@@ -37,48 +37,7 @@ interface Document {
 }
 
 export default function DocumentsPage() {
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: '1',
-      name: 'Building Permit Application.pdf',
-      type: 'pdf',
-      category: 'Permits',
-      projectName: 'Medical Office Building',
-      uploadedBy: 'John Smith',
-      uploadedDate: '2024-01-15',
-      lastModified: '2024-01-15',
-      fileSize: '2.4 MB',
-      status: 'active',
-      tags: ['permit', 'application', 'medical']
-    },
-    {
-      id: '2',
-      name: 'Site Survey Report.pdf',
-      type: 'pdf',
-      category: 'Reports',
-      projectName: 'Retail Plaza Renovation',
-      uploadedBy: 'Sarah Johnson',
-      uploadedDate: '2024-01-10',
-      lastModified: '2024-01-12',
-      fileSize: '8.7 MB',
-      status: 'active',
-      tags: ['survey', 'site', 'report']
-    },
-    {
-      id: '3',
-      name: 'Inspection Photos.zip',
-      type: 'zip',
-      category: 'Inspections',
-      projectName: 'Residential Addition',
-      uploadedBy: 'Mike Chen',
-      uploadedDate: '2024-01-18',
-      lastModified: '2024-01-18',
-      fileSize: '45.2 MB',
-      status: 'pending_review',
-      tags: ['photos', 'inspection', 'residential']
-    }
-  ])
-
+  const [documents, setDocuments] = useState<Document[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -92,6 +51,14 @@ export default function DocumentsPage() {
   })
 
   const categories = ['Permits', 'Plans', 'Reports', 'Inspections', 'Contracts', 'Correspondence', 'Other']
+
+  useEffect(() => {
+    // Load documents from localStorage
+    const savedDocuments = localStorage.getItem('documents-list')
+    if (savedDocuments) {
+      setDocuments(JSON.parse(savedDocuments))
+    }
+  }, [])
 
   const handleAddDocument = (e: React.FormEvent) => {
     e.preventDefault()
@@ -110,7 +77,10 @@ export default function DocumentsPage() {
       tags: newDocument.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
     }
     
-    setDocuments([document, ...documents])
+    const updatedDocuments = [document, ...documents]
+    setDocuments(updatedDocuments)
+    // Save to localStorage
+    localStorage.setItem('documents-list', JSON.stringify(updatedDocuments))
     setShowAddModal(false)
     setNewDocument({
       name: '',
