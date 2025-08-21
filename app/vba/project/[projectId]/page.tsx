@@ -28,6 +28,7 @@ interface FileItem {
   size?: string
   uploadDate: string
   uploadedBy?: string
+  data?: string // Base64 image data
 }
 
 interface InspectionEvent {
@@ -201,21 +202,26 @@ export default function ProjectHub() {
                       input.onchange = (e: Event) => {
                         const file = (e.target as HTMLInputElement).files?.[0]
                         if (file) {
-                          const newPhoto: FileItem = {
-                            id: Date.now().toString(),
-                            name: file.name,
-                            type: 'file',
-                            size: `${(file.size / 1024).toFixed(1)} KB`,
-                            uploadDate: new Date().toISOString(),
-                            uploadedBy: 'Current User'
+                          const reader = new FileReader()
+                          reader.onload = (event) => {
+                            const newPhoto: FileItem = {
+                              id: Date.now().toString(),
+                              name: file.name,
+                              type: 'file',
+                              size: `${(file.size / 1024).toFixed(1)} KB`,
+                              uploadDate: new Date().toISOString(),
+                              uploadedBy: 'Current User',
+                              data: event.target?.result as string // Store base64 data
+                            }
+                            
+                            const updatedPhotos = {
+                              ...inspectionPhotos,
+                              [selectedInspection]: [...(inspectionPhotos[selectedInspection] || []), newPhoto]
+                            }
+                            setInspectionPhotos(updatedPhotos)
+                            localStorage.setItem(`vba-inspection-photos-${projectId}`, JSON.stringify(updatedPhotos))
                           }
-                          
-                          const updatedPhotos = {
-                            ...inspectionPhotos,
-                            [selectedInspection]: [...(inspectionPhotos[selectedInspection] || []), newPhoto]
-                          }
-                          setInspectionPhotos(updatedPhotos)
-                          localStorage.setItem(`vba-inspection-photos-${projectId}`, JSON.stringify(updatedPhotos))
+                          reader.readAsDataURL(file)
                         }
                       }
                       input.click()
@@ -232,17 +238,29 @@ export default function ProjectHub() {
                       input.type = 'file'
                       input.multiple = true
                       input.accept = 'image/*'
-                      input.onchange = (e: Event) => {
+                      input.onchange = async (e: Event) => {
                         const files = (e.target as HTMLInputElement).files
                         if (files) {
-                          const newPhotos: FileItem[] = Array.from(files).map((file) => ({
-                            id: Date.now().toString() + Math.random().toString(),
-                            name: file.name,
-                            type: 'file' as const,
-                            size: `${(file.size / 1024).toFixed(1)} KB`,
-                            uploadDate: new Date().toISOString(),
-                            uploadedBy: 'Current User'
-                          }))
+                          const newPhotos: FileItem[] = []
+                          
+                          // Read each file as base64
+                          for (const file of Array.from(files)) {
+                            const reader = new FileReader()
+                            const photoData = await new Promise<string>((resolve) => {
+                              reader.onload = (event) => resolve(event.target?.result as string)
+                              reader.readAsDataURL(file)
+                            })
+                            
+                            newPhotos.push({
+                              id: Date.now().toString() + Math.random().toString(),
+                              name: file.name,
+                              type: 'file' as const,
+                              size: `${(file.size / 1024).toFixed(1)} KB`,
+                              uploadDate: new Date().toISOString(),
+                              uploadedBy: 'Current User',
+                              data: photoData // Store base64 data
+                            })
+                          }
                           
                           const updatedPhotos = {
                             ...inspectionPhotos,
