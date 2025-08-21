@@ -46,7 +46,7 @@ export default function ProjectHub() {
   const [project, setProject] = useState<VBAProject | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editedProject, setEditedProject] = useState<VBAProject | null>(null)
-  const [activeView, setActiveView] = useState<'hub' | 'inspections' | 'reports' | 'templates' | 'misc'>('hub')
+  const [activeView, setActiveView] = useState<'hub' | 'inspections' | 'reports' | 'templates' | 'misc' | 'photoDocumentation'>('hub')
   const [selectedInspection, setSelectedInspection] = useState<string | null>(null)
   const [inspectionPhotos, setInspectionPhotos] = useState<Record<string, FileItem[]>>({})
   const [reports, setReports] = useState<FileItem[]>([])
@@ -345,7 +345,10 @@ export default function ProjectHub() {
 
           <div className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button className="bg-white border-2 border-indigo-500 px-6 py-8 rounded-lg text-left hover:bg-indigo-50 transition-all">
+              <button 
+                onClick={() => router.push(`/vba/project/${projectId}/templates/inspection-report`)}
+                className="bg-white border-2 border-indigo-500 px-6 py-8 rounded-lg text-left hover:bg-indigo-50 transition-all"
+              >
                 <h3 className="font-medium text-gray-900 text-lg mb-2">Inspection Report</h3>
                 <p className="text-sm text-gray-600">Generate inspection reports from templates</p>
               </button>
@@ -355,12 +358,18 @@ export default function ProjectHub() {
                 <p className="text-sm text-gray-600">Create executive summary documents</p>
               </button>
               
-              <button className="bg-white border border-gray-200 px-6 py-8 rounded-lg text-left hover:bg-gray-50 hover:border-indigo-300 transition-all">
+              <button 
+                onClick={() => router.push(`/vba/project/${projectId}/templates/project-information`)}
+                className="bg-white border border-gray-200 px-6 py-8 rounded-lg text-left hover:bg-gray-50 hover:border-indigo-300 transition-all"
+              >
                 <h3 className="font-medium text-gray-900 text-lg mb-2">Project Information</h3>
                 <p className="text-sm text-gray-600">Update project details and information</p>
               </button>
               
-              <button className="bg-white border border-gray-200 px-6 py-8 rounded-lg text-left hover:bg-gray-50 hover:border-indigo-300 transition-all">
+              <button 
+                onClick={() => setActiveView('photoDocumentation')}
+                className="bg-white border border-gray-200 px-6 py-8 rounded-lg text-left hover:bg-gray-50 hover:border-indigo-300 transition-all"
+              >
                 <h3 className="font-medium text-gray-900 text-lg mb-2">Photo Documentation</h3>
                 <p className="text-sm text-gray-600">Organize and document project photos</p>
               </button>
@@ -433,8 +442,8 @@ export default function ProjectHub() {
     )
   }
 
-  // Misc View
-  if (activeView === 'misc') {
+  // Photo Documentation View
+  if (activeView === 'photoDocumentation') {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
         <div className="mb-6">
@@ -450,20 +459,48 @@ export default function ProjectHub() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Archive className="h-5 w-5" />
-              Misc
+              <Camera className="h-5 w-5" />
+              Photo-Documentation
             </h2>
-            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+            <button 
+              onClick={() => {
+                const input = document.createElement('input')
+                input.type = 'file'
+                input.multiple = true
+                input.accept = 'image/*'
+                input.click()
+              }}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+            >
               <Upload className="h-4 w-4" />
               Upload File
             </button>
           </div>
 
-          <div className="p-4">
-            <div className="text-center py-12">
-              <Archive className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No miscellaneous files uploaded yet</p>
+          <div className="p-6">
+            <h3 className="text-base font-medium text-gray-900 mb-4">Photo Documentation by Inspection:</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {project?.selectedInspections?.map((inspection) => (
+                <div 
+                  key={inspection}
+                  className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-indigo-300 cursor-pointer transition-all"
+                  onClick={() => setSelectedInspection(inspection)}
+                >
+                  <h4 className="font-medium text-gray-900 mb-1">{inspection}</h4>
+                  <p className="text-sm text-gray-500">
+                    {inspectionPhotos[inspection]?.length || 0} photos
+                  </p>
+                </div>
+              ))}
             </div>
+
+            {project?.selectedInspections?.length === 0 && (
+              <div className="text-center py-12">
+                <Camera className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No inspections selected for this project</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -484,13 +521,6 @@ export default function ProjectHub() {
         </button>
       </div>
 
-      {/* Debug Info - Remove after testing */}
-      <div className="bg-yellow-100 border border-yellow-400 p-4 rounded mb-4">
-        <p className="text-sm font-bold">Debug: You are on the NEW Project Hub page</p>
-        <p className="text-sm">Project ID: {projectId}</p>
-        <p className="text-sm">URL: /vba/project/{projectId}</p>
-        <p className="text-sm">Generated at: {new Date().toISOString()}</p>
-      </div>
 
       {/* Project Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -691,11 +721,11 @@ export default function ProjectHub() {
         </button>
         
         <button
-          onClick={() => setActiveView('misc')}
+          onClick={() => setActiveView('photoDocumentation')}
           className="bg-gray-500 hover:bg-gray-600 text-white p-6 rounded-lg transition-all flex items-center gap-3"
         >
-          <Archive className="h-6 w-6" />
-          <span className="font-medium text-lg">Misc</span>
+          <Camera className="h-6 w-6" />
+          <span className="font-medium text-lg">Photo Documentation</span>
         </button>
       </div>
 

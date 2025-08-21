@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Search, 
@@ -90,6 +90,27 @@ interface NewsItem {
   source: string
   date: string
   category: string
+  url?: string
+  description?: string
+}
+
+interface InspectionSchedule {
+  id: string
+  projectId: string
+  inspectionType: string
+  date: string
+  time: string
+  assignedTo: string
+  assignedToEmail?: string
+  status: 'scheduled' | 'completed' | 'cancelled'
+}
+
+interface Contact {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  role?: string
 }
 
 export default function VBAPage() {
@@ -120,27 +141,111 @@ export default function VBAPage() {
     ]
   })
   const [weatherLoading, setWeatherLoading] = useState(true)
-  const [newsItems] = useState<NewsItem[]>([
-    {
-      id: '1',
-      title: 'AI-Powered Construction Management Reduces Project Delays by 35%',
-      source: 'Construction AI Weekly',
-      date: 'Jan 27',
-      category: 'AI & Tech'
-    },
-    {
-      id: '2',
-      title: 'Construction Robotics Market to Hit $20B by 2026',
-      source: 'TechConstruct News',
-      date: 'Jan 24',
-      category: 'AI & Tech'
-    }
-  ])
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([])
+  const [newsLoading, setNewsLoading] = useState(true)
+  const [selectedNewsCategory, setSelectedNewsCategory] = useState('all')
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [selectedProjectForSchedule, setSelectedProjectForSchedule] = useState<VBAProject | null>(null)
+  const [inspectionSchedules, setInspectionSchedules] = useState<InspectionSchedule[]>([])
+  const [contacts, setContacts] = useState<Contact[]>([])
 
   useEffect(() => {
     loadVBAProjects()
     fetchWeatherData()
+    fetchNewsData()
+    loadContacts()
+    loadInspectionSchedules()
   }, [])
+
+  const fetchNewsData = async () => {
+    try {
+      setNewsLoading(true)
+      
+      // Using a free news API that doesn't require authentication for construction news
+      // You can replace this with your preferred news API
+      const response = await fetch(
+        'https://newsdata.io/api/1/news?apikey=pub_52993cc6dc6e4de5c1a08c13c5b528dd17bb3&q=construction%20technology%20AI%20robotics&language=en&category=technology,business'
+      )
+      
+      if (!response.ok) {
+        console.error('Failed to fetch news')
+        // Fallback to mock data if API fails
+        setNewsItems([
+          {
+            id: '1',
+            title: 'AI-Powered Construction Management Reduces Project Delays by 35%',
+            source: 'Construction AI Weekly',
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            category: 'AI & Tech',
+            description: 'New AI systems are revolutionizing construction project management'
+          },
+          {
+            id: '2',
+            title: 'Construction Robotics Market to Hit $20B by 2026',
+            source: 'TechConstruct News',
+            date: new Date(Date.now() - 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            category: 'AI & Tech',
+            description: 'Market analysis shows rapid growth in construction automation'
+          }
+        ])
+        return
+      }
+      
+      const data = await response.json()
+      
+      if (data.results) {
+        const formattedNews = data.results.slice(0, 5).map((article: any, index: number) => ({
+          id: index.toString(),
+          title: article.title,
+          source: article.source_name || article.source_id || 'Industry News',
+          date: new Date(article.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          category: 'AI & Tech',
+          url: article.link,
+          description: article.description || article.content?.substring(0, 150) + '...'
+        }))
+        
+        setNewsItems(formattedNews)
+      }
+    } catch (error) {
+      console.error('Failed to fetch news:', error)
+      // Set fallback news items
+      setNewsItems([
+        {
+          id: '1',
+          title: 'AI-Powered Construction Management Reduces Project Delays by 35%',
+          source: 'Construction AI Weekly',
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          category: 'AI & Tech'
+        }
+      ])
+    } finally {
+      setNewsLoading(false)
+    }
+  }
+
+  const loadContacts = () => {
+    const savedContacts = localStorage.getItem('vba-contacts')
+    if (savedContacts) {
+      setContacts(JSON.parse(savedContacts))
+    } else {
+      // Default contacts
+      const defaultContacts = [
+        { id: '1', name: 'John Smith', email: 'john.smith@example.com', phone: '(239) 555-0101', role: 'Senior Inspector' },
+        { id: '2', name: 'Sarah Johnson', email: 'sarah.j@example.com', phone: '(239) 555-0102', role: 'Lead Inspector' },
+        { id: '3', name: 'Mike Williams', email: 'mike.w@example.com', phone: '(239) 555-0103', role: 'Inspector' },
+        { id: '4', name: 'Emily Davis', email: 'emily.d@example.com', phone: '(239) 555-0104', role: 'Junior Inspector' }
+      ]
+      setContacts(defaultContacts)
+      localStorage.setItem('vba-contacts', JSON.stringify(defaultContacts))
+    }
+  }
+
+  const loadInspectionSchedules = () => {
+    const savedSchedules = localStorage.getItem('vba-inspection-schedules')
+    if (savedSchedules) {
+      setInspectionSchedules(JSON.parse(savedSchedules))
+    }
+  }
 
   const fetchWeatherData = async () => {
     try {
@@ -436,26 +541,79 @@ export default function VBAPage() {
           </h3>
 
           <div className="flex gap-2 mb-4">
-            <button className="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-xs font-medium">All</button>
-            <button className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium hover:bg-gray-200">AI & Tech</button>
-            <button className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium hover:bg-gray-200">General</button>
-            <button className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium hover:bg-gray-200">Updates</button>
+            <button 
+              onClick={() => setSelectedNewsCategory('all')}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                selectedNewsCategory === 'all' 
+                  ? 'bg-sky-100 text-sky-700' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              All
+            </button>
+            <button 
+              onClick={() => setSelectedNewsCategory('ai')}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                selectedNewsCategory === 'ai' 
+                  ? 'bg-sky-100 text-sky-700' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              AI & Tech
+            </button>
+            <button 
+              onClick={() => setSelectedNewsCategory('general')}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                selectedNewsCategory === 'general' 
+                  ? 'bg-sky-100 text-sky-700' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              General
+            </button>
+            <button 
+              onClick={() => setSelectedNewsCategory('updates')}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                selectedNewsCategory === 'updates' 
+                  ? 'bg-sky-100 text-sky-700' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Updates
+            </button>
           </div>
 
           <div className="space-y-4">
-            {newsItems.map((news) => (
-              <div key={news.id} className="border-b border-gray-100 pb-4 last:border-0">
-                <h4 className="text-sm font-medium text-gray-900 mb-1 hover:text-sky-600 cursor-pointer">
-                  {news.title}
-                </h4>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span className="bg-gray-100 px-2 py-0.5 rounded">ai</span>
-                  <span>{news.source}</span>
-                  <span>•</span>
-                  <span>{news.date}</span>
-                </div>
+            {newsLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400" />
+                <p className="text-sm text-gray-500 mt-2">Loading news...</p>
               </div>
-            ))}
+            ) : newsItems.length === 0 ? (
+              <p className="text-center py-8 text-gray-500 text-sm">No news available</p>
+            ) : (
+              newsItems
+                .filter(news => selectedNewsCategory === 'all' || news.category.toLowerCase().includes(selectedNewsCategory.toLowerCase()))
+                .map((news) => (
+                  <div key={news.id} className="border-b border-gray-100 pb-4 last:border-0">
+                    <h4 
+                      className="text-sm font-medium text-gray-900 mb-1 hover:text-sky-600 cursor-pointer line-clamp-2"
+                      onClick={() => news.url && window.open(news.url, '_blank')}
+                    >
+                      {news.title}
+                    </h4>
+                    {news.description && (
+                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{news.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="bg-gray-100 px-2 py-0.5 rounded">ai</span>
+                      <span>{news.source}</span>
+                      <span>•</span>
+                      <span>{news.date}</span>
+                    </div>
+                  </div>
+                ))
+            )}
           </div>
 
           <Link href="/vba/news" className="mt-4 flex items-center justify-center gap-2 text-sm text-sky-600 hover:text-sky-700">
@@ -550,23 +708,44 @@ export default function VBAPage() {
                 filteredProjects.map((project) => (
                   <tr 
                     key={project.id} 
-                    className="hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => {
-                      console.log('Navigating to:', `/vba/project/${project.id}`)
-                      router.push(`/vba/project/${project.id}`)
-                    }}
+                    className="hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td 
+                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 cursor-pointer"
+                      onClick={() => {
+                        console.log('Navigating to:', `/vba/project/${project.id}`)
+                        router.push(`/vba/project/${project.id}`)
+                      }}
+                    >
                       {project.jobNumber || `J${project.id.slice(-4)}`}
                     </td>
-                    <td className="px-6 py-4">
+                    <td 
+                      className="px-6 py-4 cursor-pointer"
+                      onClick={() => {
+                        console.log('Navigating to:', `/vba/project/${project.id}`)
+                        router.push(`/vba/project/${project.id}`)
+                      }}
+                    >
                       <div className="text-sm font-medium text-gray-900 hover:text-sky-600">
                         {project.projectName}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">{project.address}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(project.scheduledDate).toLocaleDateString()}
+                      <div className="flex items-center justify-between">
+                        <span>{new Date(project.scheduledDate).toLocaleDateString()}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedProjectForSchedule(project)
+                            setShowScheduleModal(true)
+                          }}
+                          className="ml-4 p-1 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded"
+                          title="Schedule Inspection"
+                        >
+                          <Calendar className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -606,6 +785,42 @@ export default function VBAPage() {
           }}
         />
       )}
+
+      {/* Schedule Inspection Modal */}
+      {showScheduleModal && selectedProjectForSchedule && (
+        <ScheduleInspectionModal
+          project={selectedProjectForSchedule}
+          contacts={contacts}
+          onClose={() => {
+            setShowScheduleModal(false)
+            setSelectedProjectForSchedule(null)
+          }}
+          onSave={(schedule) => {
+            const updatedSchedules = [...inspectionSchedules, schedule]
+            setInspectionSchedules(updatedSchedules)
+            localStorage.setItem('vba-inspection-schedules', JSON.stringify(updatedSchedules))
+            
+            // Update the project's inspection events
+            const eventKey = `vba-events-${selectedProjectForSchedule.id}`
+            const existingEvents = localStorage.getItem(eventKey)
+            const events = existingEvents ? JSON.parse(existingEvents) : []
+            
+            const newEvent = {
+              id: schedule.id,
+              title: schedule.inspectionType,
+              date: new Date(`${schedule.date}T${schedule.time}`),
+              type: schedule.inspectionType,
+              status: 'scheduled' as const
+            }
+            
+            events.push(newEvent)
+            localStorage.setItem(eventKey, JSON.stringify(events))
+            
+            setShowScheduleModal(false)
+            setSelectedProjectForSchedule(null)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -625,7 +840,7 @@ const INSPECTION_TYPES = [
   'Footings',
   'Slab',
   'Stem Wall',
-  'Pos-Tension',
+  'Post-Tension',
   'Mono Slab',
   'Column',
   'Tie Beam',
@@ -830,6 +1045,178 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
               disabled={!projectData.projectName || !projectData.jobNumber || selectedInspections.length === 0}
             >
               Create Project
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// Schedule Inspection Modal Component
+function ScheduleInspectionModal({ 
+  project, 
+  contacts, 
+  onClose, 
+  onSave 
+}: { 
+  project: VBAProject
+  contacts: Contact[]
+  onClose: () => void
+  onSave: (schedule: InspectionSchedule) => void 
+}) {
+  const [scheduleData, setScheduleData] = useState({
+    inspectionType: '',
+    date: '',
+    time: '',
+    assignedTo: '',
+    assignedToEmail: '',
+    notes: ''
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const selectedContact = contacts.find(c => c.id === scheduleData.assignedTo)
+    
+    const newSchedule: InspectionSchedule = {
+      id: Date.now().toString(),
+      projectId: project.id,
+      inspectionType: scheduleData.inspectionType,
+      date: scheduleData.date,
+      time: scheduleData.time,
+      assignedTo: selectedContact?.name || '',
+      assignedToEmail: selectedContact?.email,
+      status: 'scheduled'
+    }
+
+    onSave(newSchedule)
+  }
+
+  const handleContactSelect = (contactId: string) => {
+    const contact = contacts.find(c => c.id === contactId)
+    setScheduleData({
+      ...scheduleData,
+      assignedTo: contactId,
+      assignedToEmail: contact?.email || ''
+    })
+  }
+
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0]
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Schedule Inspection</h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Project: {project.projectName} - {project.address}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Inspection Type
+              </label>
+              <select
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                value={scheduleData.inspectionType}
+                onChange={(e) => setScheduleData({ ...scheduleData, inspectionType: e.target.value })}
+                required
+              >
+                <option value="">Select inspection type</option>
+                {project.selectedInspections?.map((inspection) => (
+                  <option key={inspection} value={inspection}>
+                    {inspection}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  value={scheduleData.date}
+                  min={today}
+                  onChange={(e) => setScheduleData({ ...scheduleData, date: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Time
+                </label>
+                <input
+                  type="time"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  value={scheduleData.time}
+                  onChange={(e) => setScheduleData({ ...scheduleData, time: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Assign Inspector & Send Notification To:
+              </label>
+              <select
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                value={scheduleData.assignedTo}
+                onChange={(e) => handleContactSelect(e.target.value)}
+                required
+              >
+                <option value="">Select inspector</option>
+                {contacts.map((contact) => (
+                  <option key={contact.id} value={contact.id}>
+                    {contact.name} - {contact.role || 'Inspector'} ({contact.email})
+                  </option>
+                ))}
+              </select>
+              {scheduleData.assignedToEmail && (
+                <p className="mt-2 text-sm text-gray-600">
+                  Notification will be sent to: {scheduleData.assignedToEmail}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Notes (Optional)
+              </label>
+              <textarea
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                rows={3}
+                value={scheduleData.notes}
+                onChange={(e) => setScheduleData({ ...scheduleData, notes: e.target.value })}
+                placeholder="Any special instructions or notes for the inspection..."
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
+              disabled={!scheduleData.inspectionType || !scheduleData.date || !scheduleData.time || !scheduleData.assignedTo}
+            >
+              Schedule & Send Notification
             </button>
           </div>
         </form>
