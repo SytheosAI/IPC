@@ -247,6 +247,58 @@ export default function VBAPage() {
     }
   }
 
+  const calculateWeeklyMetrics = () => {
+    // Get the start of this week (Sunday)
+    const now = new Date()
+    const startOfWeek = new Date(now)
+    startOfWeek.setDate(now.getDate() - now.getDay())
+    startOfWeek.setHours(0, 0, 0, 0)
+    
+    // Filter projects for this week
+    const thisWeekProjects = projects.filter(project => {
+      const projectDate = new Date(project.lastUpdated)
+      return projectDate >= startOfWeek
+    })
+    
+    // Get all inspection events from localStorage
+    const allInspectionEvents: any[] = []
+    projects.forEach(project => {
+      const events = localStorage.getItem(`vba-inspection-events-${project.id}`)
+      if (events) {
+        const parsedEvents = JSON.parse(events)
+        allInspectionEvents.push(...parsedEvents.map((e: any) => ({...e, projectId: project.id})))
+      }
+    })
+    
+    // Filter events for this week
+    const thisWeekEvents = allInspectionEvents.filter(event => {
+      const eventDate = new Date(event.date || event.scheduledDate || event.lastUpdated)
+      return eventDate >= startOfWeek
+    })
+    
+    // Calculate metrics
+    const completed = thisWeekEvents.filter(e => e.status === 'completed').length +
+                     thisWeekProjects.filter(p => p.status === 'completed').length
+    const scheduled = thisWeekEvents.filter(e => e.status === 'scheduled').length + 
+                     thisWeekProjects.filter(p => p.status === 'scheduled').length
+    const passed = thisWeekEvents.filter(e => e.status === 'completed' && !e.failed).length +
+                  thisWeekProjects.filter(p => p.status === 'completed' && p.violations === 0).length
+    const passRate = completed > 0 ? Math.round((passed / completed) * 100) : 0
+    
+    // Calculate average compliance score
+    const completedWithScores = thisWeekProjects.filter(p => p.status === 'completed' && p.complianceScore)
+    const complianceAvg = completedWithScores.length > 0 
+      ? Math.round(completedWithScores.reduce((sum, p) => sum + (p.complianceScore || 0), 0) / completedWithScores.length)
+      : 0
+    
+    setWeeklyMetrics({
+      completed,
+      scheduled,
+      passRate,
+      complianceAvg
+    })
+  }
+
   const fetchWeatherData = async () => {
     try {
       setWeatherLoading(true)
