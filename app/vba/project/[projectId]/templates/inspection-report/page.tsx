@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, FileText, Settings, Upload, Download, Camera
 } from 'lucide-react'
+import jsPDF from 'jspdf'
 
 interface InspectionReportData {
   reportTitle: string
@@ -62,6 +63,7 @@ export default function InspectionReportTemplate() {
   const [loading, setLoading] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
   const [availableInspections, setAvailableInspections] = useState<string[]>([])
+  const [generatingPDF, setGeneratingPDF] = useState(false)
 
   useEffect(() => {
     loadReportData()
@@ -162,9 +164,12 @@ export default function InspectionReportTemplate() {
     }
   }
 
-  const handleGenerateReport = () => {
-    // Save current state
-    localStorage.setItem(`vba-inspection-report-${projectId}`, JSON.stringify(reportData))
+  const handleGenerateReport = async () => {
+    setGeneratingPDF(true)
+    
+    try {
+      // Save current state
+      localStorage.setItem(`vba-inspection-report-${projectId}`, JSON.stringify(reportData))
     
     // Generate filename based on date and sequence
     const date = new Date()
@@ -173,10 +178,246 @@ export default function InspectionReportTemplate() {
     const day = String(date.getDate()).padStart(2, '0')
     const sequence = reportData.reportSequence.padStart(3, '0')
     
-    const filename = `${year} ${month} ${day} ${sequence} - Inspection Report.pdf`
+    const filename = `${year} ${month} ${day} ${sequence} - Inspection Report`
     
-    // In a real app, this would generate a PDF
-    alert(`Report generated: ${filename}\n\nNote: PDF generation would be implemented in production.`)
+    // Create PDF
+    const pdf = new jsPDF('p', 'mm', 'letter')
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 20
+    const contentWidth = pageWidth - (margin * 2)
+    let yPosition = margin
+    
+    // Helper function to check page overflow
+    const checkPageBreak = (additionalHeight: number) => {
+      if (yPosition + additionalHeight > pageHeight - margin) {
+        pdf.addPage()
+        yPosition = margin
+        return true
+      }
+      return false
+    }
+    
+    // Helper function to add wrapped text
+    const addWrappedText = (text: string, fontSize: number, isBold: boolean = false) => {
+      pdf.setFontSize(fontSize)
+      if (isBold) {
+        pdf.setFont('helvetica', 'bold')
+      } else {
+        pdf.setFont('helvetica', 'normal')
+      }
+      const lines = pdf.splitTextToSize(text, contentWidth)
+      const lineHeight = fontSize * 0.5
+      checkPageBreak(lines.length * lineHeight)
+      pdf.text(lines, margin, yPosition)
+      yPosition += lines.length * lineHeight
+      return lines.length * lineHeight
+    }
+    
+    // Add logo if available
+    if (reportData.logo) {
+      try {
+        // In production, convert base64 or URL to image
+        pdf.addImage(reportData.logo, 'PNG', margin, yPosition, 40, 20)
+        yPosition += 25
+      } catch (e) {
+        console.error('Failed to add logo:', e)
+      }
+    }
+    
+    // Title
+    pdf.setFontSize(20)
+    pdf.setFont('helvetica', 'bold')
+    pdf.text(reportData.reportTitle, pageWidth / 2, yPosition, { align: 'center' })
+    yPosition += 15
+    
+    // Reference and Attention
+    if (reportData.reference) {
+      addWrappedText(`Reference: ${reportData.reference}`, 10)
+      yPosition += 3
+    }
+    if (reportData.attention) {
+      addWrappedText(`Attention: ${reportData.attention}`, 10)
+      yPosition += 3
+    }
+    
+    // Line separator
+    pdf.setLineWidth(0.5)
+    pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+    yPosition += 10
+    
+    // Project Information Section
+    addWrappedText('PROJECT INFORMATION', 14, true)
+    yPosition += 5
+    
+    const projectInfo = [
+      ['Project Name:', reportData.projectName || 'Not specified'],
+      ['Project Address:', reportData.projectAddress || 'Not specified'],
+      ['Job Number:', reportData.jobNumber || 'Not specified'],
+      ['Inspection Date:', reportData.inspectionDate],
+      ['Inspection Type:', reportData.inspectionType || 'Not specified'],
+      ['Weather:', reportData.weather || 'Not available']
+    ]
+    
+    projectInfo.forEach(([label, value]) => {
+      checkPageBreak(8)
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text(label, margin, yPosition)
+      pdf.setFont('helvetica', 'normal')
+      const lines = pdf.splitTextToSize(value, contentWidth - 50)
+      pdf.text(lines, margin + 35, yPosition)
+      yPosition += Math.max(8, lines.length * 5)
+    })
+    
+    yPosition += 5
+    
+    // Inspector Information Section
+    checkPageBreak(20)
+    pdf.setLineWidth(0.5)
+    pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+    yPosition += 10
+    
+    addWrappedText('INSPECTOR INFORMATION', 14, true)
+    yPosition += 5
+    
+    const inspectorInfo = [
+      ['Inspector Name:', reportData.inspectorName || 'Not specified'],
+      ['License Number:', reportData.inspectorLicense || 'Not specified'],
+      ['Company:', reportData.companyName || 'Not specified']
+    ]
+    
+    inspectorInfo.forEach(([label, value]) => {
+      checkPageBreak(8)
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text(label, margin, yPosition)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text(value, margin + 35, yPosition)
+      yPosition += 8
+    })
+    
+    yPosition += 5
+    
+    // General Context
+    if (reportData.generalContext) {
+      checkPageBreak(20)
+      pdf.setLineWidth(0.5)
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+      yPosition += 10
+      
+      addWrappedText('GENERAL CONTEXT', 14, true)
+      yPosition += 5
+      addWrappedText(reportData.generalContext, 10)
+      yPosition += 5
+    }
+    
+    // Observations Section
+    if (reportData.observations) {
+      checkPageBreak(20)
+      pdf.setLineWidth(0.5)
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+      yPosition += 10
+      
+      addWrappedText('OBSERVATIONS', 14, true)
+      yPosition += 5
+      addWrappedText(reportData.observations, 10)
+      yPosition += 5
+    }
+    
+    // Recommendations Section
+    if (reportData.recommendations) {
+      checkPageBreak(20)
+      pdf.setLineWidth(0.5)
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+      yPosition += 10
+      
+      addWrappedText('RECOMMENDATIONS', 14, true)
+      yPosition += 5
+      addWrappedText(reportData.recommendations, 10)
+      yPosition += 5
+    }
+    
+    // Photos Section
+    if (reportData.photos.length > 0) {
+      checkPageBreak(30)
+      pdf.setLineWidth(0.5)
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+      yPosition += 10
+      
+      addWrappedText('INSPECTION PHOTOS', 14, true)
+      yPosition += 5
+      
+      // Add photo references (in production, actual images would be embedded)
+      reportData.photos.forEach((photo, index) => {
+        checkPageBreak(10)
+        pdf.setFontSize(10)
+        pdf.text(`Photo ${index + 1}: ${photo.caption}`, margin, yPosition)
+        yPosition += 8
+      })
+      yPosition += 5
+    }
+    
+    // Digital Signature
+    if (reportData.digitalSignature) {
+      checkPageBreak(40)
+      pdf.setLineWidth(0.5)
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+      yPosition += 10
+      
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text('Digitally Signed By:', margin, yPosition)
+      yPosition += 8
+      
+      try {
+        // In production, add actual signature image
+        pdf.text('[Digital Signature]', margin, yPosition)
+        yPosition += 8
+      } catch (e) {
+        console.error('Failed to add signature:', e)
+      }
+      
+      pdf.text(reportData.inspectorName || 'Inspector', margin, yPosition)
+      yPosition += 5
+      pdf.text(new Date().toLocaleDateString('en-US'), margin, yPosition)
+    }
+    
+    // Footer on last page
+    pdf.setFontSize(8)
+    pdf.setFont('helvetica', 'italic')
+    pdf.text(
+      `Generated on ${new Date().toLocaleString('en-US')}`,
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: 'center' }
+    )
+    
+    // Add page numbers
+    const totalPages = pdf.getNumberOfPages()
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i)
+      pdf.setFontSize(8)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text(
+        `Page ${i} of ${totalPages}`,
+        pageWidth - margin,
+        pageHeight - 10,
+        { align: 'right' }
+      )
+    }
+    
+    // Save the PDF
+    pdf.save(`${filename}.pdf`)
+    
+    // Show success message
+    alert(`Report generated successfully!\n\nFile saved as: ${filename}.pdf`)
+    } catch (error) {
+      console.error('Failed to generate PDF:', error)
+      alert('Failed to generate PDF. Please try again.')
+    } finally {
+      setGeneratingPDF(false)
+    }
   }
 
   const loadInspectionPhotos = () => {
@@ -471,10 +712,20 @@ export default function InspectionReportTemplate() {
         <div className="flex justify-center">
           <button
             onClick={handleGenerateReport}
-            className="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 flex items-center gap-2 text-lg"
+            disabled={generatingPDF}
+            className="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 text-lg transition-colors"
           >
-            <FileText className="h-5 w-5" />
-            Generate Report
+            {generatingPDF ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Generating PDF...
+              </>
+            ) : (
+              <>
+                <FileText className="h-5 w-5" />
+                Generate Report
+              </>
+            )}
           </button>
         </div>
       </div>
