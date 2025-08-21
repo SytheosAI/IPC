@@ -140,6 +140,12 @@ export default function VBAPage() {
       { day: 'Fri', high: 90, low: 79, condition: 'cloudy' }
     ]
   })
+  const [weeklyMetrics, setWeeklyMetrics] = useState({
+    completed: 0,
+    scheduled: 0,
+    passRate: 0,
+    complianceAvg: 0
+  })
   const [weatherLoading, setWeatherLoading] = useState(true)
   const [newsItems, setNewsItems] = useState<NewsItem[]>([])
   const [newsLoading, setNewsLoading] = useState(true)
@@ -156,6 +162,10 @@ export default function VBAPage() {
     loadContacts()
     loadInspectionSchedules()
   }, [])
+
+  useEffect(() => {
+    calculateWeeklyMetrics()
+  }, [projects, inspectionSchedules])
 
   const fetchNewsData = async () => {
     try {
