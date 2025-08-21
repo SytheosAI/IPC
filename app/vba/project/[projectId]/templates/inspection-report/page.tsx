@@ -23,6 +23,9 @@ interface InspectionReportData {
   inspectorName: string
   inspectorLicense: string
   companyName: string
+  workZone: string
+  workPerformed: string
+  drawingPage: string
   observations: string
   recommendations: string
   digitalSignature: string | null
@@ -54,6 +57,9 @@ export default function InspectionReportTemplate() {
     inspectorName: '',
     inspectorLicense: '',
     companyName: '',
+    workZone: '',
+    workPerformed: '',
+    drawingPage: '',
     observations: '',
     recommendations: '',
     digitalSignature: null,
@@ -170,6 +176,21 @@ export default function InspectionReportTemplate() {
     try {
       // Save current state
       localStorage.setItem(`vba-inspection-report-${projectId}`, JSON.stringify(reportData))
+      
+      // Load actual photos from the inspection type folder
+      let actualPhotos = reportData.photos
+      if (reportData.inspectionType) {
+        const savedPhotos = localStorage.getItem(`vba-inspection-photos-${projectId}`)
+        if (savedPhotos) {
+          const allPhotos = JSON.parse(savedPhotos)
+          const inspectionPhotos = allPhotos[reportData.inspectionType] || []
+          actualPhotos = inspectionPhotos.map((photo: any) => ({
+            id: photo.id,
+            url: photo.url || photo.data, // Use data if url not available
+            caption: photo.name
+          }))
+        }
+      }
     
     // Generate filename based on date and sequence
     const date = new Date()
@@ -214,50 +235,99 @@ export default function InspectionReportTemplate() {
       return lines.length * lineHeight
     }
     
-    // Add logo if available
+    // Add logo if available - maintain aspect ratio
     if (reportData.logo) {
       try {
-        // In production, convert base64 or URL to image
-        pdf.addImage(reportData.logo, 'PNG', margin, yPosition, 40, 20)
-        yPosition += 25
+        const logoWidth = 50
+        const logoHeight = 30
+        // Position logo at top right
+        pdf.addImage(reportData.logo, 'PNG', pageWidth - margin - logoWidth, yPosition, logoWidth, logoHeight)
       } catch (e) {
         console.error('Failed to add logo:', e)
       }
     }
     
-    // Title
-    pdf.setFontSize(20)
-    pdf.setFont('helvetica', 'bold')
-    pdf.text(reportData.reportTitle, pageWidth / 2, yPosition, { align: 'center' })
-    yPosition += 15
+    // Date at top left
+    pdf.setFontSize(10)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(`Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, margin, yPosition)
+    yPosition += 8
     
-    // Reference and Attention
-    if (reportData.reference) {
-      addWrappedText(`Reference: ${reportData.reference}`, 10)
-      yPosition += 3
-    }
+    // Attention section
     if (reportData.attention) {
-      addWrappedText(`Attention: ${reportData.attention}`, 10)
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'normal')
+      const attentionLines = reportData.attention.split('\n')
+      pdf.text('Attn:', margin, yPosition)
+      yPosition += 6
+      attentionLines.forEach(line => {
+        if (line.trim()) {
+          pdf.text(line.trim(), margin + 15, yPosition)
+          yPosition += 5
+        }
+      })
       yPosition += 3
     }
     
-    // Line separator
-    pdf.setLineWidth(0.5)
-    pdf.line(margin, yPosition, pageWidth - margin, yPosition)
+    // Reference section
+    if (reportData.reference) {
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text('Ref:', margin, yPosition)
+      yPosition += 6
+      const refLines = reportData.reference.split('\n')
+      refLines.forEach(line => {
+        if (line.trim()) {
+          pdf.text(line.trim(), margin + 15, yPosition)
+          yPosition += 5
+        }
+      })
+      yPosition += 8
+    }
+    
+    // Inspection Report Title and Details (formatted like example)
+    pdf.setFontSize(11)
+    pdf.setFont('helvetica', 'normal')
+    const inspectionTitle = reportData.inspectionType || 'Threshold Inspection'
+    const reportNumber = reportData.reportSequence.padStart(3, '0')
+    pdf.text(`${inspectionTitle} Report: ${reportNumber}`, margin + 5, yPosition)
+    yPosition += 8
+    
+    pdf.text(`Date & Time of Inspection: ${reportData.inspectionDate}, ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`, margin + 5, yPosition)
+    yPosition += 6
+    
+    pdf.text(`Inspector Name: ${reportData.inspectorName || 'Not specified'}`, margin + 5, yPosition)
+    yPosition += 6
+    
+    pdf.text(`Weather Conditions: ${reportData.weather || 'Not specified'}`, margin + 5, yPosition)
+    yPosition += 6
+    
+    const temp = reportData.weather ? reportData.weather.match(/\d+°F/) : null
+    pdf.text(`Temperature: ${temp ? temp[0] : '80F'}`, margin + 5, yPosition)
+    yPosition += 6
+    
+    pdf.text(`Work Zone: ${reportData.workZone || 'Not specified'}`, margin + 5, yPosition)
+    yPosition += 6
+    
+    pdf.text(`Work Performed: ${reportData.workPerformed || 'Not specified'}`, margin + 5, yPosition)
+    yPosition += 6
+    
+    pdf.text(`Plans Used: ${reportData.projectName || 'Not specified'}`, margin + 5, yPosition)
+    yPosition += 6
+    
+    pdf.text(`Current Date/Revision: ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, margin + 5, yPosition)
+    yPosition += 6
+    
+    pdf.text(`Drawing Page: ${reportData.drawingPage || 'Not specified'}`, margin + 5, yPosition)
     yPosition += 10
     
-    // Project Information Section
-    addWrappedText('PROJECT INFORMATION', 14, true)
-    yPosition += 5
-    
-    const projectInfo = [
-      ['Project Name:', reportData.projectName || 'Not specified'],
-      ['Project Address:', reportData.projectAddress || 'Not specified'],
-      ['Job Number:', reportData.jobNumber || 'Not specified'],
-      ['Inspection Date:', reportData.inspectionDate],
-      ['Inspection Type:', reportData.inspectionType || 'Not specified'],
-      ['Weather:', reportData.weather || 'Not available']
-    ]
+    // HBS project number if available
+    if (reportData.jobNumber) {
+      pdf.setFont('helvetica', 'bold')
+      pdf.text(`HBS Project Number: ${reportData.jobNumber}`, margin + 5, yPosition)
+      pdf.setFont('helvetica', 'normal')
+      yPosition += 10
+    }
     
     projectInfo.forEach(([label, value]) => {
       checkPageBreak(8)
@@ -338,8 +408,8 @@ export default function InspectionReportTemplate() {
       yPosition += 5
     }
     
-    // Photos Section
-    if (reportData.photos.length > 0) {
+    // Photos Section - embed actual photos
+    if (actualPhotos && actualPhotos.length > 0) {
       checkPageBreak(30)
       pdf.setLineWidth(0.5)
       pdf.line(margin, yPosition, pageWidth - margin, yPosition)
@@ -348,19 +418,38 @@ export default function InspectionReportTemplate() {
       addWrappedText('INSPECTION PHOTOS', 14, true)
       yPosition += 5
       
-      // Add photo references (in production, actual images would be embedded)
-      reportData.photos.forEach((photo, index) => {
-        checkPageBreak(10)
+      // Add actual photos to PDF
+      actualPhotos.forEach((photo, index) => {
+        checkPageBreak(80) // Space for photo + caption
+        
+        // Add photo caption
         pdf.setFontSize(10)
         pdf.text(`Photo ${index + 1}: ${photo.caption}`, margin, yPosition)
-        yPosition += 8
+        yPosition += 5
+        
+        // Try to add the actual image
+        if (photo.url && photo.url.startsWith('data:image')) {
+          try {
+            const imgWidth = 80
+            const imgHeight = 60
+            pdf.addImage(photo.url, 'JPEG', margin, yPosition, imgWidth, imgHeight)
+            yPosition += imgHeight + 10
+          } catch (e) {
+            console.error('Failed to add photo:', e)
+            pdf.text('[Photo could not be embedded]', margin, yPosition)
+            yPosition += 10
+          }
+        } else {
+          pdf.text('[Photo placeholder]', margin, yPosition)
+          yPosition += 10
+        }
       })
       yPosition += 5
     }
     
     // Digital Signature
     if (reportData.digitalSignature) {
-      checkPageBreak(40)
+      checkPageBreak(50)
       pdf.setLineWidth(0.5)
       pdf.line(margin, yPosition, pageWidth - margin, yPosition)
       yPosition += 10
@@ -371,11 +460,18 @@ export default function InspectionReportTemplate() {
       yPosition += 8
       
       try {
-        // In production, add actual signature image
-        pdf.text('[Digital Signature]', margin, yPosition)
-        yPosition += 8
+        // Add actual signature image if it's base64
+        if (reportData.digitalSignature.startsWith('data:image')) {
+          pdf.addImage(reportData.digitalSignature, 'PNG', margin, yPosition, 60, 20)
+          yPosition += 25
+        } else {
+          pdf.text('[Digital Signature]', margin, yPosition)
+          yPosition += 8
+        }
       } catch (e) {
         console.error('Failed to add signature:', e)
+        pdf.text('[Digital Signature]', margin, yPosition)
+        yPosition += 8
       }
       
       pdf.text(reportData.inspectorName || 'Inspector', margin, yPosition)
@@ -383,32 +479,55 @@ export default function InspectionReportTemplate() {
       pdf.text(new Date().toLocaleDateString('en-US'), margin, yPosition)
     }
     
-    // Footer on last page
-    pdf.setFontSize(8)
-    pdf.setFont('helvetica', 'italic')
-    pdf.text(
-      `Generated on ${new Date().toLocaleString('en-US')}`,
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: 'center' }
-    )
+    // Company footer on every page
+    const addFooter = () => {
+      pdf.setFontSize(9)
+      pdf.setFont('helvetica', 'normal')
+      const footerY = pageHeight - 20
+      pdf.text(reportData.companyName || 'HBS Consultants', margin, footerY)
+      pdf.text('368 Ashbury Way', pageWidth / 2 - 20, footerY)
+      pdf.text('Naples, FL 34110', pageWidth - margin - 30, footerY)
+      pdf.setFontSize(8)
+      pdf.text('239.326.7846', pageWidth / 2, footerY + 5, { align: 'center' })
+    }
     
-    // Add page numbers
+    // Add page numbers and footer to all pages
     const totalPages = pdf.internal.getNumberOfPages()
     for (let i = 1; i <= totalPages; i++) {
       pdf.setPage(i)
+      addFooter()
       pdf.setFontSize(8)
       pdf.setFont('helvetica', 'normal')
       pdf.text(
         `Page ${i} of ${totalPages}`,
         pageWidth - margin,
-        pageHeight - 10,
+        10,
         { align: 'right' }
       )
     }
     
-    // Save the PDF
-    pdf.save(`${filename}.pdf`)
+    // Save the PDF to inspection-reports folder
+    // Create a download that mimics saving to a specific folder
+    const blob = pdf.output('blob')
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${filename}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    // Also save reference in localStorage for the inspection-reports folder
+    const reports = JSON.parse(localStorage.getItem(`vba-inspection-reports-${projectId}`) || '[]')
+    reports.push({
+      id: Date.now().toString(),
+      filename: `${filename}.pdf`,
+      date: new Date().toISOString(),
+      inspectionType: reportData.inspectionType,
+      sequence: reportData.reportSequence
+    })
+    localStorage.setItem(`vba-inspection-reports-${projectId}`, JSON.stringify(reports))
     
     // Show success message
     alert(`Report generated successfully!\n\nFile saved as: ${filename}.pdf`)
@@ -490,25 +609,25 @@ export default function InspectionReportTemplate() {
               />
             </div>
             
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Reference</label>
-              <input
-                type="text"
+              <textarea
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                rows={5}
                 value={reportData.reference}
                 onChange={(e) => setReportData({ ...reportData, reference: e.target.value })}
-                placeholder="Project Reference"
+                placeholder="Project Reference (e.g., Building and Permit Services\n1500 Monroe St\nFort Myers, FL 33901)"
               />
             </div>
             
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Attention</label>
-              <input
-                type="text"
+              <textarea
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                rows={5}
                 value={reportData.attention}
                 onChange={(e) => setReportData({ ...reportData, attention: e.target.value })}
-                placeholder="Recipient Name"
+                placeholder="Recipient details (e.g., Lee County Public Works\nBuilding Department)"
               />
             </div>
             
@@ -588,7 +707,40 @@ export default function InspectionReportTemplate() {
               <p className="text-xs text-gray-500 mt-1">Use 1 for first report, 2 for second report of same inspection, etc.</p>
             </div>
             
-            <div className="md:col-span-2 bg-gray-50 p-3 rounded">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Work Zone</label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                value={reportData.workZone}
+                onChange={(e) => setReportData({ ...reportData, workZone: e.target.value })}
+                placeholder="e.g., Concourse"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Work Performed</label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                value={reportData.workPerformed}
+                onChange={(e) => setReportData({ ...reportData, workPerformed: e.target.value })}
+                placeholder="e.g., Concrete Placement"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Drawing Page</label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                value={reportData.drawingPage}
+                onChange={(e) => setReportData({ ...reportData, drawingPage: e.target.value })}
+                placeholder="e.g., Concourse"
+              />
+            </div>
+            
+            <div className="bg-gray-50 p-3 rounded">
               <label className="block text-sm font-medium text-gray-700 mb-1">Weather</label>
               <p className="text-gray-900">{reportData.weather || 'Weather data unavailable'}</p>
             </div>
@@ -600,24 +752,30 @@ export default function InspectionReportTemplate() {
           <h2 className="text-lg font-semibold text-orange-600 mb-4">Inspector Information</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-yellow-50 p-3 rounded">
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                value={reportData.inspectorName}
-                onChange={(e) => setReportData({ ...reportData, inspectorName: e.target.value })}
-                placeholder="John Doe, P.E."
-              />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Inspector Name</label>
+              <div className="bg-yellow-50 p-3 rounded">
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  value={reportData.inspectorName}
+                  onChange={(e) => setReportData({ ...reportData, inspectorName: e.target.value })}
+                  placeholder="John Doe, P.E."
+                />
+              </div>
             </div>
             
-            <div className="bg-yellow-50 p-3 rounded">
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                value={reportData.inspectorLicense}
-                onChange={(e) => setReportData({ ...reportData, inspectorLicense: e.target.value })}
-                placeholder="PE12345"
-              />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Inspector License</label>
+              <div className="bg-yellow-50 p-3 rounded">
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  value={reportData.inspectorLicense}
+                  onChange={(e) => setReportData({ ...reportData, inspectorLicense: e.target.value })}
+                  placeholder="PE12345"
+                />
+              </div>
             </div>
             
             <div className="md:col-span-2">
