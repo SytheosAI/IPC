@@ -181,14 +181,17 @@ export default function InspectionReportTemplate() {
       let actualPhotos = reportData.photos
       if (reportData.inspectionType) {
         const savedPhotos = localStorage.getItem(`vba-inspection-photos-${projectId}`)
+        console.log('Loading photos for inspection type:', reportData.inspectionType)
         if (savedPhotos) {
           const allPhotos = JSON.parse(savedPhotos)
           const inspectionPhotos = allPhotos[reportData.inspectionType] || []
+          console.log('Found inspection photos:', inspectionPhotos.length)
           actualPhotos = inspectionPhotos.map((photo: any) => ({
             id: photo.id,
-            url: photo.url || photo.data, // Use data if url not available
-            caption: photo.name
+            url: photo.data || photo.url, // Prioritize data over url
+            caption: photo.name || photo.caption || 'Photo'
           }))
+          console.log('Mapped photos:', actualPhotos.length, actualPhotos[0]?.url?.substring(0, 50))
         }
       }
     
@@ -238,10 +241,13 @@ export default function InspectionReportTemplate() {
     // Add logo if available - maintain aspect ratio
     if (reportData.logo) {
       try {
-        const logoWidth = 50
-        const logoHeight = 30
+        // Fixed dimensions to maintain aspect ratio
+        const maxLogoWidth = 50
+        const maxLogoHeight = 25
         // Position logo at top right
-        pdf.addImage(reportData.logo, 'PNG', pageWidth - margin - logoWidth, yPosition, logoWidth, logoHeight)
+        // Use JPEG/PNG based on data URL
+        const imageType = reportData.logo.includes('png') ? 'PNG' : 'JPEG'
+        pdf.addImage(reportData.logo, imageType, pageWidth - margin - maxLogoWidth, yPosition, maxLogoWidth, maxLogoHeight, undefined, 'FAST')
       } catch (e) {
         console.error('Failed to add logo:', e)
       }
@@ -415,19 +421,27 @@ export default function InspectionReportTemplate() {
         yPosition += 5
         
         // Try to add the actual image
-        if (photo.url && photo.url.startsWith('data:image')) {
+        if (photo.url) {
           try {
-            const imgWidth = 80
-            const imgHeight = 60
-            pdf.addImage(photo.url, 'JPEG', margin, yPosition, imgWidth, imgHeight)
-            yPosition += imgHeight + 10
+            // Check if it's a base64 image
+            if (photo.url.startsWith('data:image')) {
+              const imgWidth = 80
+              const imgHeight = 60
+              const imageType = photo.url.includes('png') ? 'PNG' : 'JPEG'
+              pdf.addImage(photo.url, imageType, margin, yPosition, imgWidth, imgHeight, undefined, 'FAST')
+              yPosition += imgHeight + 10
+            } else {
+              // If it's not base64, show placeholder
+              pdf.text('[Photo URL not embedded - base64 required]', margin, yPosition)
+              yPosition += 10
+            }
           } catch (e) {
-            console.error('Failed to add photo:', e)
+            console.error('Failed to add photo:', e, photo.url?.substring(0, 50))
             pdf.text('[Photo could not be embedded]', margin, yPosition)
             yPosition += 10
           }
         } else {
-          pdf.text('[Photo placeholder]', margin, yPosition)
+          pdf.text('[No photo data available]', margin, yPosition)
           yPosition += 10
         }
       })
@@ -449,8 +463,12 @@ export default function InspectionReportTemplate() {
       try {
         // Add actual signature image if it's base64
         if (reportData.digitalSignature.startsWith('data:image')) {
-          pdf.addImage(reportData.digitalSignature, 'PNG', margin, yPosition, 60, 20)
-          yPosition += 25
+          // Fixed dimensions to maintain aspect ratio
+          const sigWidth = 60
+          const sigHeight = 20
+          const imageType = reportData.digitalSignature.includes('png') ? 'PNG' : 'JPEG'
+          pdf.addImage(reportData.digitalSignature, imageType, margin, yPosition, sigWidth, sigHeight, undefined, 'FAST')
+          yPosition += sigHeight + 5
         } else {
           pdf.text('[Digital Signature]', margin, yPosition)
           yPosition += 8

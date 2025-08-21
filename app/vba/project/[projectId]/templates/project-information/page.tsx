@@ -147,28 +147,30 @@ export default function ProjectInformationTemplate() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Reference */}
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Reference
               </label>
-              <input
-                type="text"
+              <textarea
+                rows={5}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={projectInfo.reference}
                 onChange={(e) => setProjectInfo({ ...projectInfo, reference: e.target.value })}
+                placeholder="Southwest Florida International Airport Terminal Expansion\n11000 Terminal Access Road, Fort Myers, FL 33913\nHBS Project Number: 25-008"
               />
             </div>
 
             {/* Attention */}
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Attention
               </label>
-              <input
-                type="text"
+              <textarea
+                rows={5}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={projectInfo.attention}
                 onChange={(e) => setProjectInfo({ ...projectInfo, attention: e.target.value })}
+                placeholder="Lee County Public Works\nBuilding and Permit Services\n1500 Monroe St\nFort Myers, FL 33901"
               />
             </div>
 
