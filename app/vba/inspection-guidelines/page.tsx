@@ -292,7 +292,7 @@ export default function InspectionGuidelinesPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                  <span>Verify proper drain slope (1/4" per foot minimum)</span>
+                  <span>Verify proper drain slope (1/4&quot; per foot minimum)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
