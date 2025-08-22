@@ -102,14 +102,6 @@ export default function InspectionReportTemplate() {
       
       // Skip loading previous report data for now
       // TODO: Implement reports table in Supabase
-      const savedReport = null
-      if (savedReport) {
-        const report = savedReport
-        setReportData(prev => ({
-          ...prev,
-          ...report
-        }))
-      }
       
     } catch (error) {
       console.error('Failed to load report data:', error)
@@ -177,13 +169,15 @@ export default function InspectionReportTemplate() {
         console.log('Loading photos for inspection type:', reportData.inspectionType)
         const photos = await db.inspections.getByVBAProject(projectId)
         if (photos && photos.length > 0) {
-          const allPhotos = photos
-          const inspectionPhotos = allPhotos[reportData.inspectionType] || []
+          // Filter photos by inspection type if they have a category field
+          const inspectionPhotos = photos.filter((photo: any) => 
+            photo.category === reportData.inspectionType
+          )
           console.log('Found inspection photos:', inspectionPhotos.length)
           actualPhotos = inspectionPhotos.map((photo: any) => ({
             id: photo.id,
-            url: photo.data || photo.url, // Prioritize data over url
-            caption: photo.name || photo.caption || 'Photo'
+            url: photo.url || photo.data, // Prioritize url over data
+            caption: photo.caption || photo.name || 'Photo'
           }))
           console.log('Mapped photos:', actualPhotos.length, actualPhotos[0]?.url?.substring(0, 50))
         }
@@ -526,8 +520,10 @@ export default function InspectionReportTemplate() {
       // Load photos from Supabase
       const photos = await db.inspections.getByVBAProject(projectId)
       if (photos && photos.length > 0) {
-        const allPhotos = photos
-        const inspectionPhotos = allPhotos[reportData.inspectionType] || []
+        // Filter photos by inspection type
+        const inspectionPhotos = photos.filter((photo: any) => 
+          photo.category === reportData.inspectionType
+        )
         
         setReportData(prev => ({
           ...prev,
