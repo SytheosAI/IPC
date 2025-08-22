@@ -66,7 +66,8 @@ export default function ProjectsPage() {
     applicant_email: '',
     applicant_phone: '',
     project_type: 'commercial',
-    status: 'intake' as 'intake' | 'in_review' | 'approved' | 'rejected' | 'issued'
+    status: 'intake' as 'intake' | 'in_review' | 'approved' | 'rejected' | 'issued',
+    priority: 'medium'
   })
   
   // Load projects from Supabase on mount
@@ -123,7 +124,8 @@ export default function ProjectsPage() {
       applicant_email: '',
       applicant_phone: '',
       project_type: 'commercial',
-      status: 'intake'
+      status: 'intake',
+      priority: 'medium'
     })
     setShowNewProjectModal(false)
   }
@@ -330,7 +332,7 @@ export default function ProjectsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1 text-sm text-gray-900 dark:text-gray-100">
                         <MapPin className="h-3 w-3 text-gray-400" />
-                        {project.city}
+                        {project.city || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -464,43 +466,68 @@ export default function ProjectsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Type</label>
                     <select
                       className="input-modern text-gray-900 dark:text-gray-100"
-                      value={newProject.priority}
-                      onChange={(e) => setNewProject({ ...newProject, priority: e.target.value as any })}
+                      value={newProject.project_type}
+                      onChange={(e) => setNewProject({ ...newProject, project_type: e.target.value })}
                     >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
+                      <option value="residential">Residential</option>
+                      <option value="commercial">Commercial</option>
+                      <option value="industrial">Industrial</option>
+                      <option value="municipal">Municipal</option>
                     </select>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                  <select
-                    className="input-modern text-gray-900 dark:text-gray-100"
-                    value={newProject.category}
-                    onChange={(e) => setNewProject({ ...newProject, category: e.target.value as any })}
-                  >
-                    <option value="residential">Residential</option>
-                    <option value="commercial">Commercial</option>
-                    <option value="industrial">Industrial</option>
-                    <option value="municipal">Municipal</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
+                    <input
+                      type="text"
+                      className="input-modern text-gray-900 dark:text-gray-100"
+                      value={newProject.address}
+                      onChange={(e) => setNewProject({ ...newProject, address: e.target.value })}
+                      placeholder="Project address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                    <select
+                      className="input-modern text-gray-900 dark:text-gray-100"
+                      value={newProject.status}
+                      onChange={(e) => setNewProject({ ...newProject, status: e.target.value as any })}
+                    >
+                      <option value="intake">Intake</option>
+                      <option value="in_review">In Review</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="issued">Issued</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Completion *</label>
-                  <input
-                    type="date"
-                    className="input-modern text-gray-900 dark:text-gray-100"
-                    value={newProject.expectedCompletion}
-                    onChange={(e) => setNewProject({ ...newProject, expectedCompletion: e.target.value })}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applicant Email</label>
+                    <input
+                      type="email"
+                      className="input-modern text-gray-900 dark:text-gray-100"
+                      value={newProject.applicant_email}
+                      onChange={(e) => setNewProject({ ...newProject, applicant_email: e.target.value })}
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applicant Phone</label>
+                    <input
+                      type="tel"
+                      className="input-modern text-gray-900 dark:text-gray-100"
+                      value={newProject.applicant_phone}
+                      onChange={(e) => setNewProject({ ...newProject, applicant_phone: e.target.value })}
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
                 </div>
               </div>
 
