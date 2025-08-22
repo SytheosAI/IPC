@@ -539,7 +539,7 @@ export default function SettingsPage() {
                               setTheme({ ...theme, mode: option.value as ThemeSettings['mode'] })
                               if (userContext?.updateTheme) {
                                 userContext.updateTheme({ 
-                                  theme: option.value === 'system' ? 'auto' : option.value, 
+                                  theme: option.value === 'system' ? 'auto' : option.value as 'light' | 'dark', 
                                   accentColor: theme.primaryColor 
                                 })
                               }
