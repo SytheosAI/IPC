@@ -662,7 +662,7 @@ export default function ProjectHub() {
               <div className="flex gap-2">
                 <span className="text-gray-600 font-medium">Start Date:</span>
                 <span className="text-gray-900">
-                  {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A'}
+                  {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
             </div>

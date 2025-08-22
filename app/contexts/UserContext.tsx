@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { db } from '@/lib/supabase-client'
 
 interface UserProfile {
   name: string
