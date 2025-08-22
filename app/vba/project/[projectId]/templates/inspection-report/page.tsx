@@ -77,47 +77,34 @@ export default function InspectionReportTemplate() {
     fetchWeatherData()
   }, [projectId])
 
-  const loadReportData = () => {
+  const loadReportData = async () => {
     try {
       setLoading(true)
       
-      // Load project info
-      const savedProjectInfo = localStorage.getItem(`vba-project-info-${projectId}`)
-      if (savedProjectInfo) {
-        const projectInfo = JSON.parse(savedProjectInfo)
+      // Load project info from Supabase
+      const project = await db.vbaProjects.get(projectId)
+      if (project) {
         setReportData(prev => ({
           ...prev,
-          reference: projectInfo.reference,
-          attention: projectInfo.attention,
-          logo: projectInfo.companyLogo,
-          projectName: projectInfo.projectName,
-          projectAddress: projectInfo.projectAddress,
-          inspectorLicense: projectInfo.licenseNumber,
-          companyName: projectInfo.companyName,
-          digitalSignature: projectInfo.digitalSignature
+          projectName: project.project_name,
+          projectAddress: project.address,
+          jobNumber: project.job_number || project.id,
+          // These fields might not exist yet in the database
+          reference: '',
+          attention: '',
+          logo: '',
+          inspectorLicense: '',
+          companyName: '',
+          digitalSignature: ''
         }))
+        setAvailableInspections(project.selected_inspections || [])
       }
       
-      // Load project data
-      const savedProjects = localStorage.getItem('vba-projects')
-      if (savedProjects) {
-        const projects = JSON.parse(savedProjects)
-        const project = projects.find((p: any) => p.id === projectId)
-        if (project) {
-          setReportData(prev => ({
-            ...prev,
-            projectName: prev.projectName || project.projectName,
-            projectAddress: prev.projectAddress || project.address,
-            jobNumber: project.jobNumber || project.id
-          }))
-          setAvailableInspections(project.selectedInspections || [])
-        }
-      }
-      
-      // Load previous report data if exists
-      const savedReport = localStorage.getItem(`vba-inspection-report-${projectId}`)
+      // Skip loading previous report data for now
+      // TODO: Implement reports table in Supabase
+      const savedReport = null
       if (savedReport) {
-        const report = JSON.parse(savedReport)
+        const report = savedReport
         setReportData(prev => ({
           ...prev,
           ...report
@@ -175,16 +162,22 @@ export default function InspectionReportTemplate() {
     setGeneratingPDF(true)
     
     try {
-      // Save current state
-      localStorage.setItem(`vba-inspection-report-${projectId}`, JSON.stringify(reportData))
+      // Log activity instead of saving to localStorage
+      await db.activityLogs.create(
+        'generated_inspection_report',
+        'vba_project',
+        projectId,
+        { inspection_type: reportData.inspectionType }
+      )
       
       // Load actual photos from the inspection type folder
       let actualPhotos = reportData.photos
       if (reportData.inspectionType) {
-        const savedPhotos = localStorage.getItem(`vba-inspection-photos-${projectId}`)
+        // Load photos from Supabase
         console.log('Loading photos for inspection type:', reportData.inspectionType)
-        if (savedPhotos) {
-          const allPhotos = JSON.parse(savedPhotos)
+        const photos = await db.inspections.getByVBAProject(projectId)
+        if (photos && photos.length > 0) {
+          const allPhotos = photos
           const inspectionPhotos = allPhotos[reportData.inspectionType] || []
           console.log('Found inspection photos:', inspectionPhotos.length)
           actualPhotos = inspectionPhotos.map((photo: any) => ({
@@ -504,30 +497,19 @@ export default function InspectionReportTemplate() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     
-    // Save reference in localStorage for the Reports folder
-    const reports = JSON.parse(localStorage.getItem(`vba-reports-${projectId}`) || '[]')
-    reports.push({
-      id: Date.now().toString(),
-      filename: `${filename}.pdf`,
-      date: new Date().toISOString(),
-      inspectionType: reportData.inspectionType,
-      sequence: reportData.reportSequence,
-      type: 'inspection'
-    })
-    localStorage.setItem(`vba-reports-${projectId}`, JSON.stringify(reports))
-    
-    // Also save to main reports list
-    const allReports = JSON.parse(localStorage.getItem('vba-all-reports') || '[]')
-    allReports.push({
-      id: Date.now().toString(),
-      projectId: projectId,
-      filename: `${filename}.pdf`,
-      date: new Date().toISOString(),
-      inspectionType: reportData.inspectionType,
-      sequence: reportData.reportSequence,
-      type: 'inspection'
-    })
-    localStorage.setItem('vba-all-reports', JSON.stringify(allReports))
+    // Log activity for generated report
+    await db.activityLogs.create(
+      'generated_pdf_report',
+      'vba_project',
+      projectId,
+      {
+        filename: `${filename}.pdf`,
+        date: new Date().toISOString(),
+        inspectionType: reportData.inspectionType,
+        sequence: reportData.reportSequence,
+        type: 'inspection'
+      }
+    )
     
     // Show success message
     alert(`Report generated successfully!\n\nFile saved as: ${filename}.pdf`)
@@ -539,11 +521,12 @@ export default function InspectionReportTemplate() {
     }
   }
 
-  const loadInspectionPhotos = () => {
+  const loadInspectionPhotos = async () => {
     if (reportData.inspectionType) {
-      const savedPhotos = localStorage.getItem(`vba-inspection-photos-${projectId}`)
-      if (savedPhotos) {
-        const allPhotos = JSON.parse(savedPhotos)
+      // Load photos from Supabase
+      const photos = await db.inspections.getByVBAProject(projectId)
+      if (photos && photos.length > 0) {
+        const allPhotos = photos
         const inspectionPhotos = allPhotos[reportData.inspectionType] || []
         
         setReportData(prev => ({

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, Save, Upload, FileImage, Building2
 } from 'lucide-react'
+import { db } from '@/lib/supabase-client'
 
 interface ProjectInfoData {
   reference: string
@@ -39,27 +40,22 @@ export default function ProjectInformationTemplate() {
     loadProjectInfo()
   }, [projectId])
 
-  const loadProjectInfo = () => {
+  const loadProjectInfo = async () => {
     try {
       setLoading(true)
-      // Load project info from localStorage
-      const savedInfo = localStorage.getItem(`vba-project-info-${projectId}`)
-      if (savedInfo) {
-        setProjectInfo(JSON.parse(savedInfo))
-      } else {
-        // Load basic project data if no info saved yet
-        const savedProjects = localStorage.getItem('vba-projects')
-        if (savedProjects) {
-          const projects = JSON.parse(savedProjects)
-          const project = projects.find((p: any) => p.id === projectId)
-          if (project) {
-            setProjectInfo({
-              ...projectInfo,
-              projectName: project.projectName,
-              projectAddress: project.address
-            })
-          }
-        }
+      // Load project info from Supabase
+      const project = await db.vbaProjects.get(projectId)
+      if (project) {
+        setProjectInfo({
+          reference: '',
+          attention: '',
+          companyLogo: null,
+          projectName: project.project_name,
+          projectAddress: project.address,
+          licenseNumber: '',
+          companyName: '',
+          digitalSignature: null
+        })
       }
     } catch (error) {
       console.error('Failed to load project info:', error)
@@ -68,8 +64,14 @@ export default function ProjectInformationTemplate() {
     }
   }
 
-  const handleSave = () => {
-    localStorage.setItem(`vba-project-info-${projectId}`, JSON.stringify(projectInfo))
+  const handleSave = async () => {
+    // Log activity instead of saving to localStorage
+    await db.activityLogs.create(
+      'updated_project_info',
+      'vba_project',
+      projectId,
+      projectInfo
+    )
     alert('Project information saved successfully!')
   }
 

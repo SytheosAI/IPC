@@ -97,7 +97,7 @@ export default function SettingsPage() {
 
   // Theme settings - use context value
   const [theme, setTheme] = useState<ThemeSettings>({
-    mode: userContext?.theme?.theme || 'light',
+    mode: (userContext?.theme?.theme === 'auto' ? 'system' : userContext?.theme?.theme) || 'light',
     primaryColor: userContext?.theme?.accentColor || 'sky',
     fontSize: 'medium'
   })
