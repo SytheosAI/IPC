@@ -40,25 +40,31 @@ import {
   Loader2
 } from 'lucide-react'
 import Link from 'next/link'
+import { db } from '@/lib/supabase-client'
 
 interface VBAProject {
   id: string
-  jobNumber?: string
-  projectName: string
+  job_number?: string
+  project_name: string
   address: string
-  inspectionType: string
+  inspection_type: string
   status: 'scheduled' | 'in_progress' | 'completed' | 'failed'
-  scheduledDate: string
+  scheduled_date: string
   inspector: string
-  completionRate: number
-  complianceScore?: number
-  lastUpdated: string
-  virtualInspectorEnabled: boolean
-  gpsLocation?: { lat: number; lng: number }
-  photoCount: number
+  completion_rate: number
+  compliance_score?: number
+  last_updated: string
+  virtual_inspector_enabled: boolean
+  gps_location?: { lat: number; lng: number }
+  photo_count: number
   violations: number
-  aiConfidence?: number
-  selectedInspections?: string[]
+  ai_confidence?: number
+  selected_inspections?: string[]
+  owner?: string
+  contractor?: string
+  project_type?: string
+  created_at?: string
+  updated_at?: string
 }
 
 interface InspectionStats {
@@ -233,28 +239,20 @@ export default function VBAPage() {
     }
   }
 
-  const loadContacts = () => {
-    const savedContacts = localStorage.getItem('vba-contacts')
-    if (savedContacts) {
-      setContacts(JSON.parse(savedContacts))
-    } else {
-      // Default contacts
-      const defaultContacts = [
-        { id: '1', name: 'John Smith', email: 'john.smith@example.com', phone: '(239) 555-0101', role: 'Senior Inspector' },
-        { id: '2', name: 'Sarah Johnson', email: 'sarah.j@example.com', phone: '(239) 555-0102', role: 'Lead Inspector' },
-        { id: '3', name: 'Mike Williams', email: 'mike.w@example.com', phone: '(239) 555-0103', role: 'Inspector' },
-        { id: '4', name: 'Emily Davis', email: 'emily.d@example.com', phone: '(239) 555-0104', role: 'Junior Inspector' }
-      ]
-      setContacts(defaultContacts)
-      localStorage.setItem('vba-contacts', JSON.stringify(defaultContacts))
-    }
+  const loadContacts = async () => {
+    // For now, use default contacts until we have a contacts table
+    const defaultContacts = [
+      { id: '1', name: 'John Smith', email: 'john.smith@example.com', phone: '(239) 555-0101', role: 'Senior Inspector' },
+      { id: '2', name: 'Sarah Johnson', email: 'sarah.j@example.com', phone: '(239) 555-0102', role: 'Lead Inspector' },
+      { id: '3', name: 'Mike Williams', email: 'mike.w@example.com', phone: '(239) 555-0103', role: 'Inspector' },
+      { id: '4', name: 'Emily Davis', email: 'emily.d@example.com', phone: '(239) 555-0104', role: 'Junior Inspector' }
+    ]
+    setContacts(defaultContacts)
   }
 
-  const loadInspectionSchedules = () => {
-    const savedSchedules = localStorage.getItem('vba-inspection-schedules')
-    if (savedSchedules) {
-      setInspectionSchedules(JSON.parse(savedSchedules))
-    }
+  const loadInspectionSchedules = async () => {
+    // For now, we'll use empty schedules until we have a schedules table
+    setInspectionSchedules([])
   }
 
   const calculateWeeklyMetrics = () => {
@@ -266,39 +264,20 @@ export default function VBAPage() {
     
     // Filter projects for this week
     const thisWeekProjects = projects.filter(project => {
-      const projectDate = new Date(project.lastUpdated)
+      const projectDate = new Date(project.last_updated)
       return projectDate >= startOfWeek
     })
     
-    // Get all inspection events from localStorage
-    const allInspectionEvents: any[] = []
-    projects.forEach(project => {
-      const events = localStorage.getItem(`vba-inspection-events-${project.id}`)
-      if (events) {
-        const parsedEvents = JSON.parse(events)
-        allInspectionEvents.push(...parsedEvents.map((e: any) => ({...e, projectId: project.id})))
-      }
-    })
-    
-    // Filter events for this week
-    const thisWeekEvents = allInspectionEvents.filter(event => {
-      const eventDate = new Date(event.date || event.scheduledDate || event.lastUpdated)
-      return eventDate >= startOfWeek
-    })
-    
-    // Calculate metrics
-    const completed = thisWeekEvents.filter(e => e.status === 'completed').length +
-                     thisWeekProjects.filter(p => p.status === 'completed').length
-    const scheduled = thisWeekEvents.filter(e => e.status === 'scheduled').length + 
-                     thisWeekProjects.filter(p => p.status === 'scheduled').length
-    const passed = thisWeekEvents.filter(e => e.status === 'completed' && !e.failed).length +
-                  thisWeekProjects.filter(p => p.status === 'completed' && p.violations === 0).length
+    // Calculate metrics based on projects only (events will be added when we have a separate table)
+    const completed = thisWeekProjects.filter(p => p.status === 'completed').length
+    const scheduled = thisWeekProjects.filter(p => p.status === 'scheduled').length
+    const passed = thisWeekProjects.filter(p => p.status === 'completed' && p.violations === 0).length
     const passRate = completed > 0 ? Math.round((passed / completed) * 100) : 0
     
     // Calculate average compliance score
-    const completedWithScores = thisWeekProjects.filter(p => p.status === 'completed' && p.complianceScore)
+    const completedWithScores = thisWeekProjects.filter(p => p.status === 'completed' && p.compliance_score)
     const complianceAvg = completedWithScores.length > 0 
-      ? Math.round(completedWithScores.reduce((sum, p) => sum + (p.complianceScore || 0), 0) / completedWithScores.length)
+      ? Math.round(completedWithScores.reduce((sum, p) => sum + (p.compliance_score || 0), 0) / completedWithScores.length)
       : 0
     
     setWeeklyMetrics({
@@ -378,14 +357,11 @@ export default function VBAPage() {
   const loadVBAProjects = async () => {
     try {
       setIsLoading(true)
-      // Load projects from API or localStorage
-      const savedProjects = localStorage.getItem('vba-projects')
-      if (savedProjects) {
-        setProjects(JSON.parse(savedProjects))
-      }
+      // Load projects from Supabase
+      const loadedProjects = await db.vbaProjects.getAll()
+      setProjects(loadedProjects)
 
       // Calculate stats
-      const loadedProjects = savedProjects ? JSON.parse(savedProjects) : []
       const stats: InspectionStats = {
         totalInspections: loadedProjects.length,
         completedInspections: loadedProjects.filter((p: VBAProject) => p.status === 'completed').length,
@@ -393,12 +369,12 @@ export default function VBAPage() {
         failedInspections: loadedProjects.filter((p: VBAProject) => p.status === 'failed').length,
         averageComplianceScore: loadedProjects.length > 0 ? Math.round(
           loadedProjects
-            .filter((p: VBAProject) => p.complianceScore !== undefined)
-            .reduce((acc: number, p: VBAProject) => acc + (p.complianceScore || 0), 0) /
-          (loadedProjects.filter((p: VBAProject) => p.complianceScore !== undefined).length || 1)
+            .filter((p: VBAProject) => p.compliance_score !== undefined)
+            .reduce((acc: number, p: VBAProject) => acc + (p.compliance_score || 0), 0) /
+          (loadedProjects.filter((p: VBAProject) => p.compliance_score !== undefined).length || 1)
         ) : 0,
         virtualInspectorUsage: loadedProjects.length > 0 ? Math.round(
-          (loadedProjects.filter((p: VBAProject) => p.virtualInspectorEnabled).length / loadedProjects.length) * 100
+          (loadedProjects.filter((p: VBAProject) => p.virtual_inspector_enabled).length / loadedProjects.length) * 100
         ) : 0,
         timesSaved: 0
       }
@@ -412,7 +388,7 @@ export default function VBAPage() {
   }
 
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = project.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.inspector.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = filterStatus === 'all' || project.status === filterStatus
@@ -474,8 +450,9 @@ export default function VBAPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center">Virtual Building Authority</h1>
+      <div className="mb-6 relative">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">Virtual Building Authority</h1>
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sky-500 to-transparent opacity-50"></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -585,7 +562,7 @@ export default function VBAPage() {
         </div>
 
         {/* This Week Stats */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 border-animated relative overflow-hidden">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
             This Week
             <TrendingUp className="h-5 w-5 text-gray-400" />
@@ -653,7 +630,7 @@ export default function VBAPage() {
         </div>
 
         {/* Construction News */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 card-modern">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
             Construction AI & Industry News
             <Newspaper className="h-5 w-5 text-gray-400" />
@@ -743,20 +720,20 @@ export default function VBAPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex gap-4 mb-6 glass-morphism rounded-xl p-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
             placeholder="Search inspections..."
-            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+            className="input-modern pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
         <select
-          className="px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+          className="input-modern"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >
@@ -767,25 +744,25 @@ export default function VBAPage() {
           <option value="failed">Failed</option>
         </select>
         
-        <button className="px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
+        <button className="btn-secondary">
           <Filter className="h-5 w-5" />
           More Filters
         </button>
         
-        <button className="px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
+        <button className="btn-secondary">
           <Download className="h-5 w-5" />
           Export
         </button>
       </div>
 
       {/* Inspection Projects Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white rounded-lg shadow-sm border-gradient relative overflow-hidden">
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">Inspection Projects</h2>
             <button
               onClick={() => setShowNewProjectModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
+              className="btn-primary"
             >
               <Plus className="h-5 w-5 mr-2" />
               New Project
@@ -836,7 +813,7 @@ export default function VBAPage() {
                         router.push(`/vba/project/${project.id}`)
                       }}
                     >
-                      {project.jobNumber || `J${project.id.slice(-4)}`}
+                      {project.job_number || `J${project.id.slice(-4)}`}
                     </td>
                     <td 
                       className="px-6 py-4 cursor-pointer"
@@ -846,13 +823,13 @@ export default function VBAPage() {
                       }}
                     >
                       <div className="text-sm font-medium text-gray-900 hover:text-sky-600">
-                        {project.projectName}
+                        {project.project_name}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">{project.address}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center justify-between">
-                        <span>{new Date(project.scheduledDate).toLocaleDateString()}</span>
+                        <span>{new Date(project.scheduled_date).toLocaleDateString()}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -875,18 +852,18 @@ export default function VBAPage() {
       </div>
 
       {/* AI-Powered Inspections */}
-      <div className="mt-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
+      <div className="mt-8 gradient-aurora rounded-2xl p-6 text-white border-animated relative overflow-hidden">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-lg">
+            <div className="p-3 glass-morphism rounded-lg">
               <Brain className="h-8 w-8 text-white" />
             </div>
             <div>
               <h3 className="text-lg font-semibold">AI-Powered Inspections</h3>
-              <p className="text-white/80">Use computer vision to automatically detect compliance issues</p>
+              <p className="text-white/90">Use computer vision to automatically detect compliance issues</p>
             </div>
           </div>
-          <button className="bg-white text-purple-600 px-6 py-2 rounded-lg hover:bg-gray-100 font-medium transition-colors">
+          <button className="glass-morphism px-6 py-2 rounded-lg hover:scale-105 font-medium transition-all text-white">
             Learn More
           </button>
         </div>
@@ -896,11 +873,15 @@ export default function VBAPage() {
       {showNewProjectModal && (
         <NewProjectModal 
           onClose={() => setShowNewProjectModal(false)}
-          onSave={(newProject) => {
-            const updatedProjects = [newProject, ...projects]
-            setProjects(updatedProjects)
-            localStorage.setItem('vba-projects', JSON.stringify(updatedProjects))
-            setShowNewProjectModal(false)
+          onSave={async (newProject) => {
+            try {
+              const created = await db.vbaProjects.create(newProject)
+              setProjects([created, ...projects])
+              setShowNewProjectModal(false)
+            } catch (error) {
+              console.error('Failed to create project:', error)
+              alert('Failed to create project. Please try again.')
+            }
           }}
         />
       )}
@@ -915,25 +896,22 @@ export default function VBAPage() {
             setSelectedProjectForSchedule(null)
           }}
           onSave={(schedule) => {
+            // For now, just update local state until we have a schedules table
             const updatedSchedules = [...inspectionSchedules, schedule]
             setInspectionSchedules(updatedSchedules)
-            localStorage.setItem('vba-inspection-schedules', JSON.stringify(updatedSchedules))
             
-            // Update the project's inspection events
-            const eventKey = `vba-events-${selectedProjectForSchedule.id}`
-            const existingEvents = localStorage.getItem(eventKey)
-            const events = existingEvents ? JSON.parse(existingEvents) : []
-            
-            const newEvent = {
-              id: schedule.id,
-              title: schedule.inspectionType,
-              date: new Date(`${schedule.date}T${schedule.time}`),
-              type: schedule.inspectionType,
-              status: 'scheduled' as const
-            }
-            
-            events.push(newEvent)
-            localStorage.setItem(eventKey, JSON.stringify(events))
+            // Log activity
+            db.activityLogs.create(
+              'scheduled_inspection',
+              'vba_project',
+              selectedProjectForSchedule.id,
+              {
+                inspection_type: schedule.inspectionType,
+                date: schedule.date,
+                time: schedule.time,
+                assigned_to: schedule.assignedTo
+              }
+            )
             
             setShowScheduleModal(false)
             setSelectedProjectForSchedule(null)
@@ -1023,7 +1001,7 @@ const INSPECTION_TYPES = [
 ]
 
 // New Project Modal Component
-function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (project: VBAProject) => void }) {
+function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (project: Partial<VBAProject>) => void }) {
   const [projectData, setProjectData] = useState({
     projectName: '',
     address: '',
@@ -1037,21 +1015,23 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    const newProject: VBAProject = {
-      id: Date.now().toString(),
-      jobNumber: projectData.jobNumber,
-      projectName: projectData.projectName,
+    const newProject: Partial<VBAProject> = {
+      job_number: projectData.jobNumber,
+      project_name: projectData.projectName,
       address: projectData.address,
-      inspectionType: selectedInspections.join(', '),
+      inspection_type: selectedInspections.join(', '),
       status: 'scheduled',
-      scheduledDate: new Date().toISOString(),
+      scheduled_date: new Date().toISOString(),
       inspector: '',
-      completionRate: 0,
-      lastUpdated: new Date().toISOString(),
-      virtualInspectorEnabled: false,
-      photoCount: 0,
+      completion_rate: 0,
+      last_updated: new Date().toISOString(),
+      virtual_inspector_enabled: false,
+      photo_count: 0,
       violations: 0,
-      selectedInspections: selectedInspections
+      selected_inspections: selectedInspections,
+      owner: projectData.owner,
+      contractor: projectData.contractor,
+      project_type: projectData.projectType
     }
 
     onSave(newProject)
@@ -1230,7 +1210,7 @@ function ScheduleInspectionModal({
         <div className="p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Schedule Inspection</h3>
           <p className="text-sm text-gray-600 mt-1">
-            Project: {project.projectName} - {project.address}
+            Project: {project.project_name} - {project.address}
           </p>
         </div>
 
@@ -1247,7 +1227,7 @@ function ScheduleInspectionModal({
                 required
               >
                 <option value="">Select inspection type</option>
-                {project.selectedInspections?.map((inspection) => (
+                {project.selected_inspections?.map((inspection) => (
                   <option key={inspection} value={inspection}>
                     {inspection}
                   </option>

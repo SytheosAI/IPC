@@ -26,61 +26,43 @@ import {
   Building,
   Wrench,
   Shield,
-  Activity
+  Activity,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react'
+import { db, subscriptions } from '@/lib/supabase-client'
 
 interface FieldReport {
   id: string
-  reportNumber: string
-  projectName: string
-  projectAddress: string
-  reportType: 'Safety' | 'Progress' | 'Quality' | 'Incident' | 'Daily' | 'Weekly' | 'Inspection'
-  date: string
-  time: string
-  reportedBy: string
+  report_number: string
+  project_id?: string
+  project_name: string
+  project_address: string
+  report_type: 'Safety' | 'Progress' | 'Quality' | 'Incident' | 'Daily' | 'Weekly' | 'Inspection'
+  report_date: string
+  report_time?: string
+  reported_by: string
+  reporter_id?: string
   status: 'draft' | 'submitted'
   priority: 'low' | 'medium' | 'high' | 'critical'
-  notificationEmails?: string[]
-  weather?: {
-    temperature: number
-    conditions: string
-    windSpeed?: number
-  }
-  workCompleted?: string[]
-  issues?: {
-    id: string
-    description: string
-    severity: 'minor' | 'major' | 'critical'
-    resolved: boolean
-  }[]
-  photos?: {
-    id: string
-    url: string
-    data?: string // Base64 encoded image data
-    caption: string
-    timestamp: string
-    category?: 'before' | 'during' | 'after' | 'issue' | 'safety' | 'general'
-  }[]
-  personnel?: {
-    name: string
-    role: string
-    hours: number
-  }[]
-  equipment?: {
-    name: string
-    status: 'operational' | 'maintenance' | 'broken'
-    hours?: number
-  }[]
-  safetyObservations?: string[]
-  nextSteps?: string[]
+  weather_temperature?: number
+  weather_conditions?: string
+  weather_wind_speed?: number
   signature?: string
-  attachments?: {
-    id: string
-    name: string
-    type: string
-    size: number
-    url: string
-  }[]
+  created_at?: string
+  updated_at?: string
+  // Related data (loaded separately)
+  work_completed?: any[]
+  issues?: any[]
+  safety_observations?: any[]
+  personnel?: any[]
+  photos?: any[]
+}
+
+interface NotificationEmail {
+  id: string
+  email: string
+  name?: string
 }
 
 export default function FieldReportsPage() {
@@ -97,43 +79,63 @@ export default function FieldReportsPage() {
     start: '',
     end: ''
   })
-  const [notificationEmails, setNotificationEmails] = useState<string[]>([])
+  const [notificationEmails, setNotificationEmails] = useState<NotificationEmail[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadFieldReports()
-    // Load notification emails from localStorage
-    if (typeof window !== 'undefined') {
-      const savedEmails = localStorage.getItem('field-report-emails') || ''
-      if (savedEmails) {
-        setNotificationEmails(savedEmails.split(',').filter(e => e.trim()))
-      }
+    loadNotificationEmails()
+    
+    // Subscribe to real-time updates
+    const channel = subscriptions.subscribeToFieldReports(() => {
+      loadFieldReports()
+    })
+    
+    return () => {
+      channel.unsubscribe()
     }
   }, [])
 
-  const loadFieldReports = () => {
-    const savedReports = localStorage.getItem('field-reports')
-    if (savedReports) {
-      setReports(JSON.parse(savedReports))
-    } else {
-      // Start with empty data
-      setReports([])
+  const loadFieldReports = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await db.fieldReports.getAll()
+      setReports(data)
+    } catch (err) {
+      console.error('Error loading field reports:', err)
+      setError('Failed to load field reports')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadNotificationEmails = async () => {
+    try {
+      const emails = await db.notificationEmails.getAll()
+      setNotificationEmails(emails.filter(e => 
+        e.notification_type === 'field_reports' || e.notification_type === 'all'
+      ))
+    } catch (err) {
+      console.error('Error loading notification emails:', err)
     }
   }
 
   const filteredReports = reports.filter(report => {
     const matchesSearch = 
-      report.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.projectAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reportNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reportedBy.toLowerCase().includes(searchQuery.toLowerCase())
+      report.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.project_address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.report_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.reported_by.toLowerCase().includes(searchQuery.toLowerCase())
     
-    const matchesType = filterType === 'all' || report.reportType === filterType
+    const matchesType = filterType === 'all' || report.report_type === filterType
     const matchesStatus = filterStatus === 'all' || report.status === filterStatus
     const matchesPriority = filterPriority === 'all' || report.priority === filterPriority
     
     let matchesDate = true
     if (dateRange.start && dateRange.end) {
-      const reportDate = new Date(report.date)
+      const reportDate = new Date(report.report_date)
       const startDate = new Date(dateRange.start)
       const endDate = new Date(dateRange.end)
       matchesDate = reportDate >= startDate && reportDate <= endDate
@@ -153,33 +155,22 @@ export default function FieldReportsPage() {
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'submitted':
-        return 'bg-green-100 text-green-700 border-green-300'
-      case 'draft':
-        return 'bg-gray-100 text-gray-700 border-gray-300'
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-300'
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
+  const getPriorityIcon = (priority: string) => {
     switch (priority) {
       case 'critical':
-        return 'bg-red-100 text-red-700'
+        return <XCircle className="h-4 w-4 text-red-600" />
       case 'high':
-        return 'bg-orange-100 text-orange-700'
+        return <AlertTriangle className="h-4 w-4 text-orange-600" />
       case 'medium':
-        return 'bg-yellow-100 text-yellow-700'
+        return <AlertCircle className="h-4 w-4 text-yellow-600" />
       case 'low':
-        return 'bg-green-100 text-green-700'
+        return <Clock className="h-4 w-4 text-blue-600" />
       default:
-        return 'bg-gray-100 text-gray-700'
+        return null
     }
   }
 
-  const getReportTypeIcon = (type: string) => {
+  const getTypeIcon = (type: string) => {
     switch (type) {
       case 'Safety':
         return <Shield className="h-5 w-5" />
@@ -190,35 +181,112 @@ export default function FieldReportsPage() {
       case 'Incident':
         return <AlertTriangle className="h-5 w-5" />
       case 'Inspection':
-        return <Search className="h-5 w-5" />
-      case 'Daily':
-      case 'Weekly':
-        return <Calendar className="h-5 w-5" />
+        return <Eye className="h-5 w-5" />
       default:
         return <FileText className="h-5 w-5" />
     }
   }
 
-  const handleDeleteReport = (reportId: string) => {
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'Safety':
+        return 'bg-red-100 text-red-800 border-red-200'
+      case 'Progress':
+        return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'Quality':
+        return 'bg-green-100 text-green-800 border-green-200'
+      case 'Incident':
+        return 'bg-orange-100 text-orange-800 border-orange-200'
+      case 'Inspection':
+        return 'bg-purple-100 text-purple-800 border-purple-200'
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  const handleNewReport = async (reportData: Partial<FieldReport>) => {
+    try {
+      const newReport = await db.fieldReports.create({
+        report_number: `FR-${Date.now()}`,
+        project_name: reportData.project_name || '',
+        project_address: reportData.project_address || '',
+        report_type: reportData.report_type || 'Daily',
+        report_date: new Date().toISOString().split('T')[0],
+        report_time: new Date().toTimeString().split(' ')[0],
+        reported_by: reportData.reported_by || 'Current User',
+        status: 'draft',
+        priority: reportData.priority || 'medium'
+      })
+      
+      await loadFieldReports()
+      setShowNewReportModal(false)
+      
+      // Log activity
+      await db.activityLogs.create(
+        'Created field report',
+        'field_report',
+        newReport.id,
+        { report_number: newReport.report_number }
+      )
+    } catch (err) {
+      console.error('Error creating field report:', err)
+      alert('Failed to create field report')
+    }
+  }
+
+  const handleDeleteReport = async (reportId: string) => {
     if (confirm('Are you sure you want to delete this report?')) {
-      const updatedReports = reports.filter(r => r.id !== reportId)
-      setReports(updatedReports)
-      localStorage.setItem('field-reports', JSON.stringify(updatedReports))
+      try {
+        await db.fieldReports.delete(reportId)
+        await loadFieldReports()
+        
+        // Log activity
+        await db.activityLogs.create(
+          'Deleted field report',
+          'field_report',
+          reportId
+        )
+      } catch (err) {
+        console.error('Error deleting field report:', err)
+        alert('Failed to delete field report')
+      }
+    }
+  }
+
+  const handleSubmitReport = async (reportId: string) => {
+    try {
+      await db.fieldReports.update(reportId, { status: 'submitted' })
+      await loadFieldReports()
+      
+      // Send notifications
+      if (notificationEmails.length > 0) {
+        console.log('Sending notifications to:', notificationEmails.map(e => e.email))
+      }
+      
+      // Log activity
+      await db.activityLogs.create(
+        'Submitted field report',
+        'field_report',
+        reportId
+      )
+    } catch (err) {
+      console.error('Error submitting field report:', err)
+      alert('Failed to submit field report')
     }
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-white shadow-sm border-b border-gray-200 border-gradient">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 text-center">
-              <h1 className="text-2xl font-semibold text-gray-900">Field Reports</h1>
+              <h1 className="text-2xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Field Reports</h1>
             </div>
             <button
               onClick={() => setShowNewReportModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors absolute right-6"
+              className="btn-primary absolute right-6"
             >
               <Plus className="h-5 w-5 mr-2" />
               New Report
@@ -229,7 +297,7 @@ export default function FieldReportsPage() {
 
       {/* Filters and Search */}
       <div className="p-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="glass-morphism rounded-xl p-4 mb-6 border-animated">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
@@ -238,7 +306,7 @@ export default function FieldReportsPage() {
                 <input
                   type="text"
                   placeholder="Search reports..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="input-modern pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -252,13 +320,13 @@ export default function FieldReportsPage() {
               onChange={(e) => setFilterType(e.target.value)}
             >
               <option value="all">All Types</option>
-              <option value="Daily">Daily</option>
-              <option value="Weekly">Weekly</option>
-              <option value="Inspection">Inspection</option>
               <option value="Safety">Safety</option>
               <option value="Progress">Progress</option>
               <option value="Quality">Quality</option>
               <option value="Incident">Incident</option>
+              <option value="Daily">Daily</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Inspection">Inspection</option>
             </select>
 
             {/* Status Filter */}
@@ -279,14 +347,14 @@ export default function FieldReportsPage() {
               onChange={(e) => setFilterPriority(e.target.value)}
             >
               <option value="all">All Priority</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
               <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
             </select>
           </div>
 
-          {/* Date Range */}
+          {/* Date Range Filter */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
@@ -309,920 +377,230 @@ export default function FieldReportsPage() {
           </div>
         </div>
 
-        {/* Email Notification Settings */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-sky-600" />
-              <h3 className="text-sm font-medium text-gray-900">Report Notification Recipients</h3>
-            </div>
-            <button
-              onClick={() => {
-                const newEmail = prompt('Add email address:', '')
-                if (newEmail && newEmail.includes('@')) {
-                  const updatedEmails = [...notificationEmails, newEmail]
-                  setNotificationEmails(updatedEmails)
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem('field-report-emails', updatedEmails.join(','))
-                  }
-                }
-              }}
-              className="text-sky-600 hover:text-sky-700 text-sm font-medium"
-            >
-              + Add Email
-            </button>
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center h-64">
+            <RefreshCw className="h-8 w-8 animate-spin text-sky-500" />
+            <span className="ml-2 text-gray-600">Loading field reports...</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {notificationEmails.map((email, index) => (
-              <div key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-sky-50 text-sky-700 rounded-full text-sm">
-                <span>{email}</span>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+              <span className="text-red-800">{error}</span>
+              <button 
+                onClick={loadFieldReports}
+                className="ml-auto text-red-600 hover:text-red-800"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Reports Grid/List */}
+        {!loading && (
+          <div className="grid gap-4">
+            {filteredReports.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Field Reports Found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchQuery || filterType !== 'all' || filterStatus !== 'all' || filterPriority !== 'all'
+                    ? 'Try adjusting your filters or search query'
+                    : 'Get started by creating your first field report'}
+                </p>
                 <button
-                  onClick={() => {
-                    const updatedEmails = notificationEmails.filter((_, i) => i !== index)
-                    setNotificationEmails(updatedEmails)
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('field-report-emails', updatedEmails.join(','))
-                    }
-                  }}
-                  className="ml-1 hover:text-sky-900"
+                  onClick={() => setShowNewReportModal(true)}
+                  className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
                 >
-                  <XCircle className="h-3 w-3" />
+                  <Plus className="h-5 w-5 mr-2" />
+                  Create Field Report
                 </button>
               </div>
-            ))}
-            {notificationEmails.length === 0 && (
-              <p className="text-sm text-gray-500">No notification recipients configured. Click &quot;+ Add Email&quot; to add recipients.</p>
-            )}
-          </div>
-          <p className="text-xs text-gray-500 mt-3">
-            These email addresses will receive notifications when new field reports are submitted.
-          </p>
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex justify-end mb-4">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1 flex">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1 rounded ${viewMode === 'list' ? 'bg-sky-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              List View
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-3 py-1 rounded ${viewMode === 'grid' ? 'bg-sky-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              Grid View
-            </button>
-          </div>
-        </div>
-
-        {/* Reports List/Grid */}
-        {viewMode === 'list' ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Report #
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Project
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Reporter
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Priority
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReports.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
-                      No reports found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {report.reportNumber}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{report.projectName}</div>
-                          <div className="text-xs text-gray-500">{report.projectAddress}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {getReportTypeIcon(report.reportType)}
-                          <span className="text-sm text-gray-900">{report.reportType}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(report.date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {report.reportedBy}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
-                          {getStatusIcon(report.status)}
-                          {report.status}
+            ) : (
+              filteredReports.map((report) => (
+                <div
+                  key={report.id}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(report.report_type)}`}>
+                          {getTypeIcon(report.report_type)}
+                          <span className="ml-2">{report.report_type}</span>
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(report.priority)}`}>
-                          {report.priority}
+                        <span className="text-sm text-gray-500">#{report.report_number}</span>
+                        {getStatusIcon(report.status)}
+                        {getPriorityIcon(report.priority)}
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{report.project_name}</h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                        <span className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {report.project_address}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
+                        <span className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          {new Date(report.report_date).toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center">
+                          <User className="h-4 w-4 mr-1" />
+                          {report.reported_by}
+                        </span>
+                      </div>
+
+                      {/* Quick Stats */}
+                      <div className="flex items-center gap-6 text-sm">
+                        {report.weather_conditions && (
+                          <span className="text-gray-600">
+                            Weather: {report.weather_conditions} {report.weather_temperature}°F
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => router.push(`/field-reports/${report.id}`)}
+                        className="p-2 text-gray-600 hover:text-sky-600 transition-colors"
+                        title="View Report"
+                      >
+                        <Eye className="h-5 w-5" />
+                      </button>
+                      {report.status === 'draft' && (
+                        <>
                           <button
-                            onClick={() => setSelectedReport(report)}
-                            className="text-sky-600 hover:text-sky-800"
-                            title="View Report"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            className="text-gray-600 hover:text-gray-800"
+                            onClick={() => router.push(`/field-reports/${report.id}/edit`)}
+                            className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
                             title="Edit Report"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-5 w-5" />
                           </button>
                           <button
-                            className="text-gray-600 hover:text-gray-800"
-                            title="Download Report"
+                            onClick={() => handleSubmitReport(report.id)}
+                            className="p-2 text-gray-600 hover:text-green-600 transition-colors"
+                            title="Submit Report"
                           >
-                            <Download className="h-4 w-4" />
+                            <Send className="h-5 w-5" />
                           </button>
-                          <button
-                            onClick={() => handleDeleteReport(report.id)}
-                            className="text-red-600 hover:text-red-800"
-                            title="Delete Report"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredReports.map((report) => (
-              <div key={report.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    {getReportTypeIcon(report.reportType)}
-                    <span className="text-sm font-medium text-gray-900">{report.reportType}</span>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(report.priority)}`}>
-                    {report.priority}
-                  </span>
-                </div>
-                
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{report.reportNumber}</h3>
-                <p className="text-sm font-medium text-gray-900">{report.projectName}</p>
-                <p className="text-xs text-gray-500 mb-3">{report.projectAddress}</p>
-                
-                <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {new Date(report.date).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    {report.reportedBy}
+                        </>
+                      )}
+                      <button
+                        onClick={() => handleDeleteReport(report.id)}
+                        className="p-2 text-gray-600 hover:text-red-600 transition-colors"
+                        title="Delete Report"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
-                    {getStatusIcon(report.status)}
-                    {report.status}
-                  </span>
-                  
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setSelectedReport(report)}
-                      className="text-sky-600 hover:text-sky-800"
-                      title="View Report"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
-                    <button
-                      className="text-gray-600 hover:text-gray-800"
-                      title="Download Report"
-                    >
-                      <Download className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
       </div>
 
-      {/* Report Detail Modal */}
-      {selectedReport && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">{selectedReport.reportNumber}</h2>
-                  <p className="text-sm text-gray-600 mt-1">{selectedReport.projectName}</p>
-                </div>
-                <button
-                  onClick={() => setSelectedReport(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              {/* Report Details */}
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Report Information</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Type:</span>
-                      <span className="text-sm font-medium text-gray-900">{selectedReport.reportType}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Date:</span>
-                      <span className="text-sm font-medium text-gray-900">
-                        {new Date(selectedReport.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Time:</span>
-                      <span className="text-sm font-medium text-gray-900">{selectedReport.time}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Reporter:</span>
-                      <span className="text-sm font-medium text-gray-900">{selectedReport.reportedBy}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Status & Priority</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Status:</span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedReport.status)}`}>
-                        {getStatusIcon(selectedReport.status)}
-                        {selectedReport.status}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Priority:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(selectedReport.priority)}`}>
-                        {selectedReport.priority}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Weather */}
-              {selectedReport.weather && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Weather Conditions</h3>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm text-gray-600">Temperature: {selectedReport.weather.temperature}°F</span>
-                      <span className="text-sm text-gray-600">Conditions: {selectedReport.weather.conditions}</span>
-                      {selectedReport.weather.windSpeed && (
-                        <span className="text-sm text-gray-600">Wind: {selectedReport.weather.windSpeed} mph</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Work Completed */}
-              {selectedReport.workCompleted && selectedReport.workCompleted.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Work Completed</h3>
-                  <ul className="space-y-1">
-                    {selectedReport.workCompleted.map((work, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-gray-600">{work}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              {/* Issues */}
-              {selectedReport.issues && selectedReport.issues.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Issues Identified</h3>
-                  <div className="space-y-2">
-                    {selectedReport.issues.map((issue) => (
-                      <div key={issue.id} className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-2">
-                            <AlertTriangle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
-                              issue.severity === 'critical' ? 'text-red-500' :
-                              issue.severity === 'major' ? 'text-orange-500' :
-                              'text-yellow-500'
-                            }`} />
-                            <div>
-                              <p className="text-sm text-gray-900">{issue.description}</p>
-                              <div className="flex items-center gap-3 mt-1">
-                                <span className={`text-xs font-medium ${
-                                  issue.severity === 'critical' ? 'text-red-600' :
-                                  issue.severity === 'major' ? 'text-orange-600' :
-                                  'text-yellow-600'
-                                }`}>
-                                  {issue.severity}
-                                </span>
-                                <span className={`text-xs ${issue.resolved ? 'text-green-600' : 'text-gray-600'}`}>
-                                  {issue.resolved ? 'Resolved' : 'Pending'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Personnel */}
-              {selectedReport.personnel && selectedReport.personnel.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Personnel on Site</h3>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="grid grid-cols-3 gap-4">
-                      {selectedReport.personnel.map((person, index) => (
-                        <div key={index} className="text-sm">
-                          <span className="font-medium text-gray-900">{person.name}</span>
-                          <div className="text-xs text-gray-600">{person.role} - {person.hours} hours</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Safety Observations */}
-              {selectedReport.safetyObservations && selectedReport.safetyObservations.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Safety Observations</h3>
-                  <ul className="space-y-1">
-                    {selectedReport.safetyObservations.map((observation, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <Shield className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-gray-600">{observation}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              {/* Photos Section */}
-              {selectedReport.photos && selectedReport.photos.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-4">Photos & Documentation</h3>
-                  
-                  {/* Photo Categories */}
-                  <div className="space-y-6">
-                    {['before', 'during', 'after', 'issue', 'safety', 'general'].map((category) => {
-                      const categoryPhotos = selectedReport.photos?.filter(p => (p.category || 'general') === category)
-                      if (!categoryPhotos || categoryPhotos.length === 0) return null
-                      
-                      return (
-                        <div key={category} className="border border-gray-200 rounded-lg p-4">
-                          <h4 className="text-sm font-semibold text-gray-800 mb-3 capitalize">
-                            {category === 'general' ? 'General Documentation' : `${category} Photos`}
-                          </h4>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            {categoryPhotos.map((photo) => (
-                              <div key={photo.id} className="space-y-2">
-                                <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '300px' }}>
-                                  {photo.data ? (
-                                    <img
-                                      src={photo.data}
-                                      alt={photo.caption || 'Field photo'}
-                                      className="w-full h-full object-contain"
-                                    />
-                                  ) : (
-                                    <div className="flex items-center justify-center h-full text-gray-400">
-                                      <Camera className="h-12 w-12" />
-                                    </div>
-                                  )}
-                                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2">
-                                    <p className="text-xs">{new Date(photo.timestamp).toLocaleString()}</p>
-                                  </div>
-                                </div>
-                                {photo.caption && (
-                                  <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{photo.caption}</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  
-                  {/* Print Layout Notice */}
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-xs text-blue-700">
-                      <strong>Note:</strong> When downloading or printing this report, photos will be automatically formatted 
-                      to fit properly on standard letter-size pages with appropriate margins and captions.
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-                <button className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  <Edit className="h-4 w-4 inline mr-2" />
-                  Edit
-                </button>
-                <button className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  <Download className="h-4 w-4 inline mr-2" />
-                  Download PDF
-                </button>
-                <button 
-                  onClick={() => {
-                    if (notificationEmails.length > 0) {
-                      alert(`Report will be sent to: ${notificationEmails.join(', ')}`)
-                      // In a real app, this would trigger an API call to send emails
-                    } else {
-                      alert('Please configure notification recipients first')
-                    }
-                  }}
-                  className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
-                >
-                  <Send className="h-4 w-4 inline mr-2" />
-                  Send Report
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* New Report Modal */}
       {showNewReportModal && (
-        <NewFieldReportModal
-          onClose={() => setShowNewReportModal(false)}
-          onSave={(newReport) => {
-            const updatedReports = [newReport, ...reports]
-            setReports(updatedReports)
-            localStorage.setItem('field-reports', JSON.stringify(updatedReports))
-            setShowNewReportModal(false)
-          }}
-        />
-      )}
-    </div>
-  )
-}
-
-// New Field Report Modal Component
-function NewFieldReportModal({ onClose, onSave }: { onClose: () => void; onSave: (report: FieldReport) => void }) {
-  const [reportData, setReportData] = useState({
-    projectName: '',
-    projectAddress: '',
-    reportType: 'Daily' as FieldReport['reportType'],
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
-    reportedBy: '',
-    priority: 'medium' as FieldReport['priority'],
-    weather: {
-      temperature: 75,
-      conditions: 'Clear',
-      windSpeed: 5
-    },
-    workCompleted: [''],
-    safetyObservations: [''],
-    photos: [] as Array<{
-      id: string
-      url: string
-      data?: string
-      caption: string
-      timestamp: string
-      category: 'before' | 'during' | 'after' | 'issue' | 'safety' | 'general'
-    }>
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    const newReport: FieldReport = {
-      id: Date.now().toString(),
-      reportNumber: `FR-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-      projectName: reportData.projectName,
-      projectAddress: reportData.projectAddress,
-      reportType: reportData.reportType,
-      date: reportData.date,
-      time: reportData.time,
-      reportedBy: reportData.reportedBy,
-      status: 'draft',
-      priority: reportData.priority,
-      weather: reportData.weather,
-      workCompleted: reportData.workCompleted.filter(w => w.trim() !== ''),
-      safetyObservations: reportData.safetyObservations.filter(s => s.trim() !== ''),
-      photos: reportData.photos
-    }
-    
-    // Get notification emails
-    const emails = localStorage.getItem('field-report-emails') || ''
-    if (emails) {
-      newReport.notificationEmails = emails.split(',').filter(e => e.trim())
-      // In a real app, this would trigger email notifications
-      console.log('Sending notifications to:', newReport.notificationEmails)
-    }
-    
-    onSave(newReport)
-  }
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, category: 'before' | 'during' | 'after' | 'issue' | 'safety' | 'general') => {
-    const files = e.target.files
-    if (!files) return
-
-    Array.from(files).forEach(file => {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const newPhoto = {
-          id: Date.now().toString() + Math.random().toString(36),
-          url: file.name,
-          data: event.target?.result as string,
-          caption: '',
-          timestamp: new Date().toISOString(),
-          category
-        }
-        setReportData(prev => ({
-          ...prev,
-          photos: [...prev.photos, newPhoto]
-        }))
-      }
-      reader.readAsDataURL(file)
-    })
-  }
-
-  const removePhoto = (photoId: string) => {
-    setReportData(prev => ({
-      ...prev,
-      photos: prev.photos.filter(p => p.id !== photoId)
-    }))
-  }
-
-  const updatePhotoCaption = (photoId: string, caption: string) => {
-    setReportData(prev => ({
-      ...prev,
-      photos: prev.photos.map(p => p.id === photoId ? { ...p, caption } : p)
-    }))
-  }
-
-  const addWorkItem = () => {
-    setReportData({
-      ...reportData,
-      workCompleted: [...reportData.workCompleted, '']
-    })
-  }
-
-  const updateWorkItem = (index: number, value: string) => {
-    const updated = [...reportData.workCompleted]
-    updated[index] = value
-    setReportData({ ...reportData, workCompleted: updated })
-  }
-
-  const addSafetyObservation = () => {
-    setReportData({
-      ...reportData,
-      safetyObservations: [...reportData.safetyObservations, '']
-    })
-  }
-
-  const updateSafetyObservation = (index: number, value: string) => {
-    const updated = [...reportData.safetyObservations]
-    updated[index] = value
-    setReportData({ ...reportData, safetyObservations: updated })
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900">Create New Field Report</h3>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Project Name *</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                value={reportData.projectName}
-                onChange={(e) => setReportData({ ...reportData, projectName: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Project Address *</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                value={reportData.projectAddress}
-                onChange={(e) => setReportData({ ...reportData, projectAddress: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Report Type *</label>
-              <select
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                value={reportData.reportType}
-                onChange={(e) => setReportData({ ...reportData, reportType: e.target.value as FieldReport['reportType'] })}
-                required
-              >
-                <option value="Daily">Daily</option>
-                <option value="Weekly">Weekly</option>
-                <option value="Inspection">Inspection</option>
-                <option value="Safety">Safety</option>
-                <option value="Progress">Progress</option>
-                <option value="Quality">Quality</option>
-                <option value="Incident">Incident</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
-              <select
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                value={reportData.priority}
-                onChange={(e) => setReportData({ ...reportData, priority: e.target.value as FieldReport['priority'] })}
-                required
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-              <input
-                type="date"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                value={reportData.date}
-                onChange={(e) => setReportData({ ...reportData, date: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
-              <input
-                type="time"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                value={reportData.time}
-                onChange={(e) => setReportData({ ...reportData, time: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Reported By *</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                value={reportData.reportedBy}
-                onChange={(e) => setReportData({ ...reportData, reportedBy: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-          
-          {/* Weather Conditions */}
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Weather Conditions</h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Temperature (°F)</label>
-                <input
-                  type="number"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  value={reportData.weather.temperature}
-                  onChange={(e) => setReportData({
-                    ...reportData,
-                    weather: { ...reportData.weather, temperature: parseInt(e.target.value) }
-                  })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Conditions</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  value={reportData.weather.conditions}
-                  onChange={(e) => setReportData({
-                    ...reportData,
-                    weather: { ...reportData.weather, conditions: e.target.value }
-                  })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Wind Speed (mph)</label>
-                <input
-                  type="number"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  value={reportData.weather.windSpeed}
-                  onChange={(e) => setReportData({
-                    ...reportData,
-                    weather: { ...reportData.weather, windSpeed: parseInt(e.target.value) }
-                  })}
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Work Completed */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium text-gray-700">Work Completed</h4>
-              <button
-                type="button"
-                onClick={addWorkItem}
-                className="text-sky-600 hover:text-sky-700 text-sm"
-              >
-                + Add Item
-              </button>
-            </div>
-            {reportData.workCompleted.map((item, index) => (
-              <input
-                key={index}
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500 mb-2"
-                placeholder="Describe work completed..."
-                value={item}
-                onChange={(e) => updateWorkItem(index, e.target.value)}
-              />
-            ))}
-          </div>
-          
-          {/* Safety Observations */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium text-gray-700">Safety Observations</h4>
-              <button
-                type="button"
-                onClick={addSafetyObservation}
-                className="text-sky-600 hover:text-sky-700 text-sm"
-              >
-                + Add Observation
-              </button>
-            </div>
-            {reportData.safetyObservations.map((item, index) => (
-              <input
-                key={index}
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500 mb-2"
-                placeholder="Enter safety observation..."
-                value={item}
-                onChange={(e) => updateSafetyObservation(index, e.target.value)}
-              />
-            ))}
-          </div>
-          
-          {/* Photo Upload Section */}
-          <div className="mb-6 border-t pt-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-4">Photos & Documentation</h4>
-            
-            {/* Photo Upload Categories */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-              {[
-                { category: 'before' as const, label: 'Before', icon: Camera },
-                { category: 'during' as const, label: 'During', icon: Camera },
-                { category: 'after' as const, label: 'After', icon: Camera },
-                { category: 'issue' as const, label: 'Issues', icon: AlertTriangle },
-                { category: 'safety' as const, label: 'Safety', icon: Shield },
-                { category: 'general' as const, label: 'General', icon: FileText }
-              ].map(({ category, label, icon: Icon }) => (
-                <div key={category}>
-                  <label className="block cursor-pointer">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-sky-500 transition-colors text-center">
-                      <Icon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <span className="text-sm font-medium text-gray-700">{label}</span>
-                      <p className="text-xs text-gray-500 mt-1">Click to upload</p>
-                    </div>
-                    <input
-                      type="file"
-                      className="hidden"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, category)}
-                    />
-                  </label>
-                </div>
-              ))}
-            </div>
-            
-            {/* Uploaded Photos Preview */}
-            {reportData.photos.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Create New Field Report</h2>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.currentTarget)
+                handleNewReport({
+                  project_name: formData.get('project_name') as string,
+                  project_address: formData.get('project_address') as string,
+                  report_type: formData.get('report_type') as FieldReport['report_type'],
+                  priority: formData.get('priority') as FieldReport['priority'],
+                  reported_by: formData.get('reported_by') as string
+                })
+              }}
+            >
               <div className="space-y-4">
-                <h5 className="text-sm font-medium text-gray-700">Uploaded Photos ({reportData.photos.length})</h5>
-                <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto p-2 border border-gray-200 rounded-lg">
-                  {reportData.photos.map((photo) => (
-                    <div key={photo.id} className="relative group">
-                      <div className="bg-gray-100 rounded-lg overflow-hidden" style={{ height: '200px' }}>
-                        <img
-                          src={photo.data}
-                          alt={photo.caption || 'Uploaded photo'}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="mt-2">
-                        <input
-                          type="text"
-                          placeholder="Add caption..."
-                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                          value={photo.caption}
-                          onChange={(e) => updatePhotoCaption(photo.id, e.target.value)}
-                        />
-                      </div>
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(photo.id)}
-                          className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="absolute bottom-12 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-                        {photo.category}
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                  <input
+                    type="text"
+                    name="project_name"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Address</label>
+                  <input
+                    type="text"
+                    name="project_address"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
+                  <select
+                    name="report_type"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  >
+                    <option value="Daily">Daily</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Safety">Safety</option>
+                    <option value="Progress">Progress</option>
+                    <option value="Quality">Quality</option>
+                    <option value="Incident">Incident</option>
+                    <option value="Inspection">Inspection</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    name="priority"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reported By</label>
+                  <input
+                    type="text"
+                    name="reported_by"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
                 </div>
               </div>
-            )}
-            
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-600">
-                <strong>Tip:</strong> Upload photos in appropriate categories for better organization. 
-                Photos will be displayed in full size in the report and automatically paginated when printed.
-              </p>
-            </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowNewReportModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
+                >
+                  Create Report
+                </button>
+              </div>
+            </form>
           </div>
-          
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
-            >
-              Create Report
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

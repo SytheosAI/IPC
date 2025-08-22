@@ -54,19 +54,27 @@ export interface VBAProject {
   id: string
   project_id?: string
   project_name: string
-  project_number: string
+  job_number?: string
   address: string
   city?: string
   state?: string
   contractor?: string
   owner?: string
-  status: 'active' | 'pending' | 'completed' | 'on-hold'
-  start_date?: string
+  status: 'scheduled' | 'in_progress' | 'completed' | 'failed'
+  scheduled_date?: string
   completion_date?: string
-  inspection_count?: number
-  last_inspection_date?: string
+  inspector?: string
+  completion_rate?: number
   compliance_score?: number
+  last_updated?: string
   virtual_inspector_enabled?: boolean
+  gps_location?: { lat: number; lng: number }
+  photo_count?: number
+  violations?: number
+  ai_confidence?: number
+  selected_inspections?: string[]
+  inspection_type?: string
+  project_type?: string
   notes?: string
   created_by?: string
   created_at?: string
@@ -386,10 +394,17 @@ export const db = {
       return data
     },
     
-    async create(project: Omit<VBAProject, 'id' | 'created_at' | 'updated_at'>) {
+    async create(project: Partial<Omit<VBAProject, 'id' | 'created_at' | 'updated_at'>>) {
+      // Ensure required fields have defaults
+      const projectWithDefaults = {
+        project_name: project.project_name || 'Untitled Project',
+        address: project.address || '',
+        status: project.status || 'scheduled',
+        ...project
+      }
       const { data, error } = await supabase
         .from('vba_projects')
-        .insert(project)
+        .insert(projectWithDefaults)
         .select()
         .single()
       if (error) throw error

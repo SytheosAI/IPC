@@ -7,18 +7,21 @@ import {
   Download, Eye, Edit2, Save, X, Calendar, ChevronRight, Building, 
   CheckCircle, Shield, Clock, Camera, Trash2
 } from 'lucide-react'
+import { db } from '@/lib/supabase-client'
 
 interface VBAProject {
   id: string
-  jobNumber?: string
-  projectName: string
+  job_number?: string
+  project_name: string
   address: string
   owner?: string
   contractor?: string
-  projectType?: string
-  startDate?: string
-  status: string
-  selectedInspections?: string[]
+  project_type?: string
+  start_date?: string
+  status: 'scheduled' | 'in_progress' | 'completed' | 'failed'
+  selected_inspections?: string[]
+  created_at?: string
+  updated_at?: string
 }
 
 interface FileItem {
@@ -63,17 +66,15 @@ export default function ProjectHub() {
     try {
       setLoading(true)
       
-      // Load from localStorage
-      const savedProjects = localStorage.getItem('vba-projects')
-      if (savedProjects) {
-        const projects = JSON.parse(savedProjects)
-        const foundProject = projects.find((p: VBAProject) => p.id === projectId)
-        if (foundProject) {
-          setProject(foundProject)
-          setEditedProject(foundProject)
-        }
+      // Load from Supabase
+      const projects = await db.vbaProjects.getAll()
+      const foundProject = projects.find((p: VBAProject) => p.id === projectId)
+      if (foundProject) {
+        setProject(foundProject)
+        setEditedProject(foundProject)
       }
 
+      // For now, keep photos and reports in localStorage until we add them to Supabase
       // Load inspection photos
       const savedPhotos = localStorage.getItem(`vba-inspection-photos-${projectId}`)
       if (savedPhotos) {
@@ -98,20 +99,25 @@ export default function ProjectHub() {
     }
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editedProject) return
 
-    const savedProjects = localStorage.getItem('vba-projects')
-    if (savedProjects) {
-      const projects = JSON.parse(savedProjects)
-      const updatedProjects = projects.map((p: VBAProject) =>
-        p.id === projectId ? editedProject : p
+    try {
+      await db.vbaProjects.update(projectId, editedProject as Partial<VBAProject>)
+      setProject(editedProject)
+      setIsEditing(false)
+      
+      // Log activity
+      await db.activityLogs.create(
+        'updated_vba_project',
+        'vba_project',
+        projectId,
+        { updated_fields: Object.keys(editedProject) }
       )
-      localStorage.setItem('vba-projects', JSON.stringify(updatedProjects))
+    } catch (error) {
+      console.error('Failed to save project edits:', error)
+      alert('Failed to save changes. Please try again.')
     }
-
-    setProject(editedProject)
-    setIsEditing(false)
   }
 
   const getDaysInMonth = (date: Date) => {
@@ -315,7 +321,7 @@ export default function ProjectHub() {
               <div>
                 <h3 className="font-medium text-gray-900 mb-4">Select an inspection to view checklist:</h3>
                 <div className="space-y-3">
-                  {project.selectedInspections?.map((inspection, index) => (
+                  {project.selected_inspections?.map((inspection, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedInspection(inspection)}
@@ -499,7 +505,7 @@ export default function ProjectHub() {
             <h3 className="text-base font-medium text-gray-900 mb-4">Photo Documentation by Inspection:</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {project?.selectedInspections?.map((inspection) => (
+              {project?.selected_inspections?.map((inspection) => (
                 <div 
                   key={inspection}
                   className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-indigo-300 cursor-pointer transition-all"
@@ -513,7 +519,7 @@ export default function ProjectHub() {
               ))}
             </div>
 
-            {project?.selectedInspections?.length === 0 && (
+            {project?.selected_inspections?.length === 0 && (
               <div className="text-center py-12">
                 <Camera className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No inspections selected for this project</p>
@@ -547,7 +553,7 @@ export default function ProjectHub() {
             <h3 className="text-sm font-medium text-gray-600">Total</h3>
             <Building className="h-4 w-4 text-gray-400" />
           </div>
-          <p className="text-2xl font-bold text-gray-900">{project?.selectedInspections?.length || 0}</p>
+          <p className="text-2xl font-bold text-gray-900">{project?.selected_inspections?.length || 0}</p>
           <p className="text-xs text-gray-600 mt-1">Scheduled for project</p>
         </div>
 
@@ -625,17 +631,17 @@ export default function ProjectHub() {
         {!isEditing ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{project.projectName}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{project.project_name}</h1>
               <p className="text-gray-600 mb-4">{project.address}</p>
               
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <span className="text-gray-600 font-medium">Job #:</span>
-                  <span className="text-gray-900">{project.jobNumber || project.id}</span>
+                  <span className="text-gray-900">{project.job_number || project.id}</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-gray-600 font-medium">Type:</span>
-                  <span className="text-gray-900">{project.projectType || 'N/A'}</span>
+                  <span className="text-gray-900">{project.project_type || 'N/A'}</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-gray-600 font-medium">Status:</span>
@@ -668,8 +674,8 @@ export default function ProjectHub() {
               <input
                 type="text"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                value={editedProject?.projectName || ''}
-                onChange={(e) => setEditedProject({ ...editedProject!, projectName: e.target.value })}
+                value={editedProject?.project_name || ''}
+                onChange={(e) => setEditedProject({ ...editedProject!, project_name: e.target.value })}
               />
             </div>
             <div>
@@ -677,8 +683,8 @@ export default function ProjectHub() {
               <input
                 type="text"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                value={editedProject?.jobNumber || ''}
-                onChange={(e) => setEditedProject({ ...editedProject!, jobNumber: e.target.value })}
+                value={editedProject?.job_number || ''}
+                onChange={(e) => setEditedProject({ ...editedProject!, job_number: e.target.value })}
               />
             </div>
             <div className="md:col-span-2">

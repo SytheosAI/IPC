@@ -19,21 +19,27 @@ import {
   Upload,
   File,
   FileImage,
-  FileSpreadsheet
+  FileSpreadsheet,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react'
+import { db, supabase } from '@/lib/supabase-client'
 
 interface Document {
   id: string
+  project_id?: string
   name: string
-  type: string
-  category: string
-  projectName: string
-  uploadedBy: string
-  uploadedDate: string
-  lastModified: string
-  fileSize: string
-  status: 'active' | 'archived' | 'pending_review'
-  tags: string[]
+  file_type?: string
+  category?: 'Permits' | 'Plans' | 'Reports' | 'Inspections' | 'Contracts' | 'Correspondence' | 'Other'
+  project_name?: string
+  uploaded_by?: string
+  uploaded_by_name?: string
+  file_size?: string
+  file_url?: string
+  status?: 'active' | 'archived' | 'pending_review'
+  tags?: string[]
+  created_at?: string
+  updated_at?: string
 }
 
 export default function DocumentsPage() {
@@ -41,95 +47,170 @@ export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [newDocument, setNewDocument] = useState({
     name: '',
-    category: 'Permits',
-    projectName: '',
-    uploadedBy: '',
+    category: 'Permits' as Document['category'],
+    project_name: '',
+    uploaded_by_name: '',
     tags: '',
     file: null as File | null
   })
 
-  const categories = ['Permits', 'Plans', 'Reports', 'Inspections', 'Contracts', 'Correspondence', 'Other']
+  const categories: Document['category'][] = ['Permits', 'Plans', 'Reports', 'Inspections', 'Contracts', 'Correspondence', 'Other']
 
   useEffect(() => {
-    // Load documents from localStorage
-    const savedDocuments = localStorage.getItem('documents-list')
-    if (savedDocuments) {
-      setDocuments(JSON.parse(savedDocuments))
-    }
+    loadDocuments()
   }, [])
 
-  const handleAddDocument = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    const document: Document = {
-      id: Date.now().toString(),
-      name: newDocument.file?.name || newDocument.name,
-      type: newDocument.file?.type.split('/')[1] || 'pdf',
-      category: newDocument.category,
-      projectName: newDocument.projectName,
-      uploadedBy: newDocument.uploadedBy,
-      uploadedDate: new Date().toISOString().split('T')[0],
-      lastModified: new Date().toISOString().split('T')[0],
-      fileSize: newDocument.file ? `${(newDocument.file.size / (1024 * 1024)).toFixed(1)} MB` : '0 MB',
-      status: 'active',
-      tags: newDocument.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+  const loadDocuments = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await db.documents.getAll()
+      setDocuments(data)
+    } catch (err) {
+      console.error('Error loading documents:', err)
+      setError('Failed to load documents')
+    } finally {
+      setLoading(false)
     }
-    
-    const updatedDocuments = [document, ...documents]
-    setDocuments(updatedDocuments)
-    // Save to localStorage
-    localStorage.setItem('documents-list', JSON.stringify(updatedDocuments))
-    setShowAddModal(false)
-    setNewDocument({
-      name: '',
-      category: 'Permits',
-      projectName: '',
-      uploadedBy: '',
-      tags: '',
-      file: null
-    })
   }
 
-  const getFileIcon = (type: string) => {
-    switch (type) {
+  const handleAddDocument = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!newDocument.file) {
+      alert('Please select a file to upload')
+      return
+    }
+
+    try {
+      setUploading(true)
+      
+      // Upload file to Supabase Storage
+      const fileName = `${Date.now()}-${newDocument.file.name}`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, newDocument.file)
+      
+      if (uploadError) throw uploadError
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(fileName)
+      
+      // Create document record in database
+      const document = await db.documents.create({
+        name: newDocument.name || newDocument.file.name,
+        file_type: newDocument.file.type.split('/')[1] || 'pdf',
+        category: newDocument.category,
+        project_name: newDocument.project_name,
+        uploaded_by_name: newDocument.uploaded_by_name,
+        file_size: `${(newDocument.file.size / (1024 * 1024)).toFixed(1)} MB`,
+        file_url: publicUrl,
+        status: 'active',
+        tags: newDocument.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+      })
+      
+      await loadDocuments()
+      setShowAddModal(false)
+      setNewDocument({
+        name: '',
+        category: 'Permits',
+        project_name: '',
+        uploaded_by_name: '',
+        tags: '',
+        file: null
+      })
+      
+      // Log activity
+      await db.activityLogs.create(
+        'Uploaded document',
+        'document',
+        document.id,
+        { name: document.name }
+      )
+    } catch (err) {
+      console.error('Error uploading document:', err)
+      alert('Failed to upload document')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDeleteDocument = async (id: string) => {
+    if (confirm('Are you sure you want to delete this document?')) {
+      try {
+        await db.documents.delete(id)
+        await loadDocuments()
+        
+        // Log activity
+        await db.activityLogs.create(
+          'Deleted document',
+          'document',
+          id
+        )
+      } catch (err) {
+        console.error('Error deleting document:', err)
+        alert('Failed to delete document')
+      }
+    }
+  }
+
+  const getFileIcon = (type?: string) => {
+    if (!type) return <File className="h-8 w-8 text-gray-500" />
+    
+    switch (type.toLowerCase()) {
       case 'pdf': return <FileText className="h-8 w-8 text-red-500" />
       case 'jpg':
       case 'jpeg':
       case 'png': return <FileImage className="h-8 w-8 text-blue-500" />
+      case 'xls':
       case 'xlsx':
-      case 'xls': return <FileSpreadsheet className="h-8 w-8 text-green-500" />
+      case 'csv': return <FileSpreadsheet className="h-8 w-8 text-green-500" />
       default: return <File className="h-8 w-8 text-gray-500" />
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-700 border-green-300'
-      case 'archived': return 'bg-gray-100 text-gray-700 border-gray-300'
-      case 'pending_review': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      default: return 'bg-gray-100 text-gray-700 border-gray-300'
+  const getCategoryColor = (category?: string) => {
+    switch (category) {
+      case 'Permits': return 'bg-purple-100 text-purple-800'
+      case 'Plans': return 'bg-blue-100 text-blue-800'
+      case 'Reports': return 'bg-green-100 text-green-800'
+      case 'Inspections': return 'bg-yellow-100 text-yellow-800'
+      case 'Contracts': return 'bg-red-100 text-red-800'
+      case 'Correspondence': return 'bg-indigo-100 text-indigo-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+                          doc.project_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          doc.uploaded_by_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          doc.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
     const matchesCategory = filterCategory === 'all' || doc.category === filterCategory
     return matchesSearch && matchesCategory
   })
 
   return (
     <div className="p-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">Document Library</h1>
-        <div className="flex justify-end">
-          <button
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <Home className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" />
+          <span>Documents</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-900">Document Management</h1>
+          <button 
             onClick={() => setShowAddModal(true)}
-            className="btn-primary"
+            className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
           >
             <Plus className="h-5 w-5 mr-2" />
             Upload Document
@@ -137,215 +218,212 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Documents</p>
-              <p className="text-2xl font-bold text-gray-900">{documents.length}</p>
-            </div>
-            <FileText className="h-8 w-8 text-gray-400" />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active</p>
-              <p className="text-2xl font-bold text-green-600">
-                {documents.filter(d => d.status === 'active').length}
-              </p>
-            </div>
-            <Folder className="h-8 w-8 text-green-400" />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Pending Review</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {documents.filter(d => d.status === 'pending_review').length}
-              </p>
-            </div>
-            <Calendar className="h-8 w-8 text-yellow-400" />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Size</p>
-              <p className="text-2xl font-bold text-gray-900">56.3 MB</p>
-            </div>
-            <Download className="h-8 w-8 text-gray-400" />
-          </div>
-        </div>
-      </div>
-
-      {/* Filters and Search */}
+      {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search documents..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          
-          <div className="flex gap-3">
-            <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
+          <select
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+          >
+            <option value="all">All Categories</option>
+            {categories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-sky-500" />
+          <span className="ml-2 text-gray-600">Loading documents...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+            <span className="text-red-800">{error}</span>
+            <button 
+              onClick={loadDocuments}
+              className="ml-auto text-red-600 hover:text-red-800"
             >
-              <option value="all">All Categories</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
-              <Filter className="h-5 w-5" />
-              More Filters
-            </button>
-
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
-              <Download className="h-5 w-5" />
-              Export
+              <RefreshCw className="h-4 w-4" />
             </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Documents Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Document
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Project
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Uploaded
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Size
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredDocuments.map((document) => (
-                <tr key={document.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {getFileIcon(document.type)}
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{document.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {document.tags.map(tag => (
-                            <span key={tag} className="inline-block bg-gray-100 rounded px-2 py-0.5 mr-1">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+      {/* Documents Grid */}
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredDocuments.length === 0 ? (
+            <div className="col-span-full bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+              <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Documents Found</h3>
+              <p className="text-gray-500 mb-4">
+                {searchQuery || filterCategory !== 'all'
+                  ? 'Try adjusting your filters or search query'
+                  : 'Get started by uploading your first document'}
+              </p>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Upload Document
+              </button>
+            </div>
+          ) : (
+            filteredDocuments.map((doc) => (
+              <div key={doc.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-4">
+                  {getFileIcon(doc.file_type)}
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(doc.category)}`}>
+                    {doc.category}
+                  </span>
+                </div>
+                
+                <h3 className="font-semibold text-gray-900 mb-2 truncate" title={doc.name}>
+                  {doc.name}
+                </h3>
+                
+                <div className="space-y-1 text-sm text-gray-600 mb-4">
+                  {doc.project_name && (
+                    <div className="flex items-center gap-1">
+                      <Folder className="h-3 w-3" />
+                      <span className="truncate">{doc.project_name}</span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {document.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{document.projectName}</div>
-                    <div className="text-xs text-gray-500">by {document.uploadedBy}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(document.status)}`}>
-                      {document.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(document.uploadedDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {document.fileSize}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="text-sky-600 hover:text-sky-900 transition-colors">
+                  )}
+                  <div className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    <span>{doc.uploaded_by_name || 'Unknown'}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{doc.created_at ? new Date(doc.created_at).toLocaleDateString() : 'N/A'}</span>
+                  </div>
+                  {doc.file_size && (
+                    <div className="text-xs text-gray-500">Size: {doc.file_size}</div>
+                  )}
+                </div>
+
+                {doc.tags && doc.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {doc.tags.map((tag, index) => (
+                      <span key={index} className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${
+                    doc.status === 'active' ? 'bg-green-100 text-green-800' :
+                    doc.status === 'archived' ? 'bg-gray-100 text-gray-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {doc.status || 'active'}
+                  </span>
+                  
+                  <div className="flex items-center gap-2">
+                    {doc.file_url && (
+                      <a
+                        href={doc.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-gray-600 hover:text-sky-600 transition-colors"
+                        title="View"
+                      >
                         <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="text-sky-600 hover:text-sky-900 transition-colors">
+                      </a>
+                    )}
+                    {doc.file_url && (
+                      <a
+                        href={doc.file_url}
+                        download={doc.name}
+                        className="p-1 text-gray-600 hover:text-green-600 transition-colors"
+                        title="Download"
+                      >
                         <Download className="h-4 w-4" />
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-900 transition-colors">
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button className="text-gray-600 hover:text-red-600 transition-colors">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      </a>
+                    )}
+                    <button 
+                      onClick={() => handleDeleteDocument(doc.id)}
+                      className="p-1 text-gray-600 hover:text-red-600 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      </div>
+      )}
 
       {/* Add Document Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Upload Document</h3>
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors"
-                >
-                  <X className="h-5 w-5 text-gray-500" />
-                </button>
-              </div>
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Upload Document</h2>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleAddDocument} className="p-6">
+            <form onSubmit={handleAddDocument}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Document Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">File</label>
+                  <input
+                    type="file"
+                    required
+                    onChange={(e) => setNewDocument({...newDocument, file: e.target.files?.[0] || null})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Document Name (Optional)</label>
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     value={newDocument.name}
-                    onChange={(e) => setNewDocument({ ...newDocument, name: e.target.value })}
+                    onChange={(e) => setNewDocument({...newDocument, name: e.target.value})}
                     placeholder="Leave blank to use file name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     value={newDocument.category}
-                    onChange={(e) => setNewDocument({ ...newDocument, category: e.target.value })}
+                    onChange={(e) => setNewDocument({...newDocument, category: e.target.value as Document['category']})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                   >
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
                 </div>
@@ -354,10 +432,9 @@ export default function DocumentsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    value={newDocument.projectName}
-                    onChange={(e) => setNewDocument({ ...newDocument, projectName: e.target.value })}
-                    required
+                    value={newDocument.project_name}
+                    onChange={(e) => setNewDocument({...newDocument, project_name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
 
@@ -365,41 +442,21 @@ export default function DocumentsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Uploaded By</label>
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    value={newDocument.uploadedBy}
-                    onChange={(e) => setNewDocument({ ...newDocument, uploadedBy: e.target.value })}
-                    required
+                    value={newDocument.uploaded_by_name}
+                    onChange={(e) => setNewDocument({...newDocument, uploaded_by_name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     value={newDocument.tags}
-                    onChange={(e) => setNewDocument({ ...newDocument, tags: e.target.value })}
-                    placeholder="e.g., permit, application, building"
+                    onChange={(e) => setNewDocument({...newDocument, tags: e.target.value})}
+                    placeholder="e.g., important, review, 2024"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Upload File</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <input
-                      type="file"
-                      className="hidden"
-                      id="file-upload"
-                      onChange={(e) => setNewDocument({ ...newDocument, file: e.target.files?.[0] || null })}
-                    />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <span className="text-sm text-gray-600">
-                        {newDocument.file ? newDocument.file.name : 'Click to upload or drag and drop'}
-                      </span>
-                      <p className="text-xs text-gray-500 mt-1">Any file type up to 50MB</p>
-                    </label>
-                  </div>
                 </div>
               </div>
 
@@ -407,15 +464,27 @@ export default function DocumentsPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  disabled={uploading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
+                  className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={uploading}
                 >
-                  Upload Document
+                  {uploading ? (
+                    <>
+                      <RefreshCw className="inline h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="inline h-4 w-4 mr-2" />
+                      Upload
+                    </>
+                  )}
                 </button>
               </div>
             </form>
