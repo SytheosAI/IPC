@@ -179,10 +179,15 @@ export default function VBAPage() {
       
       const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY
       
+      // Add date-based query for daily updates
+      const today = new Date().toISOString().split('T')[0]
+      const topics = ['construction technology', 'building automation', 'AI construction', 'smart buildings', 'construction robotics']
+      const randomTopic = topics[Math.floor(Math.random() * topics.length)]
+      
       if (!apiKey || apiKey === 'your_news_api_key_here') {
-        // Use alternative free news API if News API key is not configured
+        // Use alternative free news API with rotating topics for variety
         const response = await fetch(
-          'https://newsdata.io/api/1/news?apikey=pub_52993cc6dc6e4de5c1a08c13c5b528dd17bb3&q=construction%20technology%20AI%20robotics&language=en&category=technology,business'
+          `https://newsdata.io/api/1/news?apikey=pub_52993cc6dc6e4de5c1a08c13c5b528dd17bb3&q=${encodeURIComponent(randomTopic)}&language=en&category=technology,business`
         )
         
         if (response.ok) {
@@ -202,9 +207,9 @@ export default function VBAPage() {
           }
         }
       } else {
-        // Use News API with the provided key
+        // Use News API with the provided key and date-based query
         const response = await fetch(
-          `https://newsapi.org/v2/everything?q=construction+technology+AI+robotics&sortBy=publishedAt&pageSize=5&apiKey=${apiKey}`
+          `https://newsapi.org/v2/everything?q=${encodeURIComponent(randomTopic)}&from=${today}&sortBy=publishedAt&pageSize=5&apiKey=${apiKey}`
         )
         
         if (response.ok) {
@@ -227,38 +232,101 @@ export default function VBAPage() {
         }
       }
       
-      // Fallback to mock data if all APIs fail
+      // Fallback to dynamic mock data if all APIs fail
       console.error('Failed to fetch news from API, using fallback data')
-      setNewsItems([
+      const fallbackNews = [
         {
-          id: '1',
           title: 'AI-Powered Construction Management Reduces Project Delays by 35%',
           source: 'Construction AI Weekly',
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          category: 'AI & Tech',
-          description: 'New AI systems are revolutionizing construction project management'
+          description: 'New study shows significant improvements in project timelines using machine learning algorithms'
         },
         {
-          id: '2',
-          title: 'Construction Robotics Market to Hit $20B by 2026',
+          title: 'Boston Dynamics Spot Robot Now Inspecting High-Rise Construction Sites',
+          source: 'Robotics Today',
+          description: 'Autonomous robots are revolutionizing safety inspections in dangerous construction environments'
+        },
+        {
+          title: 'Smart Concrete with Self-Healing Properties Tested in Major Infrastructure Projects',
+          source: 'Materials Innovation',
+          description: 'Revolutionary concrete mix can repair its own cracks, extending structure lifespan by decades'
+        },
+        {
+          title: 'BIM Software Integration with AR Headsets Transforms On-Site Construction',
           source: 'TechConstruct News',
-          date: new Date(Date.now() - 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          category: 'AI & Tech',
-          description: 'Market analysis shows rapid growth in construction automation'
+          description: 'Workers can now visualize 3D building plans in real-time using augmented reality technology'
+        },
+        {
+          title: 'Modular Construction Methods Cut Building Time by 50% in New Housing Development',
+          source: 'Building Innovation',
+          description: 'Prefabricated modules assembled on-site demonstrate massive efficiency gains'
+        },
+        {
+          title: 'AI Vision Systems Detect Safety Violations with 98% Accuracy',
+          source: 'Safety Tech Review',
+          description: 'Computer vision technology automatically identifies PPE compliance and hazardous conditions'
+        },
+        {
+          title: 'Drone Swarms Complete Site Survey in Record Time',
+          source: 'Aerial Construction',
+          description: 'Coordinated drone teams can map entire construction sites in under an hour'
+        },
+        {
+          title: '3D Printing Technology Creates First Multi-Story Building in Texas',
+          source: 'Additive Manufacturing News',
+          description: 'Concrete 3D printing achieves new milestone with three-story residential structure'
         }
-      ])
+      ]
+      
+      // Randomly select 5 news items and add dates
+      const selectedNews = [...fallbackNews].sort(() => Math.random() - 0.5).slice(0, 5)
+      setNewsItems(selectedNews.map((item, index) => ({
+        id: index.toString(),
+        title: item.title,
+        source: item.source,
+        date: new Date(Date.now() - (index * 86400000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        category: 'AI & Tech',
+        description: item.description
+      })))
     } catch (error) {
       console.error('Failed to fetch news:', error)
-      // Set fallback news items
-      setNewsItems([
+      // Set dynamic fallback news items
+      const fallbackNews = [
         {
-          id: '1',
-          title: 'AI-Powered Construction Management Reduces Project Delays by 35%',
-          source: 'Construction AI Weekly',
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          category: 'AI & Tech'
+          title: 'Next-Gen Exoskeletons Reduce Worker Fatigue by 60%',
+          source: 'Wearable Tech Daily',
+          description: 'Advanced exoskeletons help construction workers lift heavy materials with minimal strain'
+        },
+        {
+          title: 'Green Building Materials Market Sees 200% Growth',
+          source: 'Sustainable Construction',
+          description: 'Eco-friendly materials becoming standard in new construction projects'
+        },
+        {
+          title: 'AI Scheduling Platform Optimizes Subcontractor Coordination',
+          source: 'Construction Tech Weekly',
+          description: 'Machine learning algorithms prevent scheduling conflicts and delays'
+        },
+        {
+          title: 'Virtual Reality Training Reduces Workplace Accidents by 43%',
+          source: 'Safety First News',
+          description: 'VR simulations prepare workers for hazardous situations before entering job sites'
+        },
+        {
+          title: 'Autonomous Cranes Successfully Deployed in Singapore Port Construction',
+          source: 'Global Construction',
+          description: 'Self-operating cranes demonstrate precision and safety improvements'
         }
-      ])
+      ]
+      
+      const selectedNews = [...fallbackNews].sort(() => Math.random() - 0.5).slice(0, 5)
+      setNewsItems(selectedNews.map((item, index) => ({
+        id: index.toString(),
+        title: item.title,
+        source: item.source,
+        date: new Date(Date.now() - (index * 86400000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        category: 'AI & Tech',
+        description: item.description
+      })))
     } finally {
       setNewsLoading(false)
     }
@@ -611,16 +679,6 @@ export default function VBAPage() {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min(weeklyMetrics.scheduled * 10, 100)}%` }}></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Pass Rate</span>
-                <span className="text-lg font-semibold text-gray-900">{weeklyMetrics.passRate}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full" style={{ width: `${weeklyMetrics.passRate}%` }}></div>
               </div>
             </div>
 
