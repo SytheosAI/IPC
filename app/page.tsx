@@ -17,8 +17,10 @@ import {
   Search,
   Sparkles,
   Brain,
-  Zap
+  Zap,
+  RefreshCw
 } from 'lucide-react'
+import { db, subscriptions } from '@/lib/supabase-client'
 
 interface DashboardStat {
   label: string
@@ -31,73 +33,114 @@ interface DashboardStat {
 }
 
 interface ProjectSummary {
-  permitNumber: string
-  projectName: string
+  id: string
+  permit_number: string
+  project_name: string
   address: string
-  applicant: string
+  applicant?: string
   status: 'intake' | 'in_review' | 'approved' | 'rejected' | 'issued'
-  submittedDate: string
-  lastUpdated: string
-  totalIssues: number
-  totalConditions: number
-  totalNotes: number
+  submitted_date?: string
+  last_updated?: string
+  total_issues?: number
+  total_conditions?: number
+  total_notes?: number
 }
 
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [recentProjects, setRecentProjects] = useState<ProjectSummary[]>([])
   const [stats, setStats] = useState<DashboardStat[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadDashboardData()
+    
+    // Subscribe to real-time updates
+    const channel = subscriptions.subscribeToProjects(() => {
+      loadDashboardData()
+    })
+    
+    return () => {
+      channel.unsubscribe()
+    }
   }, [])
 
-  const loadDashboardData = () => {
-    // Load projects from localStorage
-    const savedProjects = localStorage.getItem('dashboard-projects')
-    const projects = savedProjects ? JSON.parse(savedProjects) : []
-    setRecentProjects(projects)
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Load projects from Supabase
+      const projects = await db.projects.getAll()
+      setRecentProjects(projects.slice(0, 10)) // Show only recent 10
 
-    // Calculate stats based on actual data
-    const pendingCount = projects.filter((p: ProjectSummary) => p.status === 'in_review').length
-    const approvedCount = projects.filter((p: ProjectSummary) => p.status === 'approved').length
+      // Calculate stats based on actual data
+      const pendingCount = projects.filter((p: ProjectSummary) => p.status === 'in_review').length
+      const approvedCount = projects.filter((p: ProjectSummary) => p.status === 'approved').length
+      
+      // Calculate average processing time
+      const avgDays = calculateAverageProcessingTime(projects)
+
+      const calculatedStats: DashboardStat[] = [
+        {
+          label: 'Total Applications',
+          value: projects.length,
+          icon: FileText,
+          color: 'blue',
+          description: 'Active permits in system'
+        },
+        {
+          label: 'Pending Review',
+          value: pendingCount,
+          icon: Clock,
+          color: 'yellow',
+          description: 'Awaiting review'
+        },
+        {
+          label: 'Approved',
+          value: approvedCount,
+          icon: CheckCircle,
+          color: 'green',
+          description: 'Total approved'
+        },
+        {
+          label: 'Avg. Processing',
+          value: avgDays > 0 ? `${avgDays} days` : 'N/A',
+          icon: TrendingUp,
+          color: 'purple',
+          trend: 'neutral',
+          trendValue: ''
+        }
+      ]
+      
+      setStats(calculatedStats)
+    } catch (err) {
+      console.error('Error loading dashboard data:', err)
+      setError('Failed to load dashboard data. Please check your connection.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const calculateAverageProcessingTime = (projects: ProjectSummary[]) => {
+    const processedProjects = projects.filter(p => 
+      p.status === 'approved' || p.status === 'issued'
+    )
     
-    // Calculate average processing time (simplified)
-    const avgDays = projects.length > 0 ? 7 : 0 // This would be calculated from actual dates
-
-    const calculatedStats: DashboardStat[] = [
-      {
-        label: 'Total Applications',
-        value: projects.length,
-        icon: FileText,
-        color: 'blue',
-        description: 'Active permits in system'
-      },
-      {
-        label: 'Pending Review',
-        value: pendingCount,
-        icon: Clock,
-        color: 'yellow',
-        description: 'Awaiting review'
-      },
-      {
-        label: 'Approved',
-        value: approvedCount,
-        icon: CheckCircle,
-        color: 'green',
-        description: 'This month'
-      },
-      {
-        label: 'Avg. Processing',
-        value: avgDays > 0 ? `${avgDays} days` : 'N/A',
-        icon: TrendingUp,
-        color: 'purple',
-        trend: 'neutral',
-        trendValue: ''
+    if (processedProjects.length === 0) return 0
+    
+    const totalDays = processedProjects.reduce((sum, p) => {
+      if (p.submitted_date && p.last_updated) {
+        const submitted = new Date(p.submitted_date)
+        const updated = new Date(p.last_updated)
+        const days = Math.floor((updated.getTime() - submitted.getTime()) / (1000 * 60 * 60 * 24))
+        return sum + days
       }
-    ]
+      return sum
+    }, 0)
     
-    setStats(calculatedStats)
+    return Math.round(totalDays / processedProjects.length)
   }
 
   const getStatusBadge = (status: string) => {
@@ -124,276 +167,258 @@ export default function DashboardPage() {
   }
 
   const filteredProjects = recentProjects.filter(project =>
-    project.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.permitNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.applicant.toLowerCase().includes(searchQuery.toLowerCase())
+    project.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.permit_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (project.applicant && project.applicant.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center">Dashboard</h1>
-        <div className="flex justify-center mt-2">
-          <span className="ai-badge">
-            <Sparkles className="h-3 w-3 mr-1" />
-            AI Insights Available
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-6">
+          <Building2 className="h-8 w-8 text-sky-600" />
+          <h1 className="text-3xl font-bold text-gray-900">Intelligent Plan Check Dashboard</h1>
+          <button 
+            onClick={loadDashboardData}
+            className="ml-auto p-2 text-gray-600 hover:text-sky-600 transition-colors"
+            title="Refresh data"
+          >
+            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+        <div className="flex items-center bg-gradient-to-r from-sky-50 to-blue-50 border border-sky-200 rounded-lg p-3">
+          <Sparkles className="h-5 w-5 text-sky-600 mr-2" />
+          <span className="text-sm text-sky-800">
+            <strong>AI-Powered Analysis:</strong> Automatically reviewing plans for compliance and generating smart recommendations
           </span>
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-sky-500" />
+          <span className="ml-2 text-gray-600">Loading dashboard data...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+            <span className="text-red-800">{error}</span>
+          </div>
+        </div>
+      )}
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          const colorClasses = getStatColorClasses(stat.color)
-          
-          return (
-            <div key={index} className="relative group bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br opacity-5 group-hover:opacity-10 transition-opacity duration-300" 
-                style={{
-                  backgroundImage: stat.color === 'blue' ? 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)' :
-                                  stat.color === 'green' ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' :
-                                  stat.color === 'yellow' ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' :
-                                  stat.color === 'red' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' :
-                                  'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)'
-                }}
-              />
-              <div className="relative z-10">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-lg shadow-sm ${
-                    stat.color === 'blue' ? 'bg-sky-100' :
-                    stat.color === 'green' ? 'bg-green-100' :
-                    stat.color === 'yellow' ? 'bg-yellow-100' :
-                    stat.color === 'red' ? 'bg-red-100' :
-                    'bg-purple-100'
-                  }`}>
-                    <Icon className={`h-8 w-8 ${
-                      stat.color === 'blue' ? 'text-sky-600' :
-                      stat.color === 'green' ? 'text-green-600' :
-                      stat.color === 'yellow' ? 'text-yellow-600' :
-                      stat.color === 'red' ? 'text-red-600' :
-                      'text-purple-600'
-                    }`} />
+      {!loading && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {stats.map((stat, index) => {
+              const Icon = stat.icon
+              const colorClasses = getStatColorClasses(stat.color)
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`relative overflow-hidden bg-white rounded-xl shadow-lg border-2 ${colorClasses} p-6 card-hover`}
+                >
+                  {/* Background Pattern */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="absolute inset-0" style={{
+                      backgroundImage: `repeating-linear-gradient(45deg, currentColor, currentColor 10px, transparent 10px, transparent 20px)`
+                    }}></div>
                   </div>
-                  {stat.trend && (
-                    <div className={`text-xs font-medium flex items-center gap-1 px-2 py-1 rounded-full ${
-                      stat.trend === 'up' ? 'bg-green-100 text-green-600' : 
-                      stat.trend === 'down' ? 'bg-red-100 text-red-600' : 
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {stat.trendValue}
+                  
+                  <div className="relative z-10 flex items-start justify-between">
+                    <div className="flex-shrink-0">
+                      <Icon className="h-10 w-10 opacity-80" />
+                      {stat.trend && (
+                        <div className="mt-2 flex items-center text-xs">
+                          {stat.trend === 'up' && <TrendingUp className="h-3 w-3 text-green-500 mr-1" />}
+                          {stat.trend === 'down' && <Activity className="h-3 w-3 text-red-500 mr-1 rotate-180" />}
+                          <span className={stat.trend === 'up' ? 'text-green-600' : stat.trend === 'down' ? 'text-red-600' : 'text-gray-500'}>
+                            {stat.trendValue}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                  <p className="text-3xl font-bold mt-1 text-gray-900">{stat.value}</p>
-                  {stat.description && (
-                    <p className="text-xs text-gray-500 mt-2">{stat.description}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Recent Applications Table */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Applications</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search applications..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Permit Number
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Project Details
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Issues/Conditions/Notes
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Submitted
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProjects.map((project) => (
-                <tr key={project.permitNumber} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{project.permitNumber}</div>
-                  </td>
-                  <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{project.projectName}</div>
-                      <div className="text-sm text-gray-500">{project.address}</div>
-                      <div className="text-xs text-gray-400 mt-1">{project.applicant}</div>
+                      <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                      <p className="text-3xl font-bold mt-1 text-gray-900">{stat.value}</p>
+                      {stat.description && (
+                        <p className="text-xs text-gray-500 mt-2">{stat.description}</p>
+                      )}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(project.status)}`}>
-                      {project.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex gap-3 text-sm">
-                      <span className="text-red-600 font-medium">{project.totalIssues}</span>
-                      <span className="text-gray-400">/</span>
-                      <span className="text-yellow-600 font-medium">{project.totalConditions}</span>
-                      <span className="text-gray-400">/</span>
-                      <span className="text-blue-600 font-medium">{project.totalNotes}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(project.submittedDate).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
 
-      {/* Additional Info Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        {/* Active Permits Summary */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Permits</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Commercial</span>
-              <span className="text-sm font-medium text-gray-900">2</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Residential</span>
-              <span className="text-sm font-medium text-gray-900">1</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Industrial</span>
-              <span className="text-sm font-medium text-gray-900">0</span>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-900">Total Active</span>
-              <span className="text-lg font-bold text-sky-600">3</span>
-            </div>
-          </div>
-        </div>
-
-        {/* VBA Inspections */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">VBA Inspections</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Scheduled Today</span>
-              <span className="text-sm font-medium text-gray-900">5</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">In Progress</span>
-              <span className="text-sm font-medium text-gray-900">2</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Completed</span>
-              <span className="text-sm font-medium text-gray-900">8</span>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-900">Compliance Rate</span>
-              <span className="text-lg font-bold text-green-600">94%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Performance Metrics */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance</h3>
-          <div className="space-y-3">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-gray-600">Review Progress</span>
-                <span className="text-sm font-medium text-gray-900">78%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-sky-500 h-2 rounded-full" style={{ width: '78%' }}></div>
+          {/* Recent Applications Table */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Recent Applications</h2>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search applications..."
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-gray-600">On-Time Rate</span>
-                <span className="text-sm font-medium text-gray-900">92%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full" style={{ width: '92%' }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* AI Insights Section */}
-      <div className="mt-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 text-white shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-              <Brain className="h-8 w-8" />
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Permit Number
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Project Details
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Issues/Conditions/Notes
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Submitted
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProjects.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                        {searchQuery ? 'No projects found matching your search' : 'No projects yet. Create your first project to get started.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProjects.map((project) => (
+                      <tr key={project.id} className="hover:bg-gray-50 cursor-pointer">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{project.permit_number}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{project.project_name}</div>
+                            <div className="text-sm text-gray-500">{project.address}</div>
+                            {project.applicant && (
+                              <div className="text-xs text-gray-400 mt-1">{project.applicant}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(project.status)}`}>
+                            {project.status.replace('_', ' ').toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex gap-3 text-sm">
+                            <span className="text-red-600 font-medium">{project.total_issues || 0}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-yellow-600 font-medium">{project.total_conditions || 0}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-blue-600 font-medium">{project.total_notes || 0}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {project.submitted_date ? new Date(project.submitted_date).toLocaleDateString() : 'N/A'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-            <div>
-              <h3 className="text-xl font-bold">AI-Powered Insights</h3>
-              <p className="text-white/80 text-sm">Intelligent recommendations based on your permit data</p>
+          </div>
+
+          {/* Additional Info Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+            {/* Active Permits Summary */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Permits</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Commercial</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {recentProjects.filter(p => p.project_name.toLowerCase().includes('commercial')).length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Residential</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {recentProjects.filter(p => p.project_name.toLowerCase().includes('residential')).length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Industrial</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {recentProjects.filter(p => p.project_name.toLowerCase().includes('industrial')).length}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="space-y-2">
+                <button className="w-full text-left px-4 py-2 text-sm bg-sky-50 text-sky-700 rounded-lg hover:bg-sky-100 transition-colors">
+                  Create New Application
+                </button>
+                <button className="w-full text-left px-4 py-2 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
+                  Review Pending
+                </button>
+                <button className="w-full text-left px-4 py-2 text-sm bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">
+                  Generate Reports
+                </button>
+              </div>
+            </div>
+
+            {/* AI Analysis Insights */}
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg border border-purple-200 p-6 card-hover">
+              <div className="flex items-center mb-4">
+                <Brain className="h-6 w-6 text-purple-600 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">AI Insights</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-start">
+                  <Zap className="h-4 w-4 text-yellow-500 mr-2 mt-1 flex-shrink-0" />
+                  <p className="text-sm text-gray-700">
+                    <strong>90%</strong> of applications processed within compliance timeframe
+                  </p>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                  <p className="text-sm text-gray-700">
+                    Most common issue: <strong>Missing structural calculations</strong>
+                  </p>
+                </div>
+                <div className="flex items-start">
+                  <AlertCircle className="h-4 w-4 text-blue-500 mr-2 mt-1 flex-shrink-0" />
+                  <p className="text-sm text-gray-700">
+                    Recommendation: <strong>Automate preliminary reviews</strong>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-          <button className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur-sm transition-colors flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            Generate Report
-          </button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-            <h4 className="font-semibold mb-2 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Trend Analysis
-            </h4>
-            <p className="text-sm text-white/90">Permit approvals are 23% faster this month compared to last month</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-            <h4 className="font-semibold mb-2 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              Risk Detection
-            </h4>
-            <p className="text-sm text-white/90">2 permits require immediate attention due to missing documentation</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-            <h4 className="font-semibold mb-2 flex items-center gap-2">
-              <CheckCircle className="h-5 w-5" />
-              Optimization
-            </h4>
-            <p className="text-sm text-white/90">Automating document validation could save 4 hours per week</p>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   )
 }

@@ -481,60 +481,107 @@ export default function VBAPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Weather Widget */}
         <div 
-          className="bg-gray-800 text-white rounded-lg p-6 cursor-pointer hover:bg-gray-700 transition-colors duration-200"
+          className="relative rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300"
           onClick={() => window.open('https://earth.nullschool.net/', '_blank')}
+          style={{
+            background: weatherData.condition.toLowerCase().includes('rain') 
+              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+              : weatherData.condition.toLowerCase().includes('cloud')
+              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+              : weatherData.condition.toLowerCase().includes('clear') || weatherData.condition.toLowerCase().includes('sun')
+              ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            minHeight: '320px'
+          }}
         >
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              <span className="text-sm">Fort Myers</span>
-              <span className="ml-2 text-xs bg-blue-600 px-2 py-1 rounded-full">Live Satellite</span>
-            </div>
-            <button className="p-1 hover:bg-gray-700 rounded">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          
-          {weatherLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
-            <div className="flex items-center gap-4 mb-6">
-              {getWeatherIcon(weatherData.condition)}
-              <div>
-                <div className="text-5xl font-bold">{weatherData.temp}°</div>
-                <div className="text-sm opacity-80">{weatherData.condition}</div>
+          {/* Animated background effect */}
+          <div className="absolute inset-0 opacity-20">
+            {weatherData.condition.toLowerCase().includes('rain') && (
+              <div className="absolute inset-0" style={{
+                backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)`,
+                animation: 'rain 1s linear infinite',
+              }}></div>
+            )}
+            {(weatherData.condition.toLowerCase().includes('clear') || weatherData.condition.toLowerCase().includes('sun')) && (
+              <div className="absolute top-8 right-8">
+                <div className="w-32 h-32 bg-yellow-300 rounded-full opacity-50 blur-xl animate-pulse"></div>
               </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-700 rounded-lg p-3">
-              <div className="flex items-center gap-2 text-xs opacity-70 mb-1">
-                <Wind className="h-3 w-3" />
-                Feels like
+            )}
+            {weatherData.condition.toLowerCase().includes('cloud') && (
+              <div className="absolute inset-0">
+                <div className="absolute top-4 left-8 w-24 h-16 bg-white rounded-full opacity-20 blur-md"></div>
+                <div className="absolute top-12 right-12 w-32 h-20 bg-white rounded-full opacity-15 blur-lg"></div>
+                <div className="absolute bottom-8 left-16 w-28 h-18 bg-white rounded-full opacity-10 blur-md"></div>
               </div>
-              <div className="text-lg font-semibold">{weatherData.feelsLike}°</div>
-            </div>
-            <div className="bg-gray-700 rounded-lg p-3">
-              <div className="flex items-center gap-2 text-xs opacity-70 mb-1">
-                <Droplets className="h-3 w-3" />
-                Humidity
-              </div>
-              <div className="text-lg font-semibold">{weatherData.humidity}%</div>
-            </div>
+            )}
           </div>
 
-          <div className="space-y-2">
-            {weatherData.forecast.map((day) => (
-              <div key={day.day} className="flex items-center justify-between text-sm">
-                <span className="opacity-70">{day.day}</span>
-                {getSmallWeatherIcon(day.condition)}
-                <span>{day.high}° / {day.low}°</span>
+          <div className="relative z-10 p-6 text-white">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                <span className="text-sm font-medium">Fort Myers</span>
+                <span className="ml-2 text-xs bg-white/20 backdrop-blur px-2 py-1 rounded-full">Live Weather</span>
               </div>
-            ))}
+              <ExternalLink className="h-4 w-4 opacity-70" />
+            </div>
+            
+            {weatherLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <div className="mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="opacity-90">
+                    {getWeatherIcon(weatherData.condition)}
+                  </div>
+                  <div>
+                    <div className="text-6xl font-bold tracking-tight">{weatherData.temp}°</div>
+                    <div className="text-lg font-medium opacity-90">{weatherData.condition}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="bg-white/10 backdrop-blur rounded-lg p-3">
+                <div className="flex items-center gap-2 text-xs opacity-80 mb-1">
+                  <Wind className="h-3 w-3" />
+                  Feels like
+                </div>
+                <div className="text-xl font-semibold">{weatherData.feelsLike}°</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur rounded-lg p-3">
+                <div className="flex items-center gap-2 text-xs opacity-80 mb-1">
+                  <Droplets className="h-3 w-3" />
+                  Humidity
+                </div>
+                <div className="text-xl font-semibold">{weatherData.humidity}%</div>
+              </div>
+            </div>
+
+            <div className="space-y-2 bg-black/20 backdrop-blur rounded-lg p-3">
+              {weatherData.forecast.map((day) => (
+                <div key={day.day} className="flex items-center justify-between text-sm">
+                  <span className="opacity-80 font-medium">{day.day}</span>
+                  <div className="opacity-90">{getSmallWeatherIcon(day.condition)}</div>
+                  <span className="font-semibold">{day.high}° / <span className="opacity-70">{day.low}°</span></span>
+                </div>
+              ))}
+            </div>
           </div>
+
+          <style jsx>{`
+            @keyframes rain {
+              0% {
+                transform: translateY(-100%);
+              }
+              100% {
+                transform: translateY(100%);
+              }
+            }
+          `}</style>
         </div>
 
         {/* This Week Stats */}

@@ -2,49 +2,50 @@ import { createBrowserClient, createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
+// Database types matching our SQL schema
 export type Database = {
   public: {
     Tables: {
-      users: {
+      profiles: {
         Row: {
           id: string
-          name: string
+          user_id: string | null
           email: string
-          role: string
-          status: 'online' | 'offline' | 'busy'
-          location_lat: number | null
-          location_lng: number | null
-          last_seen: string | null
-          avatar_url: string | null
+          name: string | null
+          role: string | null
+          department: string | null
           phone: string | null
+          avatar_url: string | null
+          company: string | null
+          license_number: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
-          id: string
-          name: string
+          id?: string
+          user_id?: string | null
           email: string
-          role?: string
-          status?: 'online' | 'offline' | 'busy'
-          location_lat?: number | null
-          location_lng?: number | null
-          last_seen?: string | null
-          avatar_url?: string | null
+          name?: string | null
+          role?: string | null
+          department?: string | null
           phone?: string | null
+          avatar_url?: string | null
+          company?: string | null
+          license_number?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          name?: string
+          user_id?: string | null
           email?: string
-          role?: string
-          status?: 'online' | 'offline' | 'busy'
-          location_lat?: number | null
-          location_lng?: number | null
-          last_seen?: string | null
-          avatar_url?: string | null
+          name?: string | null
+          role?: string | null
+          department?: string | null
           phone?: string | null
+          avatar_url?: string | null
+          company?: string | null
+          license_number?: string | null
           updated_at?: string
         }
       }
