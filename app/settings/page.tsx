@@ -271,7 +271,7 @@ export default function SettingsPage() {
       }
 
       // Save to database
-      await db.userSettings.upsert(userContext?.user?.id || 'default', {
+      await db.userSettings.upsert('default-user', {
         profile,
         notifications,
         security,
