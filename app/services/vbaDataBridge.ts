@@ -54,25 +54,8 @@ class VBADataBridge {
         })
       })
 
-      // Update local storage for dashboard
-      const activities = JSON.parse(localStorage.getItem('planx-activities') || '[]')
-      eventsToSync.forEach(event => {
-        activities.unshift({
-          id: `vba-${Date.now()}-${Math.random()}`,
-          type: 'vba',
-          subType: event.type,
-          title: this.getEventTitle(event),
-          description: this.getEventDescription(event),
-          timestamp: event.timestamp,
-          projectId: event.projectId,
-          projectName: event.projectName,
-          userId: event.userId,
-          location: event.location
-        })
-      })
-      
-      // Keep only last 50 activities
-      localStorage.setItem('planx-activities', JSON.stringify(activities.slice(0, 50)))
+      // Events are now synced to Supabase only
+      // No local storage fallback
       
       // Trigger dashboard refresh
       window.dispatchEvent(new CustomEvent('vba-activity-update'))
@@ -137,10 +120,8 @@ class VBADataBridge {
       status: 'pending_review'
     }
 
-    // Save to main system
-    const reports = JSON.parse(localStorage.getItem('planx-reports') || '[]')
-    reports.unshift(report)
-    localStorage.setItem('planx-reports', JSON.stringify(reports))
+    // Reports are now saved to Supabase only
+    // TODO: Implement reports table in Supabase
 
     // Notify main dashboard
     this.sendEvent({
@@ -161,20 +142,12 @@ class VBADataBridge {
 
   // Get VBA stats for main dashboard
   static getVBAStats() {
-    const vbaProjects = JSON.parse(localStorage.getItem('vba-projects') || '[]')
-    const activities = JSON.parse(localStorage.getItem('planx-activities') || '[]')
-    
-    const today = new Date().toDateString()
-    const vbaActivitiesToday = activities.filter((a: any) => 
-      a.type === 'vba' && new Date(a.timestamp).toDateString() === today
-    )
-
+    // TODO: Implement VBA stats from Supabase
     return {
-      activeInspections: vbaProjects.filter((p: any) => p.status === 'in_progress').length,
-      completedToday: vbaActivitiesToday.filter((a: any) => a.subType === 'inspection_complete').length,
-      totalPhotos: vbaActivitiesToday.filter((a: any) => a.subType === 'photo_uploaded')
-        .reduce((sum: number, a: any) => sum + (a.data?.count || 0), 0),
-      activeInspectors: new Set(vbaActivitiesToday.map((a: any) => a.userId)).size
+      activeInspections: 0,
+      completedToday: 0,
+      totalPhotos: 0,
+      activeInspectors: 0
     }
   }
 

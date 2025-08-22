@@ -141,15 +141,20 @@ export default function DigitalSignature({
       signatureHash: btoa(signatureData).substring(0, 32) // Simple hash for verification
     }
 
-    // Save to localStorage
-    const signatures = JSON.parse(
-      localStorage.getItem(`vba-signatures-${projectId}`) || '[]'
-    )
-    signatures.push({
-      ...metadata,
-      thumbnail: signatureData.substring(0, 100) + '...' // Store partial data as thumbnail
-    })
-    localStorage.setItem(`vba-signatures-${projectId}`, JSON.stringify(signatures))
+    // TODO: Save signature to Supabase database instead of localStorage
+    // await supabase
+    //   .from('digital_signatures')
+    //   .insert({
+    //     project_id: projectId,
+    //     signer_name: metadata.signerName,
+    //     signed_at: metadata.signedAt,
+    //     document_name: metadata.documentName,
+    //     ip_address: metadata.ipAddress,
+    //     user_agent: metadata.userAgent,
+    //     signature_hash: metadata.signatureHash,
+    //     signature_data: signatureData,
+    //     thumbnail: signatureData.substring(0, 100) + '...'
+    //   })
 
     onSignature(signatureData, metadata)
   }

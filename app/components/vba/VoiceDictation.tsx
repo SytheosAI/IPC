@@ -171,16 +171,16 @@ export default function VoiceDictation({
     if (finalText.trim() || audioBlob) {
       onTranscription(finalText.trim(), audioBlob || undefined)
       
-      // Save to localStorage
-      const dictations = JSON.parse(
-        localStorage.getItem(`vba-dictations-${projectId}`) || '[]'
-      )
-      dictations.push({
-        text: finalText.trim(),
-        timestamp: new Date().toISOString(),
-        hasAudio: !!audioBlob
-      })
-      localStorage.setItem(`vba-dictations-${projectId}`, JSON.stringify(dictations))
+      // TODO: Save to Supabase database instead of localStorage
+      // const dictations = await supabase
+      //   .from('voice_dictations')
+      //   .insert({
+      //     project_id: projectId,
+      //     text: finalText.trim(),
+      //     timestamp: new Date().toISOString(),
+      //     has_audio: !!audioBlob,
+      //     audio_blob: audioBlob ? await convertBlobToBase64(audioBlob) : null
+      //   })
       
       // Reset
       handleClear()

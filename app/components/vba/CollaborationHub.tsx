@@ -67,14 +67,18 @@ export default function CollaborationHub({
   }, [messages])
 
   const loadCollaborationData = () => {
-    // Load messages from localStorage
-    const savedMessages = localStorage.getItem(`vba-messages-${projectId}`)
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages).map((m: any) => ({
-        ...m,
-        timestamp: new Date(m.timestamp)
-      })))
-    }
+    // TODO: Load messages from Supabase database instead of localStorage
+    // const { data: messages } = await supabase
+    //   .from('collaboration_messages')
+    //   .select('*')
+    //   .eq('project_id', projectId)
+    //   .order('timestamp', { ascending: true })
+    // if (messages) {
+    //   setMessages(messages.map((m: any) => ({
+    //     ...m,
+    //     timestamp: new Date(m.timestamp)
+    //   })))
+    // }
 
     // Mock team members
     setTeamMembers([
@@ -128,7 +132,19 @@ export default function CollaborationHub({
   const addMessage = (message: Message) => {
     setMessages(prev => {
       const updated = [...prev, message]
-      localStorage.setItem(`vba-messages-${projectId}`, JSON.stringify(updated))
+      // TODO: Save message to Supabase database instead of localStorage
+      // await supabase
+      //   .from('collaboration_messages')
+      //   .insert({
+      //     project_id: projectId,
+      //     sender_id: message.senderId,
+      //     sender_name: message.senderName,
+      //     content: message.content,
+      //     type: message.type,
+      //     attachments: message.attachments,
+      //     read: message.read,
+      //     location: message.location
+      //   })
       return updated
     })
   }

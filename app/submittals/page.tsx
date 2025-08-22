@@ -91,12 +91,10 @@ export default function SubmittalsPage() {
   const [sortField, setSortField] = useState<'dateSubmitted' | 'projectName' | 'status'>('dateSubmitted')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  // Load submittals from localStorage on mount
+  // Load submittals from Supabase on mount
   useEffect(() => {
-    const savedSubmittals = localStorage.getItem('submittals')
-    if (savedSubmittals) {
-      setSubmittals(JSON.parse(savedSubmittals))
-    }
+    // TODO: Load submittals from Supabase
+    setSubmittals([])
   }, [])
 
   // Generate submittal number based on date and count
@@ -149,7 +147,7 @@ export default function SubmittalsPage() {
     
     const updatedSubmittals = [submittal, ...submittals]
     setSubmittals(updatedSubmittals)
-    localStorage.setItem('submittals', JSON.stringify(updatedSubmittals))
+    // TODO: Save submittal to Supabase
     
     // Reset form
     setNewSubmittal({

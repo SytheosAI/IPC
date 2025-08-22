@@ -24,7 +24,105 @@ import {
   EyeOff,
   RefreshCw,
   AlertCircle,
-  FileText
+  FileText,
+  CreditCard,
+  Users,
+  Briefcase,
+  Building,
+  MapPin,
+  Link,
+  Zap,
+  Activity,
+  HelpCircle,
+  Code,
+  Palette,
+  Volume2,
+  Wifi,
+  Camera,
+  Mic,
+  Calendar,
+  Clock,
+  Award,
+  TrendingUp,
+  BarChart3,
+  PieChart,
+  Layers,
+  GitBranch,
+  Terminal,
+  Cpu,
+  HardDrive,
+  Cloud,
+  Server,
+  CheckCircle,
+  XCircle,
+  Info,
+  Trash2,
+  Archive,
+  FolderOpen,
+  Package,
+  MessageSquare,
+  Send,
+  Inbox,
+  Search,
+  Filter,
+  SlidersHorizontal,
+  ToggleLeft,
+  ToggleRight,
+  Compass,
+  Navigation,
+  Map,
+  Target,
+  Flag,
+  Bookmark,
+  Heart,
+  Star,
+  ThumbsUp,
+  MessageCircle,
+  Share2,
+  Copy,
+  Clipboard,
+  Edit,
+  Type,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  Grid,
+  Layout,
+  Columns,
+  Sidebar,
+  Square,
+  Circle,
+  Triangle,
+  Hexagon,
+  Octagon,
+  Sparkles,
+  Wand2,
+  Lightbulb,
+  Rocket,
+  Trophy,
+  Medal,
+  Crown,
+  Gem,
+  Gift,
+  ShoppingCart,
+  DollarSign,
+  Euro,
+  Percent,
+  Calculator,
+  Wallet,
+  Receipt,
+  FileBarChart,
+  FileSpreadsheet,
+  FilePlus,
+  FileMinus,
+  FileCheck,
+  FileX,
+  FolderPlus,
+  FolderMinus,
+  FolderCheck,
+  FolderX,
+  Command
 } from 'lucide-react'
 import { db } from '@/lib/supabase-client'
 import { useUser } from '@/app/contexts/UserContext'
@@ -109,10 +207,27 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
+    { id: 'account', label: 'Account', icon: Settings },
+    { id: 'company', label: 'Company', icon: Building },
+    { id: 'team', label: 'Team', icon: Users },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'appearance', label: 'Appearance', icon: Monitor },
-    { id: 'data', label: 'Data Export', icon: Database },
+    { id: 'privacy', label: 'Privacy', icon: Lock },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'accessibility', label: 'Accessibility', icon: Eye },
+    { id: 'integrations', label: 'Integrations', icon: Link },
+    { id: 'api', label: 'API & Webhooks', icon: Code },
+    { id: 'billing', label: 'Billing', icon: CreditCard },
+    { id: 'usage', label: 'Usage & Limits', icon: TrendingUp },
+    { id: 'performance', label: 'Performance', icon: Zap },
+    { id: 'shortcuts', label: 'Shortcuts', icon: Command },
+    { id: 'workflows', label: 'Workflows', icon: GitBranch },
+    { id: 'templates', label: 'Templates', icon: Layers },
+    { id: 'backup', label: 'Backup & Sync', icon: Cloud },
+    { id: 'import', label: 'Import/Export', icon: Database },
+    { id: 'activity', label: 'Activity Log', icon: Activity },
+    { id: 'support', label: 'Support', icon: HelpCircle },
+    { id: 'advanced', label: 'Advanced', icon: Terminal },
   ]
 
   const handleProfileUpdate = () => {
@@ -667,8 +782,74 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Data Export Tab */}
-            {activeTab === 'data' && (
+            {/* Account Tab */}
+            {activeTab === 'account' && (
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Account Settings</h2>
+                
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Account Information</h3>
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Account Type</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">Professional</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Member Since</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">January 2024</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Account Status</span>
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Active
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">License Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">License Number</label>
+                        <input
+                          type="text"
+                          placeholder="Enter license number"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiration Date</label>
+                        <input
+                          type="date"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Account Actions</h3>
+                    <div className="space-y-3">
+                      <button className="w-full p-3 text-left bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">Download Account Data</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Export your account information</p>
+                          </div>
+                          <Download className="h-4 w-4 text-gray-400" />
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Import/Export Tab */}
+            {activeTab === 'import' && (
               <div className="p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Data Management</h2>
                 

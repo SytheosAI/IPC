@@ -54,27 +54,19 @@ export interface VBAProject {
   id: string
   project_id?: string
   project_name: string
-  job_number?: string
+  project_number?: string
   address: string
   city?: string
   state?: string
   contractor?: string
   owner?: string
-  status: 'scheduled' | 'in_progress' | 'completed' | 'failed'
-  scheduled_date?: string
+  status: 'scheduled' | 'in_progress' | 'completed' | 'failed' | 'passed'
+  start_date?: string
   completion_date?: string
-  inspector?: string
-  completion_rate?: number
+  inspection_count?: number
+  last_inspection_date?: string
   compliance_score?: number
-  last_updated?: string
   virtual_inspector_enabled?: boolean
-  gps_location?: { lat: number; lng: number }
-  photo_count?: number
-  violations?: number
-  ai_confidence?: number
-  selected_inspections?: string[]
-  inspection_type?: string
-  project_type?: string
   notes?: string
   created_by?: string
   created_at?: string
@@ -395,12 +387,17 @@ export const db = {
     },
     
     async create(project: Partial<Omit<VBAProject, 'id' | 'created_at' | 'updated_at'>>) {
+      // Generate a unique project number if not provided
+      const projectNumber = project.project_number || `VBA-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      
       // Ensure required fields have defaults
       const projectWithDefaults = {
         project_name: project.project_name || 'Untitled Project',
+        project_number: projectNumber,
         address: project.address || '',
         status: project.status || 'scheduled',
-        ...project
+        ...project,
+        project_number: projectNumber // Ensure project_number is set
       }
       const { data, error } = await supabase
         .from('vba_projects')

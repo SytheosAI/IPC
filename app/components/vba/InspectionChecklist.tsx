@@ -608,11 +608,16 @@ export default function InspectionChecklist({
   const [filter, setFilter] = useState<'all' | 'pending' | 'issues'>('all')
 
   useEffect(() => {
-    // Load checklist template or saved progress
-    const savedChecklist = localStorage.getItem(`vba-checklist-${projectId}-${inspectionType}`)
-    if (savedChecklist) {
-      setItems(JSON.parse(savedChecklist))
-    } else {
+    // TODO: Load checklist from Supabase database instead of localStorage
+    // const { data: savedChecklist } = await supabase
+    //   .from('inspection_checklists')
+    //   .select('items')
+    //   .eq('project_id', projectId)
+    //   .eq('inspection_type', inspectionType)
+    //   .single()
+    // if (savedChecklist?.items) {
+    //   setItems(savedChecklist.items)
+    // } else {
       // Load template - default to a generic checklist if type not found
       const template = checklistTemplates[inspectionType] || [
         { id: '1', category: 'General', description: 'Work performed according to approved plans', status: 'pending' },
@@ -624,16 +629,20 @@ export default function InspectionChecklist({
       setItems(template.map(item => ({ ...item, id: `${projectId}-${item.id}` })))
     }
 
-    // Load timer state
-    const savedTimer = localStorage.getItem(`vba-timer-${projectId}-${inspectionType}`)
-    if (savedTimer) {
-      const { elapsed, isRunning, start } = JSON.parse(savedTimer)
-      setTimeElapsed(elapsed)
-      if (isRunning && start) {
-        setStartTime(new Date(start))
-        setIsTimerRunning(true)
-      }
-    }
+    // TODO: Load timer state from Supabase database instead of localStorage
+    // const { data: savedTimer } = await supabase
+    //   .from('inspection_timers')
+    //   .select('*')
+    //   .eq('project_id', projectId)
+    //   .eq('inspection_type', inspectionType)
+    //   .single()
+    // if (savedTimer) {
+    //   setTimeElapsed(savedTimer.elapsed)
+    //   if (savedTimer.is_running && savedTimer.start_time) {
+    //     setStartTime(new Date(savedTimer.start_time))
+    //     setIsTimerRunning(true)
+    //   }
+    // }
   }, [inspectionType, projectId])
 
   useEffect(() => {
@@ -645,12 +654,16 @@ export default function InspectionChecklist({
         const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000)
         setTimeElapsed(elapsed)
         
-        // Save timer state
-        localStorage.setItem(`vba-timer-${projectId}-${inspectionType}`, JSON.stringify({
-          elapsed,
-          isRunning: true,
-          start: startTime.toISOString()
-        }))
+        // TODO: Save timer state to Supabase database instead of localStorage
+        // await supabase
+        //   .from('inspection_timers')
+        //   .upsert({
+        //     project_id: projectId,
+        //     inspection_type: inspectionType,
+        //     elapsed,
+        //     is_running: true,
+        //     start_time: startTime.toISOString()
+        //   })
       }, 1000)
     }
 
@@ -672,7 +685,14 @@ export default function InspectionChecklist({
     })
     
     setItems(updatedItems)
-    localStorage.setItem(`vba-checklist-${projectId}-${inspectionType}`, JSON.stringify(updatedItems))
+    // TODO: Save checklist items to Supabase database instead of localStorage
+    // await supabase
+    //   .from('inspection_checklists')
+    //   .upsert({
+    //     project_id: projectId,
+    //     inspection_type: inspectionType,
+    //     items: updatedItems
+    //   })
   }
 
   const updateItemNotes = (itemId: string, notes: string) => {
@@ -684,17 +704,29 @@ export default function InspectionChecklist({
     })
     
     setItems(updatedItems)
-    localStorage.setItem(`vba-checklist-${projectId}-${inspectionType}`, JSON.stringify(updatedItems))
+    // TODO: Save checklist items to Supabase database instead of localStorage
+    // await supabase
+    //   .from('inspection_checklists')
+    //   .upsert({
+    //     project_id: projectId,
+    //     inspection_type: inspectionType,
+    //     items: updatedItems
+    //   })
   }
 
   const toggleTimer = () => {
     if (isTimerRunning) {
       setIsTimerRunning(false)
-      localStorage.setItem(`vba-timer-${projectId}-${inspectionType}`, JSON.stringify({
-        elapsed: timeElapsed,
-        isRunning: false,
-        start: null
-      }))
+      // TODO: Save timer state to Supabase database instead of localStorage
+      // await supabase
+      //   .from('inspection_timers')
+      //   .upsert({
+      //     project_id: projectId,
+      //     inspection_type: inspectionType,
+      //     elapsed: timeElapsed,
+      //     is_running: false,
+      //     start_time: null
+      //   })
     } else {
       const now = new Date()
       setStartTime(now)

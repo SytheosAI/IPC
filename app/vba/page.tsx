@@ -44,7 +44,7 @@ import { db } from '@/lib/supabase-client'
 
 interface VBAProject {
   id: string
-  job_number?: string
+  project_number?: string
   project_name: string
   address: string
   inspection_type: string
@@ -177,51 +177,76 @@ export default function VBAPage() {
     try {
       setNewsLoading(true)
       
-      // Using a free news API that doesn't require authentication for construction news
-      // You can replace this with your preferred news API
-      const response = await fetch(
-        'https://newsdata.io/api/1/news?apikey=pub_52993cc6dc6e4de5c1a08c13c5b528dd17bb3&q=construction%20technology%20AI%20robotics&language=en&category=technology,business'
-      )
+      const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY
       
-      if (!response.ok) {
-        console.error('Failed to fetch news')
-        // Fallback to mock data if API fails
-        setNewsItems([
-          {
-            id: '1',
-            title: 'AI-Powered Construction Management Reduces Project Delays by 35%',
-            source: 'Construction AI Weekly',
-            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            category: 'AI & Tech',
-            description: 'New AI systems are revolutionizing construction project management'
-          },
-          {
-            id: '2',
-            title: 'Construction Robotics Market to Hit $20B by 2026',
-            source: 'TechConstruct News',
-            date: new Date(Date.now() - 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            category: 'AI & Tech',
-            description: 'Market analysis shows rapid growth in construction automation'
-          }
-        ])
-        return
-      }
-      
-      const data = await response.json()
-      
-      if (data.results) {
-        const formattedNews = data.results.slice(0, 5).map((article: any, index: number) => ({
-          id: index.toString(),
-          title: article.title,
-          source: article.source_name || article.source_id || 'Industry News',
-          date: new Date(article.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          category: 'AI & Tech',
-          url: article.link,
-          description: article.description || article.content?.substring(0, 150) + '...'
-        }))
+      if (!apiKey || apiKey === 'your_news_api_key_here') {
+        // Use alternative free news API if News API key is not configured
+        const response = await fetch(
+          'https://newsdata.io/api/1/news?apikey=pub_52993cc6dc6e4de5c1a08c13c5b528dd17bb3&q=construction%20technology%20AI%20robotics&language=en&category=technology,business'
+        )
         
-        setNewsItems(formattedNews)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.results) {
+            const formattedNews = data.results.slice(0, 5).map((article: any, index: number) => ({
+              id: index.toString(),
+              title: article.title,
+              source: article.source_name || article.source_id || 'Industry News',
+              date: new Date(article.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              category: 'AI & Tech',
+              url: article.link,
+              description: article.description || article.content?.substring(0, 150) + '...'
+            }))
+            setNewsItems(formattedNews)
+            return
+          }
+        }
+      } else {
+        // Use News API with the provided key
+        const response = await fetch(
+          `https://newsapi.org/v2/everything?q=construction+technology+AI+robotics&sortBy=publishedAt&pageSize=5&apiKey=${apiKey}`
+        )
+        
+        if (response.ok) {
+          const data = await response.json()
+          
+          if (data.articles) {
+            const formattedNews = data.articles.slice(0, 5).map((article: any, index: number) => ({
+              id: index.toString(),
+              title: article.title,
+              source: article.source.name || 'Industry News',
+              date: new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              category: 'AI & Tech',
+              url: article.url,
+              description: article.description || article.content?.substring(0, 150) + '...'
+            }))
+            
+            setNewsItems(formattedNews)
+            return
+          }
+        }
       }
+      
+      // Fallback to mock data if all APIs fail
+      console.error('Failed to fetch news from API, using fallback data')
+      setNewsItems([
+        {
+          id: '1',
+          title: 'AI-Powered Construction Management Reduces Project Delays by 35%',
+          source: 'Construction AI Weekly',
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          category: 'AI & Tech',
+          description: 'New AI systems are revolutionizing construction project management'
+        },
+        {
+          id: '2',
+          title: 'Construction Robotics Market to Hit $20B by 2026',
+          source: 'TechConstruct News',
+          date: new Date(Date.now() - 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          category: 'AI & Tech',
+          description: 'Market analysis shows rapid growth in construction automation'
+        }
+      ])
     } catch (error) {
       console.error('Failed to fetch news:', error)
       // Set fallback news items
@@ -813,7 +838,7 @@ export default function VBAPage() {
                         router.push(`/vba/project/${project.id}`)
                       }}
                     >
-                      {project.job_number || `J${project.id.slice(-4)}`}
+                      {project.project_number || `J${project.id.slice(-4)}`}
                     </td>
                     <td 
                       className="px-6 py-4 cursor-pointer"
@@ -1016,7 +1041,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
     e.preventDefault()
     
     const newProject: Partial<VBAProject> = {
-      job_number: projectData.jobNumber,
+      project_number: projectData.jobNumber,
       project_name: projectData.projectName,
       address: projectData.address,
       inspection_type: selectedInspections.join(', '),

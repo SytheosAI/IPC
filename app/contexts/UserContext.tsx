@@ -182,28 +182,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Failed to load user settings:', error)
-        // Fall back to localStorage if it exists for migration
-        const savedProfile = localStorage.getItem('userProfile')
-        const savedNotifications = localStorage.getItem('notificationSettings')
-        const savedSecurity = localStorage.getItem('securitySettings')
-        const savedTheme = localStorage.getItem('themeSettings')
-
-        if (savedProfile) setProfile(JSON.parse(savedProfile))
-        if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
-        if (savedSecurity) setSecurity(JSON.parse(savedSecurity))
-        if (savedTheme) {
-          const parsedTheme = JSON.parse(savedTheme)
-          setTheme(parsedTheme)
-          applyThemeToDocument(parsedTheme)
-        }
-        
-        // Clear localStorage after migration
-        if (savedProfile || savedNotifications || savedSecurity || savedTheme) {
-          localStorage.removeItem('userProfile')
-          localStorage.removeItem('notificationSettings')
-          localStorage.removeItem('securitySettings')
-          localStorage.removeItem('themeSettings')
-        }
+        // Use defaults if Supabase fails
+        applyThemeToDocument(defaultTheme)
       }
     }
     loadSettings()

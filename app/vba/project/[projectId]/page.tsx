@@ -98,17 +98,11 @@ export default function ProjectHub() {
         console.error('Failed to load inspection photos:', error)
       }
 
-      // Load reports
-      const savedReports = localStorage.getItem(`vba-reports-${projectId}`)
-      if (savedReports) {
-        setReports(JSON.parse(savedReports))
-      }
+      // Load reports - TODO: Implement reports table in Supabase
+      setReports([])
 
-      // Load inspection events
-      const savedEvents = localStorage.getItem(`vba-events-${projectId}`)
-      if (savedEvents) {
-        setInspectionEvents(JSON.parse(savedEvents))
-      }
+      // Load inspection events - TODO: Implement events table in Supabase
+      setInspectionEvents([])
     } catch (error) {
       console.error('Failed to load project details:', error)
     } finally {

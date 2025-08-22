@@ -147,15 +147,17 @@ export default function LocationServices({
         setCurrentLocation(location)
         checkGeofences(location)
         
-        // Store in localStorage for offline access
-        const locationHistory = JSON.parse(
-          localStorage.getItem(`vba-location-history-${projectId}`) || '[]'
-        )
-        locationHistory.push(location)
-        localStorage.setItem(
-          `vba-location-history-${projectId}`,
-          JSON.stringify(locationHistory.slice(-100)) // Keep last 100 locations
-        )
+        // TODO: Store location in Supabase database instead of localStorage
+        // await supabase
+        //   .from('location_history')
+        //   .insert({
+        //     project_id: projectId,
+        //     latitude: location.latitude,
+        //     longitude: location.longitude,
+        //     accuracy: location.accuracy,
+        //     timestamp: location.timestamp.toISOString()
+        //   })
+        // TODO: Implement cleanup logic to keep only last 100 locations per project
       },
       (error) => {
         let errorMessage = 'Unable to get location'
@@ -196,12 +198,16 @@ export default function LocationServices({
     const checkIn = { ...currentLocation, timestamp: new Date() }
     setCheckInHistory(prev => [...prev, checkIn])
     
-    // Store check-in
-    const checkIns = JSON.parse(
-      localStorage.getItem(`vba-checkins-${projectId}`) || '[]'
-    )
-    checkIns.push(checkIn)
-    localStorage.setItem(`vba-checkins-${projectId}`, JSON.stringify(checkIns))
+    // TODO: Store check-in to Supabase database instead of localStorage
+    // await supabase
+    //   .from('location_checkins')
+    //   .insert({
+    //     project_id: projectId,
+    //     latitude: checkIn.latitude,
+    //     longitude: checkIn.longitude,
+    //     accuracy: checkIn.accuracy,
+    //     timestamp: checkIn.timestamp.toISOString()
+    //   })
     
     if (onCheckIn) {
       onCheckIn(checkIn)

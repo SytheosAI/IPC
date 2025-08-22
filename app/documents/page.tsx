@@ -206,8 +206,10 @@ export default function DocumentsPage() {
           <ChevronRight className="h-4 w-4" />
           <span>Documents</span>
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col items-center gap-4 mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Document Management</h1>
+        </div>
+        <div className="flex justify-end">
           <button 
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
