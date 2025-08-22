@@ -232,115 +232,45 @@ export default function VBAPage() {
         }
       }
       
-      // Fallback to dynamic mock data if all APIs fail
-      console.error('Failed to fetch news from API, using fallback data')
-      const fallbackNews = [
-        {
-          title: 'AI-Powered Construction Management Reduces Project Delays by 35%',
-          source: 'Construction AI Weekly',
-          description: 'New study shows significant improvements in project timelines using machine learning algorithms'
-        },
-        {
-          title: 'Boston Dynamics Spot Robot Now Inspecting High-Rise Construction Sites',
-          source: 'Robotics Today',
-          description: 'Autonomous robots are revolutionizing safety inspections in dangerous construction environments'
-        },
-        {
-          title: 'Smart Concrete with Self-Healing Properties Tested in Major Infrastructure Projects',
-          source: 'Materials Innovation',
-          description: 'Revolutionary concrete mix can repair its own cracks, extending structure lifespan by decades'
-        },
-        {
-          title: 'BIM Software Integration with AR Headsets Transforms On-Site Construction',
-          source: 'TechConstruct News',
-          description: 'Workers can now visualize 3D building plans in real-time using augmented reality technology'
-        },
-        {
-          title: 'Modular Construction Methods Cut Building Time by 50% in New Housing Development',
-          source: 'Building Innovation',
-          description: 'Prefabricated modules assembled on-site demonstrate massive efficiency gains'
-        },
-        {
-          title: 'AI Vision Systems Detect Safety Violations with 98% Accuracy',
-          source: 'Safety Tech Review',
-          description: 'Computer vision technology automatically identifies PPE compliance and hazardous conditions'
-        },
-        {
-          title: 'Drone Swarms Complete Site Survey in Record Time',
-          source: 'Aerial Construction',
-          description: 'Coordinated drone teams can map entire construction sites in under an hour'
-        },
-        {
-          title: '3D Printing Technology Creates First Multi-Story Building in Texas',
-          source: 'Additive Manufacturing News',
-          description: 'Concrete 3D printing achieves new milestone with three-story residential structure'
-        }
-      ]
-      
-      // Randomly select 5 news items and add dates
-      const selectedNews = [...fallbackNews].sort(() => Math.random() - 0.5).slice(0, 5)
-      setNewsItems(selectedNews.map((item, index) => ({
-        id: index.toString(),
-        title: item.title,
-        source: item.source,
-        date: new Date(Date.now() - (index * 86400000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        category: 'AI & Tech',
-        description: item.description
-      })))
+      // If all API attempts fail, show error message
+      console.error('Failed to fetch news from API')
+      setNewsItems([{
+        id: '1',
+        title: 'News Feed Unavailable',
+        source: 'System',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        category: 'Error',
+        description: 'Please check your News API configuration in Settings'
+      }])
     } catch (error) {
       console.error('Failed to fetch news:', error)
-      // Set dynamic fallback news items
-      const fallbackNews = [
-        {
-          title: 'Next-Gen Exoskeletons Reduce Worker Fatigue by 60%',
-          source: 'Wearable Tech Daily',
-          description: 'Advanced exoskeletons help construction workers lift heavy materials with minimal strain'
-        },
-        {
-          title: 'Green Building Materials Market Sees 200% Growth',
-          source: 'Sustainable Construction',
-          description: 'Eco-friendly materials becoming standard in new construction projects'
-        },
-        {
-          title: 'AI Scheduling Platform Optimizes Subcontractor Coordination',
-          source: 'Construction Tech Weekly',
-          description: 'Machine learning algorithms prevent scheduling conflicts and delays'
-        },
-        {
-          title: 'Virtual Reality Training Reduces Workplace Accidents by 43%',
-          source: 'Safety First News',
-          description: 'VR simulations prepare workers for hazardous situations before entering job sites'
-        },
-        {
-          title: 'Autonomous Cranes Successfully Deployed in Singapore Port Construction',
-          source: 'Global Construction',
-          description: 'Self-operating cranes demonstrate precision and safety improvements'
-        }
-      ]
-      
-      const selectedNews = [...fallbackNews].sort(() => Math.random() - 0.5).slice(0, 5)
-      setNewsItems(selectedNews.map((item, index) => ({
-        id: index.toString(),
-        title: item.title,
-        source: item.source,
-        date: new Date(Date.now() - (index * 86400000)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        category: 'AI & Tech',
-        description: item.description
-      })))
+      // Show error state if news cannot be loaded
+      setNewsItems([{
+        id: '1',
+        title: 'Unable to Load News',
+        source: 'System',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        category: 'Error',
+        description: 'News API is not configured or unavailable'
+      }])
     } finally {
       setNewsLoading(false)
     }
   }
 
   const loadContacts = async () => {
-    // For now, use default contacts until we have a contacts table
-    const defaultContacts = [
-      { id: '1', name: 'John Smith', email: 'john.smith@example.com', phone: '(239) 555-0101', role: 'Senior Inspector' },
-      { id: '2', name: 'Sarah Johnson', email: 'sarah.j@example.com', phone: '(239) 555-0102', role: 'Lead Inspector' },
-      { id: '3', name: 'Mike Williams', email: 'mike.w@example.com', phone: '(239) 555-0103', role: 'Inspector' },
-      { id: '4', name: 'Emily Davis', email: 'emily.d@example.com', phone: '(239) 555-0104', role: 'Junior Inspector' }
-    ]
-    setContacts(defaultContacts)
+    // Load contacts from database once contacts table is set up
+    try {
+      // TODO: Implement contacts table query
+      // const contactsData = await db.contacts.getAll()
+      // setContacts(contactsData)
+      
+      // For now, set empty array until database is configured
+      setContacts([])
+    } catch (error) {
+      console.error('Failed to load contacts:', error)
+      setContacts([])
+    }
   }
 
   const loadInspectionSchedules = async () => {
@@ -551,39 +481,94 @@ export default function VBAPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Weather Widget */}
         <div 
-          className="relative rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300"
+          className="relative rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 bg-gray-800"
           onClick={() => window.open('https://earth.nullschool.net/', '_blank')}
-          style={{
-            background: weatherData.condition.toLowerCase().includes('rain') 
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-              : weatherData.condition.toLowerCase().includes('cloud')
-              ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-              : weatherData.condition.toLowerCase().includes('clear') || weatherData.condition.toLowerCase().includes('sun')
-              ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
-              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            minHeight: '320px'
-          }}
+          style={{ height: '320px' }}
         >
-          {/* Animated background effect */}
-          <div className="absolute inset-0 opacity-20">
-            {weatherData.condition.toLowerCase().includes('rain') && (
-              <div className="absolute inset-0" style={{
-                backgroundImage: `repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)`,
-                animation: 'rain 1s linear infinite',
-              }}></div>
-            )}
+          {/* Animated weather background - FIXED AND VISIBLE */}
+          <div className="absolute inset-0">
             {(weatherData.condition.toLowerCase().includes('clear') || weatherData.condition.toLowerCase().includes('sun')) && (
-              <div className="absolute top-8 right-8">
-                <div className="w-32 h-32 bg-yellow-300 rounded-full opacity-50 blur-xl animate-pulse"></div>
-              </div>
+              <>
+                {/* Bright sunny sky background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-300 via-orange-300 to-sky-400" />
+                {/* Large sun glow */}
+                <div className="absolute -top-16 -right-16 w-64 h-64">
+                  <div className="absolute inset-0 bg-yellow-200 rounded-full blur-3xl opacity-90 animate-pulse" />
+                  <div className="absolute inset-8 bg-yellow-300 rounded-full blur-2xl opacity-80" />
+                  <div className="absolute inset-16 bg-yellow-400 rounded-full blur-xl opacity-70" />
+                </div>
+                {/* Sun rays */}
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute bg-yellow-200 opacity-40"
+                    style={{
+                      width: '2px',
+                      height: '80px',
+                      top: '20px',
+                      right: '40px',
+                      transform: `rotate(${i * 60}deg)`,
+                      transformOrigin: 'center bottom',
+                      animation: `pulse ${3 + i * 0.5}s infinite`
+                    }}
+                  />
+                ))}
+              </>
             )}
+            
             {weatherData.condition.toLowerCase().includes('cloud') && (
-              <div className="absolute inset-0">
-                <div className="absolute top-4 left-8 w-24 h-16 bg-white rounded-full opacity-20 blur-md"></div>
-                <div className="absolute top-12 right-12 w-32 h-20 bg-white rounded-full opacity-15 blur-lg"></div>
-                <div className="absolute bottom-8 left-16 w-28 h-18 bg-white rounded-full opacity-10 blur-md"></div>
-              </div>
+              <>
+                {/* Cloudy overcast background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-400 via-gray-300 to-blue-400" />
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute bg-white rounded-full blur-2xl opacity-70"
+                    style={{
+                      width: `${80 + i * 20}px`,
+                      height: `${40 + i * 10}px`,
+                      top: `${10 + i * 15}%`,
+                      left: `${-10 + i * 25}%`,
+                      animation: `float ${15 + i * 2}s infinite ease-in-out`
+                    }}
+                  />
+                ))}
+              </>
             )}
+            
+            {(weatherData.condition.toLowerCase().includes('rain') || weatherData.condition.toLowerCase().includes('drizzle')) && (
+              <>
+                {/* Dark rainy background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-700 via-blue-700 to-gray-800" />
+                <div className="absolute top-0 left-8 w-24 h-24 bg-gray-500 rounded-full blur-3xl opacity-60" />
+                <div className="absolute top-8 right-16 w-32 h-32 bg-gray-600 rounded-full blur-3xl opacity-50" />
+                {/* Rain drops */}
+                {[...Array(20)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute bg-blue-300 opacity-80"
+                    style={{
+                      width: '2px',
+                      height: `${15 + Math.random() * 15}px`,
+                      left: `${Math.random() * 100}%`,
+                      top: `-${Math.random() * 20}px`,
+                      animation: `rain ${0.5 + Math.random() * 0.5}s linear infinite`,
+                      animationDelay: `${Math.random() * 2}s`
+                    }}
+                  />
+                ))}
+              </>
+            )}
+            
+            {/* Default gradient if no condition matches */}
+            {!weatherData.condition.toLowerCase().includes('clear') && 
+             !weatherData.condition.toLowerCase().includes('sun') &&
+             !weatherData.condition.toLowerCase().includes('cloud') &&
+             !weatherData.condition.toLowerCase().includes('rain') &&
+             !weatherData.condition.toLowerCase().includes('drizzle') && (
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-blue-500 to-sky-600" />
+            )}
+            {/* Remove duplicate weather elements since they're already in the main sections above */}
           </div>
 
           <div className="relative z-10 p-6 text-white">
@@ -645,17 +630,49 @@ export default function VBAPage() {
           <style jsx>{`
             @keyframes rain {
               0% {
-                transform: translateY(-100%);
+                transform: translateY(-100px);
+                opacity: 0;
+              }
+              10% {
+                opacity: 0.6;
+              }
+              90% {
+                opacity: 0.6;
               }
               100% {
-                transform: translateY(100%);
+                transform: translateY(400px);
+                opacity: 0;
+              }
+            }
+            @keyframes float {
+              0%, 100% {
+                transform: translateX(0) translateY(0);
+              }
+              25% {
+                transform: translateX(30px) translateY(-10px);
+              }
+              50% {
+                transform: translateX(-20px) translateY(5px);
+              }
+              75% {
+                transform: translateX(10px) translateY(-5px);
+              }
+            }
+            @keyframes pulse {
+              0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+              }
+              50% {
+                opacity: 0.8;
+                transform: scale(1.1);
               }
             }
           `}</style>
         </div>
 
         {/* This Week Stats */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow overflow-y-auto max-h-[500px]">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow" style={{ height: '320px', overflowY: 'auto' }}>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
             This Week
             <TrendingUp className="h-5 w-5 text-gray-400" />
@@ -713,7 +730,7 @@ export default function VBAPage() {
         </div>
 
         {/* Construction News */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 card-modern">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 card-modern" style={{ height: '320px', display: 'flex', flexDirection: 'column' }}>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
             Construction AI & Industry News
             <Newspaper className="h-5 w-5 text-gray-400" />
@@ -762,8 +779,9 @@ export default function VBAPage() {
             </button>
           </div>
 
-          <div className="space-y-4">
-            {newsLoading ? (
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-3">
+              {newsLoading ? (
               <div className="text-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400" />
                 <p className="text-sm text-gray-500 mt-2">Loading news...</p>
@@ -773,29 +791,28 @@ export default function VBAPage() {
             ) : (
               newsItems
                 .filter(news => selectedNewsCategory === 'all' || news.category.toLowerCase().includes(selectedNewsCategory.toLowerCase()))
+                .slice(0, 3)
                 .map((news) => (
-                  <div key={news.id} className="border-b border-gray-100 pb-4 last:border-0">
+                  <div key={news.id} className="pb-3 last:pb-0">
                     <h4 
-                      className="text-sm font-medium text-gray-900 mb-1 hover:text-sky-600 cursor-pointer line-clamp-2"
+                      className="text-sm font-medium text-gray-900 mb-1 hover:text-sky-600 cursor-pointer line-clamp-1"
                       onClick={() => news.url && window.open(news.url, '_blank')}
                     >
                       {news.title}
                     </h4>
-                    {news.description && (
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{news.description}</p>
-                    )}
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <span className="bg-gray-100 px-2 py-0.5 rounded">ai</span>
-                      <span>{news.source}</span>
+                      <span className="truncate">{news.source}</span>
                       <span>•</span>
                       <span>{news.date}</span>
                     </div>
                   </div>
                 ))
-            )}
+              )}
+            </div>
           </div>
 
-          <Link href="/vba/news" className="mt-4 flex items-center justify-center gap-2 text-sm text-sky-600 hover:text-sky-700">
+          <Link href="/vba/news" className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-center gap-2 text-sm text-sky-600 hover:text-sky-700">
             View More Construction AI News
             <ArrowUp className="h-4 w-4 rotate-90" />
           </Link>

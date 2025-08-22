@@ -53,72 +53,13 @@ export default function PermitNotifications() {
   }, [notifications])
 
   const loadNotifications = async () => {
-    // Load from localStorage for now (would be from API in production)
+    // Load from localStorage 
     const stored = localStorage.getItem('permit_notifications')
     if (stored) {
       setNotifications(JSON.parse(stored))
     } else {
-      // Sample notifications for demo
-      const sampleNotifications: Notification[] = [
-        {
-          id: '1',
-          type: 'status_change',
-          severity: 'success',
-          title: 'Permit Approved',
-          message: 'Building permit #2024-BP-001 has been approved by Lee County',
-          permitNumber: '2024-BP-001',
-          jurisdiction: 'lee-county',
-          timestamp: new Date().toISOString(),
-          read: false,
-          actionUrl: '/projects/123'
-        },
-        {
-          id: '2',
-          type: 'inspection',
-          severity: 'info',
-          title: 'Inspection Scheduled',
-          message: 'Foundation inspection scheduled for tomorrow at 10:00 AM',
-          permitNumber: '2024-BP-002',
-          jurisdiction: 'fort-myers',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          read: false
-        },
-        {
-          id: '3',
-          type: 'document',
-          severity: 'warning',
-          title: 'Document Required',
-          message: 'Additional documents requested for permit #2024-BP-003',
-          permitNumber: '2024-BP-003',
-          jurisdiction: 'cape-coral',
-          timestamp: new Date(Date.now() - 7200000).toISOString(),
-          read: false
-        },
-        {
-          id: '4',
-          type: 'fee',
-          severity: 'warning',
-          title: 'Payment Due',
-          message: 'Permit fees of $1,250.00 due by end of week',
-          permitNumber: '2024-BP-004',
-          jurisdiction: 'collier',
-          timestamp: new Date(Date.now() - 86400000).toISOString(),
-          read: true
-        },
-        {
-          id: '5',
-          type: 'expiration',
-          severity: 'error',
-          title: 'Permit Expiring Soon',
-          message: 'Permit #2024-BP-005 expires in 7 days. Request extension if needed.',
-          permitNumber: '2024-BP-005',
-          jurisdiction: 'sarasota',
-          timestamp: new Date(Date.now() - 172800000).toISOString(),
-          read: false
-        }
-      ]
-      setNotifications(sampleNotifications)
-      localStorage.setItem('permit_notifications', JSON.stringify(sampleNotifications))
+      // Start with empty notifications - will be populated by sync
+      setNotifications([])
     }
   }
 
