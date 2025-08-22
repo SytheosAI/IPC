@@ -114,6 +114,7 @@ export default function FieldReportsPage() {
   const [selectedProject, setSelectedProject] = useState<string>('')
   const [selectedReporter, setSelectedReporter] = useState<string>('')
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([])
+  const [weatherData, setWeatherData] = useState<{ conditions: string; temperature: number } | null>(null)
 
   useEffect(() => {
     loadFieldReports()
@@ -130,6 +131,12 @@ export default function FieldReportsPage() {
       channel.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (showNewReportModal) {
+      fetchWeatherData()
+    }
+  }, [showNewReportModal])
 
   const loadFieldReports = async () => {
     try {
@@ -208,6 +215,34 @@ export default function FieldReportsPage() {
 
   const removePhoto = (index: number) => {
     setUploadedPhotos(uploadedPhotos.filter((_, i) => i !== index))
+  }
+
+  const fetchWeatherData = async () => {
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
+      if (apiKey) {
+        // Fort Myers coordinates
+        const lat = 26.6406
+        const lon = -81.8723
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setWeatherData({
+            conditions: data.weather[0].main,
+            temperature: Math.round(data.main.temp)
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch weather:', error)
+      // Set default values if API fails
+      setWeatherData({
+        conditions: 'Clear',
+        temperature: 75
+      })
+    }
   }
 
   const filteredReports = reports.filter(report => {
@@ -751,8 +786,9 @@ export default function FieldReportsPage() {
                       <input
                         type="text"
                         name="weather_conditions"
-                        placeholder="e.g., Sunny, Rainy"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        defaultValue={weatherData?.conditions || ''}
+                        placeholder="Auto-filled from weather API"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-50"
                       />
                     </div>
                     <div>
@@ -760,8 +796,9 @@ export default function FieldReportsPage() {
                       <input
                         type="number"
                         name="weather_temperature"
-                        placeholder="75"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        defaultValue={weatherData?.temperature || ''}
+                        placeholder="Auto-filled"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 bg-gray-50"
                       />
                     </div>
                   </div>

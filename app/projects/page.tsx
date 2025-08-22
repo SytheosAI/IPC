@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
   FileText,
   Plus,
@@ -55,6 +56,7 @@ interface Project {
 }
 
 export default function ProjectsPage() {
+  const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [showNewProjectModal, setShowNewProjectModal] = useState(false)
   const [newProject, setNewProject] = useState({
@@ -321,7 +323,7 @@ export default function ProjectsPage() {
                   <tr 
                     key={project.id} 
                     className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                    onClick={() => window.location.href = `/projects/${project.id}`}
+                    onClick={() => router.push(`/projects/${project.id}`)}
                   >
                     <td className="px-6 py-4">
                       <div>
@@ -355,7 +357,7 @@ export default function ProjectsPage() {
                         <button 
                           onClick={(e) => {
                             e.stopPropagation()
-                            window.location.href = `/projects/${project.id}`
+                            router.push(`/projects/${project.id}`)
                           }}
                           className="text-sky-600 hover:text-sky-900 dark:hover:text-sky-300 transition-colors"
                         >
