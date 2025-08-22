@@ -122,7 +122,11 @@ import {
   FolderMinus,
   FolderCheck,
   FolderX,
-  Command
+  Command,
+  Plus,
+  Check,
+  ChevronRight,
+  MoreVertical
 } from 'lucide-react'
 import { db } from '@/lib/supabase-client'
 import { useUser } from '@/app/contexts/UserContext'
@@ -134,6 +138,8 @@ interface UserProfile {
   department: string
   phone: string
   avatar?: string
+  company?: string
+  license?: string
 }
 
 interface NotificationSettings {
@@ -144,6 +150,8 @@ interface NotificationSettings {
   inspectionAlerts: boolean
   reportSubmissions: boolean
   documentUploads: boolean
+  weeklyDigest: boolean
+  monthlyReport: boolean
 }
 
 interface SecuritySettings {
@@ -151,12 +159,18 @@ interface SecuritySettings {
   sessionTimeout: number
   passwordExpiry: number
   loginAlerts: boolean
+  apiAccess: boolean
+  ipWhitelist: string[]
 }
 
 interface ThemeSettings {
   mode: 'light' | 'dark' | 'system'
   primaryColor: string
-  fontSize: 'small' | 'medium' | 'large'
+  fontSize: 'small' | 'medium' | 'large' | 'extra-large'
+  borderRadius: 'none' | 'small' | 'medium' | 'large'
+  compactMode: boolean
+  animations: boolean
+  highContrast: boolean
 }
 
 export default function SettingsPage() {
@@ -164,14 +178,17 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
   
-  // Profile state - initialize from context if available
+  // Profile state
   const [profile, setProfile] = useState<UserProfile>({
-    name: userContext?.profile?.name || 'John Doe',
-    email: userContext?.profile?.email || 'john.doe@example.com',
-    role: userContext?.profile?.title || 'Senior Inspector',
+    name: userContext?.profile?.name || '',
+    email: userContext?.profile?.email || '',
+    role: userContext?.profile?.title || 'Inspector',
     department: 'Building & Safety',
-    phone: userContext?.profile?.phone || '(555) 123-4567'
+    phone: userContext?.profile?.phone || '',
+    company: userContext?.profile?.company || '',
+    license: ''
   })
 
   // Notification settings
@@ -182,7 +199,9 @@ export default function SettingsPage() {
     projectUpdates: true,
     inspectionAlerts: true,
     reportSubmissions: true,
-    documentUploads: false
+    documentUploads: false,
+    weeklyDigest: true,
+    monthlyReport: false
   })
 
   // Security settings
@@ -190,14 +209,20 @@ export default function SettingsPage() {
     twoFactorAuth: false,
     sessionTimeout: 30,
     passwordExpiry: 90,
-    loginAlerts: true
+    loginAlerts: true,
+    apiAccess: false,
+    ipWhitelist: []
   })
 
-  // Theme settings - use context value
+  // Theme settings
   const [theme, setTheme] = useState<ThemeSettings>({
     mode: (userContext?.theme?.theme === 'auto' ? 'system' : userContext?.theme?.theme) || 'light',
     primaryColor: userContext?.theme?.accentColor || 'sky',
-    fontSize: 'medium'
+    fontSize: 'medium',
+    borderRadius: 'medium',
+    compactMode: false,
+    animations: true,
+    highContrast: false
   })
 
   const [showPassword, setShowPassword] = useState(false)
@@ -205,49 +230,62 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
+  // Streamlined tabs - removed unnecessary ones
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'account', label: 'Account', icon: Settings },
-    { id: 'company', label: 'Company', icon: Building },
-    { id: 'team', label: 'Team', icon: Users },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'privacy', label: 'Privacy', icon: Lock },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'accessibility', label: 'Accessibility', icon: Eye },
+    { id: 'company', label: 'Organization', icon: Building },
+    { id: 'team', label: 'Team', icon: Users },
     { id: 'integrations', label: 'Integrations', icon: Link },
-    { id: 'api', label: 'API & Webhooks', icon: Code },
+    { id: 'api', label: 'API & Developer', icon: Code },
     { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'usage', label: 'Usage & Limits', icon: TrendingUp },
-    { id: 'performance', label: 'Performance', icon: Zap },
-    { id: 'shortcuts', label: 'Shortcuts', icon: Command },
-    { id: 'workflows', label: 'Workflows', icon: GitBranch },
-    { id: 'templates', label: 'Templates', icon: Layers },
-    { id: 'backup', label: 'Backup & Sync', icon: Cloud },
-    { id: 'import', label: 'Import/Export', icon: Database },
+    { id: 'data', label: 'Data & Privacy', icon: Database },
     { id: 'activity', label: 'Activity Log', icon: Activity },
-    { id: 'support', label: 'Support', icon: HelpCircle },
-    { id: 'advanced', label: 'Advanced', icon: Terminal },
+    { id: 'support', label: 'Help & Support', icon: HelpCircle }
   ]
 
-  const handleProfileUpdate = () => {
+  const handleSave = async () => {
     setLoading(true)
-    // Update profile in context
-    if (userContext?.updateProfile) {
-      userContext.updateProfile({
-        name: profile.name,
-        email: profile.email,
-        phone: profile.phone,
-        title: profile.role,
-        company: profile.department,
-        address: ''
+    setSaved(false)
+    
+    try {
+      // Update user context
+      if (userContext?.updateProfile) {
+        userContext.updateProfile({
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          title: profile.role,
+          company: profile.company || profile.department,
+          address: ''
+        })
+      }
+
+      if (userContext?.updateTheme) {
+        userContext.updateTheme({
+          theme: theme.mode === 'system' ? 'auto' : theme.mode,
+          accentColor: theme.primaryColor
+        })
+      }
+
+      // Save to database
+      await db.userSettings.update({
+        profile,
+        notifications,
+        security,
+        theme
       })
-    }
-    // Simulate API call
-    setTimeout(() => {
+
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      console.error('Failed to save settings:', err)
+      setError('Failed to save settings')
+    } finally {
       setLoading(false)
-      alert('Profile updated successfully!')
-    }, 1000)
+    }
   }
 
   const handlePasswordChange = () => {
@@ -269,18 +307,16 @@ export default function SettingsPage() {
     }, 1000)
   }
 
-  const exportDatabaseData = async () => {
+  const exportData = async () => {
     try {
       setLoading(true)
-      setError(null)
       
-      // Fetch all data from Supabase
       const [projects, fieldReports, documents, vbaProjects, inspections] = await Promise.all([
-        db.projects.getAll(),
-        db.fieldReports.getAll(),
-        db.documents.getAll(),
-        db.vbaProjects.getAll(),
-        db.inspections.getAll()
+        db.projects.getAll().catch(() => []),
+        db.fieldReports.getAll().catch(() => []),
+        db.documents.getAll().catch(() => []),
+        db.vbaProjects.getAll().catch(() => []),
+        db.inspections.getAll().catch(() => [])
       ])
       
       const exportData = {
@@ -291,70 +327,44 @@ export default function SettingsPage() {
           fieldReports,
           documents,
           vbaProjects,
-          inspections
+          inspections,
+          settings: {
+            profile,
+            notifications,
+            theme
+          }
         }
       }
       
-      // Create and download JSON file
       const dataStr = JSON.stringify(exportData, null, 2)
       const dataBlob = new Blob([dataStr], { type: 'application/json' })
       const url = URL.createObjectURL(dataBlob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `IPC-database-export-${new Date().toISOString().split('T')[0]}.json`
+      link.download = `IPC-export-${new Date().toISOString().split('T')[0]}.json`
       link.click()
       URL.revokeObjectURL(url)
       
-      alert('Database exported successfully!')
+      alert('Data exported successfully!')
     } catch (err) {
       console.error('Error exporting data:', err)
-      setError('Failed to export database. Please try again.')
+      alert('Failed to export data')
     } finally {
       setLoading(false)
     }
   }
 
-  const generateReport = async (type: 'pdf' | 'csv') => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      // Fetch recent activity
-      const recentActivity = await db.activityLogs.getRecent(100)
-      
-      if (type === 'csv') {
-        // Generate CSV
-        const headers = ['Date', 'Action', 'Entity Type', 'Entity ID', 'User']
-        const rows = recentActivity.map(log => [
-          new Date(log.created_at).toLocaleString(),
-          log.action,
-          log.entity_type || '',
-          log.entity_id || '',
-          log.user_id || 'System'
-        ])
-        
-        const csvContent = [
-          headers.join(','),
-          ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-        ].join('\n')
-        
-        const blob = new Blob([csvContent], { type: 'text/csv' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = `activity-report-${new Date().toISOString().split('T')[0]}.csv`
-        link.click()
-        URL.revokeObjectURL(url)
-      } else {
-        alert('PDF export coming soon!')
-      }
-    } catch (err) {
-      console.error('Error generating report:', err)
-      setError('Failed to generate report. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Color options with gradient previews
+  const colorOptions = [
+    { value: 'sky', label: 'Sky Blue', gradient: 'from-sky-400 to-sky-600' },
+    { value: 'blue', label: 'Ocean Blue', gradient: 'from-blue-400 to-blue-600' },
+    { value: 'purple', label: 'Royal Purple', gradient: 'from-purple-400 to-purple-600' },
+    { value: 'green', label: 'Forest Green', gradient: 'from-green-400 to-green-600' },
+    { value: 'rose', label: 'Rose Gold', gradient: 'from-rose-400 to-rose-600' },
+    { value: 'amber', label: 'Sunset Amber', gradient: 'from-amber-400 to-amber-600' },
+    { value: 'teal', label: 'Teal Wave', gradient: 'from-teal-400 to-teal-600' },
+    { value: 'indigo', label: 'Deep Indigo', gradient: 'from-indigo-400 to-indigo-600' }
+  ]
 
   return (
     <div className="p-6">
@@ -373,14 +383,17 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                     activeTab === tab.id
-                      ? 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 border-l-4 border-sky-600'
+                      ? 'bg-gradient-to-r from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 text-sky-600 dark:text-sky-400 border-l-4 border-sky-600 shadow-sm'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="font-medium">{tab.label}</span>
+                  {activeTab === tab.id && (
+                    <ChevronRight className="h-4 w-4 ml-auto" />
+                  )}
                 </button>
               )
             })}
@@ -397,8 +410,8 @@ export default function SettingsPage() {
                 
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
-                    <div className="h-20 w-20 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                      <User className="h-10 w-10 text-gray-500 dark:text-gray-400" />
+                    <div className="h-20 w-20 bg-gradient-to-br from-sky-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                      <User className="h-10 w-10 text-white" />
                     </div>
                     <div>
                       <button className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors">
@@ -444,17 +457,6 @@ export default function SettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Department
-                      </label>
-                      <input
-                        type="text"
-                        value={profile.department}
-                        onChange={(e) => setProfile({ ...profile, department: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Phone Number
                       </label>
                       <input
@@ -464,20 +466,254 @@ export default function SettingsPage() {
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Company
+                      </label>
+                      <input
+                        type="text"
+                        value={profile.company}
+                        onChange={(e) => setProfile({ ...profile, company: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        License Number
+                      </label>
+                      <input
+                        type="text"
+                        value={profile.license}
+                        onChange={(e) => setProfile({ ...profile, license: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      />
+                    </div>
                   </div>
 
                   <div className="flex justify-end">
                     <button 
-                      onClick={handleProfileUpdate}
+                      onClick={handleSave}
                       disabled={loading}
-                      className="px-6 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-6 py-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg hover:from-sky-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
                     >
                       {loading ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : saved ? (
+                        <Check className="h-4 w-4" />
                       ) : (
                         <Save className="h-4 w-4" />
                       )}
-                      Save Changes
+                      {saved ? 'Saved!' : 'Save Changes'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Enhanced Appearance Tab */}
+            {activeTab === 'appearance' && (
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Appearance Settings</h2>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-yellow-500" />
+                    <span className="text-sm text-gray-500">Customize your experience</span>
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  {/* Theme Mode */}
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Theme Mode</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { value: 'light', icon: Sun, label: 'Light', description: 'Bright and clean' },
+                        { value: 'dark', icon: Moon, label: 'Dark', description: 'Easy on the eyes' },
+                        { value: 'system', icon: Monitor, label: 'System', description: 'Auto-switch' }
+                      ].map((option) => {
+                        const Icon = option.icon
+                        return (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setTheme({ ...theme, mode: option.value as ThemeSettings['mode'] })
+                              if (userContext?.updateTheme) {
+                                userContext.updateTheme({ 
+                                  theme: option.value === 'system' ? 'auto' : option.value, 
+                                  accentColor: theme.primaryColor 
+                                })
+                              }
+                            }}
+                            className={`relative p-6 rounded-xl border-2 transition-all duration-300 ${
+                              theme.mode === option.value
+                                ? 'border-sky-500 bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 shadow-lg transform scale-105'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
+                          >
+                            {theme.mode === option.value && (
+                              <div className="absolute top-2 right-2">
+                                <Check className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+                              </div>
+                            )}
+                            <Icon className={`h-8 w-8 mx-auto mb-3 ${
+                              theme.mode === option.value
+                                ? 'text-sky-600 dark:text-sky-400'
+                                : 'text-gray-600 dark:text-gray-400'
+                            }`} />
+                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{option.label}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{option.description}</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Accent Color */}
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Accent Color</h3>
+                    <div className="grid grid-cols-4 gap-3">
+                      {colorOptions.map((color) => (
+                        <button
+                          key={color.value}
+                          onClick={() => {
+                            setTheme({ ...theme, primaryColor: color.value })
+                            if (userContext?.updateTheme) {
+                              userContext.updateTheme({ 
+                                theme: theme.mode === 'system' ? 'auto' : theme.mode, 
+                                accentColor: color.value 
+                              })
+                            }
+                          }}
+                          className={`relative group overflow-hidden rounded-xl transition-all duration-300 ${
+                            theme.primaryColor === color.value
+                              ? 'ring-2 ring-offset-2 ring-sky-500 transform scale-105'
+                              : 'hover:transform hover:scale-105'
+                          }`}
+                        >
+                          <div className={`h-20 bg-gradient-to-br ${color.gradient}`} />
+                          <div className="p-2 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                            <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{color.label}</div>
+                          </div>
+                          {theme.primaryColor === color.value && (
+                            <div className="absolute top-2 right-2 bg-white dark:bg-gray-800 rounded-full p-1">
+                              <Check className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Typography & Layout */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Font Size</h3>
+                      <div className="space-y-2">
+                        {['small', 'medium', 'large', 'extra-large'].map((size) => (
+                          <label key={size} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer">
+                            <span className="text-sm capitalize text-gray-700 dark:text-gray-300">{size.replace('-', ' ')}</span>
+                            <input
+                              type="radio"
+                              name="fontSize"
+                              value={size}
+                              checked={theme.fontSize === size}
+                              onChange={(e) => setTheme({ ...theme, fontSize: e.target.value as ThemeSettings['fontSize'] })}
+                              className="text-sky-600 focus:ring-sky-500"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Border Radius</h3>
+                      <div className="space-y-2">
+                        {['none', 'small', 'medium', 'large'].map((radius) => (
+                          <label key={radius} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer">
+                            <span className="text-sm capitalize text-gray-700 dark:text-gray-300">{radius}</span>
+                            <input
+                              type="radio"
+                              name="borderRadius"
+                              value={radius}
+                              checked={theme.borderRadius === radius}
+                              onChange={(e) => setTheme({ ...theme, borderRadius: e.target.value as ThemeSettings['borderRadius'] })}
+                              className="text-sky-600 focus:ring-sky-500"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visual Effects */}
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Visual Effects</h3>
+                    <div className="space-y-3">
+                      <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Zap className="h-5 w-5 text-gray-500" />
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">Animations</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Smooth transitions and effects</p>
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={theme.animations}
+                          onChange={(e) => setTheme({ ...theme, animations: e.target.checked })}
+                          className="h-5 w-5 text-sky-600 rounded focus:ring-sky-500"
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Grid className="h-5 w-5 text-gray-500" />
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">Compact Mode</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Reduce spacing for more content</p>
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={theme.compactMode}
+                          onChange={(e) => setTheme({ ...theme, compactMode: e.target.checked })}
+                          className="h-5 w-5 text-sky-600 rounded focus:ring-sky-500"
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Eye className="h-5 w-5 text-gray-500" />
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">High Contrast</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Increase text and UI contrast</p>
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={theme.highContrast}
+                          onChange={(e) => setTheme({ ...theme, highContrast: e.target.checked })}
+                          className="h-5 w-5 text-sky-600 rounded focus:ring-sky-500"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSave}
+                      disabled={loading}
+                      className="px-6 py-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg hover:from-sky-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
+                    >
+                      {loading ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : saved ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      {saved ? 'Saved!' : 'Save Changes'}
                     </button>
                   </div>
                 </div>
@@ -543,48 +779,30 @@ export default function SettingsPage() {
 
                   <div>
                     <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Notification Types</h3>
-                    <div className="space-y-3">
-                      <label className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300">Project Updates</span>
-                        <input
-                          type="checkbox"
-                          checked={notifications.projectUpdates}
-                          onChange={(e) => setNotifications({ ...notifications, projectUpdates: e.target.checked })}
-                          className="h-5 w-5 text-sky-600 rounded focus:ring-sky-500"
-                        />
-                      </label>
-                      <label className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300">Inspection Alerts</span>
-                        <input
-                          type="checkbox"
-                          checked={notifications.inspectionAlerts}
-                          onChange={(e) => setNotifications({ ...notifications, inspectionAlerts: e.target.checked })}
-                          className="h-5 w-5 text-sky-600 rounded focus:ring-sky-500"
-                        />
-                      </label>
-                      <label className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300">Report Submissions</span>
-                        <input
-                          type="checkbox"
-                          checked={notifications.reportSubmissions}
-                          onChange={(e) => setNotifications({ ...notifications, reportSubmissions: e.target.checked })}
-                          className="h-5 w-5 text-sky-600 rounded focus:ring-sky-500"
-                        />
-                      </label>
-                      <label className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300">Document Uploads</span>
-                        <input
-                          type="checkbox"
-                          checked={notifications.documentUploads}
-                          onChange={(e) => setNotifications({ ...notifications, documentUploads: e.target.checked })}
-                          className="h-5 w-5 text-sky-600 rounded focus:ring-sky-500"
-                        />
-                      </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { key: 'projectUpdates', label: 'Project Updates' },
+                        { key: 'inspectionAlerts', label: 'Inspection Alerts' },
+                        { key: 'reportSubmissions', label: 'Report Submissions' },
+                        { key: 'documentUploads', label: 'Document Uploads' },
+                        { key: 'weeklyDigest', label: 'Weekly Digest' },
+                        { key: 'monthlyReport', label: 'Monthly Reports' }
+                      ].map((item) => (
+                        <label key={item.key} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900">
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{item.label}</span>
+                          <input
+                            type="checkbox"
+                            checked={notifications[item.key as keyof NotificationSettings] as boolean}
+                            onChange={(e) => setNotifications({ ...notifications, [item.key]: e.target.checked })}
+                            className="h-4 w-4 text-sky-600 rounded focus:ring-sky-500"
+                          />
+                        </label>
+                      ))}
                     </div>
                   </div>
 
                   <div className="flex justify-end">
-                    <button className="px-6 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center gap-2">
+                    <button onClick={handleSave} className="px-6 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center gap-2">
                       <Save className="h-4 w-4" />
                       Save Preferences
                     </button>
@@ -601,7 +819,7 @@ export default function SettingsPage() {
                 <div className="space-y-6">
                   <div>
                     <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Change Password</h3>
-                    <div className="space-y-4">
+                    <div className="space-y-4 max-w-md">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Current Password
@@ -693,199 +911,31 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Appearance Tab */}
-            {activeTab === 'appearance' && (
-              <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Appearance Settings</h2>
-                
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Theme</h3>
-                    <div className="grid grid-cols-3 gap-3">
-                      <button
-                        onClick={() => {
-                          const newTheme = { ...theme, mode: 'light' as const }
-                          setTheme(newTheme)
-                          // Apply theme immediately via context
-                          if (userContext?.updateTheme) {
-                            userContext.updateTheme({ theme: 'light', accentColor: theme.primaryColor })
-                          }
-                        }}
-                        className={`p-4 rounded-lg border-2 ${
-                          theme.mode === 'light' 
-                            ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/20' 
-                            : 'border-gray-200 dark:border-gray-700'
-                        }`}
-                      >
-                        <Sun className="h-6 w-6 mx-auto mb-2 text-gray-700 dark:text-gray-300" />
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Light</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const newTheme = { ...theme, mode: 'dark' as const }
-                          setTheme(newTheme)
-                          // Apply theme immediately via context
-                          if (userContext?.updateTheme) {
-                            userContext.updateTheme({ theme: 'dark', accentColor: theme.primaryColor })
-                          }
-                        }}
-                        className={`p-4 rounded-lg border-2 ${
-                          theme.mode === 'dark' 
-                            ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/20' 
-                            : 'border-gray-200 dark:border-gray-700'
-                        }`}
-                      >
-                        <Moon className="h-6 w-6 mx-auto mb-2 text-gray-700 dark:text-gray-300" />
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Dark</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const newTheme = { ...theme, mode: 'system' as const }
-                          setTheme(newTheme)
-                          // Apply theme immediately via context
-                          if (userContext?.updateTheme) {
-                            userContext.updateTheme({ theme: 'auto', accentColor: theme.primaryColor })
-                          }
-                        }}
-                        className={`p-4 rounded-lg border-2 ${
-                          theme.mode === 'system' 
-                            ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/20' 
-                            : 'border-gray-200 dark:border-gray-700'
-                        }`}
-                      >
-                        <Monitor className="h-6 w-6 mx-auto mb-2 text-gray-700 dark:text-gray-300" />
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">System</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Font Size</h3>
-                    <select
-                      value={theme.fontSize}
-                      onChange={(e) => setTheme({ ...theme, fontSize: e.target.value as ThemeSettings['fontSize'] })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    >
-                      <option value="small">Small</option>
-                      <option value="medium">Medium</option>
-                      <option value="large">Large</option>
-                    </select>
-                  </div>
-
-                  <div className="flex justify-end">
-                    <button className="px-6 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center gap-2">
-                      <Save className="h-4 w-4" />
-                      Save Appearance
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Account Tab */}
-            {activeTab === 'account' && (
-              <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Account Settings</h2>
-                
-                <div className="space-y-8">
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Account Information</h3>
-                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Account Type</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">Professional</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Member Since</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">January 2024</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Account Status</span>
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Active
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">License Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">License Number</label>
-                        <input
-                          type="text"
-                          placeholder="Enter license number"
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiration Date</label>
-                        <input
-                          type="date"
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Account Actions</h3>
-                    <div className="space-y-3">
-                      <button className="w-full p-3 text-left bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">Download Account Data</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Export your account information</p>
-                          </div>
-                          <Download className="h-4 w-4 text-gray-400" />
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Import/Export Tab */}
-            {activeTab === 'import' && (
+            {/* Data & Privacy Tab */}
+            {activeTab === 'data' && (
               <div className="p-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Data Management</h2>
                 
-                {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                    <div className="flex items-center">
-                      <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-                      <span className="text-red-800">{error}</span>
-                    </div>
-                  </div>
-                )}
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                       <Database className="h-5 w-5" />
-                      Database Export
+                      Export Data
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Export all your data from the database for backup or migration purposes.
+                      Download all your data including projects, reports, and settings.
                     </p>
                     <button 
-                      onClick={exportDatabaseData}
+                      onClick={exportData}
                       disabled={loading}
                       className="w-full p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">Export Database</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Download as JSON file</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">Export All Data</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Download as JSON</p>
                         </div>
-                        {loading ? (
-                          <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
-                        ) : (
-                          <Download className="h-4 w-4 text-gray-400" />
-                        )}
+                        <Download className="h-4 w-4 text-gray-400" />
                       </div>
                     </button>
                   </div>
@@ -893,44 +943,39 @@ export default function SettingsPage() {
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                       <FileText className="h-5 w-5" />
-                      Activity Reports
+                      Privacy Settings
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Generate reports of system activity and usage.
+                      Control how your data is used and shared.
                     </p>
-                    <div className="space-y-3">
-                      <button 
-                        onClick={() => generateReport('csv')}
-                        disabled={loading}
-                        className="w-full p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">Activity Log CSV</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Recent activity export</p>
-                          </div>
-                          {loading ? (
-                            <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
-                          ) : (
-                            <Download className="h-4 w-4 text-gray-400" />
-                          )}
-                        </div>
-                      </button>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" className="rounded text-sky-600" defaultChecked />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Analytics tracking</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" className="rounded text-sky-600" defaultChecked />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Performance monitoring</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" className="rounded text-sky-600" />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Share usage data</span>
+                      </label>
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
 
-                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-blue-900 dark:text-blue-100">Data Privacy Notice</p>
-                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                        Your exported data contains sensitive information. Please store it securely and follow your organization&apos;s data handling policies.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            {/* Placeholder for other tabs */}
+            {!['profile', 'appearance', 'notifications', 'security', 'data'].includes(activeTab) && (
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">
+                  {tabs.find(t => t.id === activeTab)?.label}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  This section is coming soon. We're working on bringing you more features!
+                </p>
               </div>
             )}
           </div>
@@ -939,12 +984,3 @@ export default function SettingsPage() {
     </div>
   )
 }
-
-// Import required icons from lucide-react
-import type { LucideIcon } from 'lucide-react'
-
-interface TabIcon {
-  icon: LucideIcon
-}
-
-type FileText = LucideIcon

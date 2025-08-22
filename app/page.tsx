@@ -71,8 +71,14 @@ export default function DashboardPage() {
       setLoading(true)
       setError(null)
       
-      // Load projects from Supabase
-      const projects = await db.projects.getAll()
+      // Load projects from Supabase with error handling
+      let projects = []
+      try {
+        projects = await db.projects.getAll()
+      } catch (dbError) {
+        console.warn('Failed to load projects from database:', dbError)
+        projects = [] // Use empty array as fallback
+      }
       setRecentProjects(projects.slice(0, 10)) // Show only recent 10
 
       // Calculate stats based on actual data

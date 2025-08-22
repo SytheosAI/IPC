@@ -101,8 +101,15 @@ export default function FieldReportsPage() {
     try {
       setLoading(true)
       setError(null)
-      const data = await db.fieldReports.getAll()
+      let data = []
+      try {
+        data = await db.fieldReports.getAll()
+      } catch (dbError) {
+        console.warn('Failed to load field reports from database:', dbError)
+        data = [] // Use empty array as fallback
+      }
       setReports(data)
+      setError(null)
     } catch (err) {
       console.error('Error loading field reports:', err)
       setError('Failed to load field reports')

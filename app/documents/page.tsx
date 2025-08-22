@@ -69,8 +69,15 @@ export default function DocumentsPage() {
     try {
       setLoading(true)
       setError(null)
-      const data = await db.documents.getAll()
+      let data = []
+      try {
+        data = await db.documents.getAll()
+      } catch (dbError) {
+        console.warn('Failed to load documents from database:', dbError)
+        data = [] // Use empty array as fallback
+      }
       setDocuments(data)
+      setError(null)
     } catch (err) {
       console.error('Error loading documents:', err)
       setError('Failed to load documents')
