@@ -974,7 +974,7 @@ export default function SettingsPage() {
                   {tabs.find(t => t.id === activeTab)?.label}
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  This section is coming soon. We're working on bringing you more features!
+                  This section is coming soon. We&apos;re working on bringing you more features!
                 </p>
               </div>
             )}
