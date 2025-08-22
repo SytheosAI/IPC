@@ -212,7 +212,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (newProfile: UserProfile) => {
     setProfile(newProfile)
     try {
-      await db.userSettings.update('default-user', {
+      await db.userSettings.upsert('default-user', {
         profile: newProfile,
         notifications,
         security,
@@ -226,7 +226,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const updateNotifications = async (newNotifications: NotificationSettings) => {
     setNotifications(newNotifications)
     try {
-      await db.userSettings.update('default-user', {
+      await db.userSettings.upsert('default-user', {
         profile,
         notifications: newNotifications,
         security,
@@ -240,7 +240,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const updateSecurity = async (newSecurity: SecuritySettings) => {
     setSecurity(newSecurity)
     try {
-      await db.userSettings.update('default-user', {
+      await db.userSettings.upsert('default-user', {
         profile,
         notifications,
         security: newSecurity,
@@ -255,7 +255,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setTheme(newTheme)
     applyThemeToDocument(newTheme)
     try {
-      await db.userSettings.update('default-user', {
+      await db.userSettings.upsert('default-user', {
         profile,
         notifications,
         security,

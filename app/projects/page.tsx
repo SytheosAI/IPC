@@ -32,19 +32,24 @@ import { db } from '@/lib/supabase-client'
 
 interface Project {
   id: string
-  project_number: string
+  permit_number: string
   project_name: string
-  city: string
-  submittal_number?: string
-  permit_number?: string
-  status: 'in_queue' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled'
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  start_date: string
-  expected_completion?: string
-  actual_completion?: string
-  progress: number
-  category: 'residential' | 'commercial' | 'industrial' | 'municipal'
-  last_activity?: string
+  address: string
+  city?: string
+  state?: string
+  zip_code?: string
+  applicant?: string
+  applicant_email?: string
+  applicant_phone?: string
+  project_type?: string
+  status: 'intake' | 'in_review' | 'approved' | 'rejected' | 'issued'
+  submitted_date?: string
+  last_updated?: string
+  total_issues?: number
+  total_conditions?: number
+  total_notes?: number
+  assigned_to?: string
+  created_by?: string
   created_at?: string
   updated_at?: string
 }
@@ -53,15 +58,15 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [showNewProjectModal, setShowNewProjectModal] = useState(false)
   const [newProject, setNewProject] = useState({
-    projectName: '',
+    project_name: '',
+    address: '',
     city: '',
-    submittalNumber: '',
-    permitNumber: '',
-    status: 'in_queue' as 'in_queue' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled',
-    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
-    category: 'commercial' as 'residential' | 'commercial' | 'industrial' | 'municipal',
-    startDate: new Date().toISOString().split('T')[0],
-    expectedCompletion: ''
+    permit_number: '',
+    applicant: '',
+    applicant_email: '',
+    applicant_phone: '',
+    project_type: 'commercial',
+    status: 'intake' as 'intake' | 'in_review' | 'approved' | 'rejected' | 'issued'
   })
   
   // Load projects from Supabase on mount
@@ -77,11 +82,11 @@ export default function ProjectsPage() {
     loadProjects()
   }, [])
   
-  // Generate project number
-  const generateProjectNumber = () => {
+  // Generate permit number
+  const generatePermitNumber = () => {
     const year = new Date().getFullYear()
-    const count = projects.filter(p => p.project_number?.startsWith(`PRJ-${year}`)).length + 1
-    return `PRJ-${year}-${String(count).padStart(3, '0')}`
+    const count = projects.filter(p => p.permit_number?.startsWith(`PRM-${year}`)).length + 1
+    return `PRM-${year}-${String(count).padStart(3, '0')}`
   }
   
   // Handle new project creation
@@ -90,18 +95,16 @@ export default function ProjectsPage() {
     
     try {
       const project = await db.projects.create({
-        project_number: generateProjectNumber(),
-        project_name: newProject.projectName,
+        permit_number: newProject.permit_number || generatePermitNumber(),
+        project_name: newProject.project_name,
+        address: newProject.address,
         city: newProject.city,
-        submittal_number: newProject.submittalNumber,
-        permit_number: newProject.permitNumber,
+        applicant: newProject.applicant,
+        applicant_email: newProject.applicant_email,
+        applicant_phone: newProject.applicant_phone,
+        project_type: newProject.project_type,
         status: newProject.status,
-        priority: newProject.priority,
-        category: newProject.category,
-        start_date: newProject.startDate,
-        expected_completion: newProject.expectedCompletion,
-        progress: newProject.status === 'completed' ? 100 : 0,
-        last_activity: new Date().toISOString().split('T')[0]
+        submitted_date: new Date().toISOString()
       })
       
       setProjects([project, ...projects])
@@ -112,15 +115,15 @@ export default function ProjectsPage() {
     
     // Reset form
     setNewProject({
-      projectName: '',
+      project_name: '',
+      address: '',
       city: '',
-      submittalNumber: '',
-      permitNumber: '',
-      status: 'in_queue',
-      priority: 'medium',
-      category: 'commercial',
-      startDate: new Date().toISOString().split('T')[0],
-      expectedCompletion: ''
+      permit_number: '',
+      applicant: '',
+      applicant_email: '',
+      applicant_phone: '',
+      project_type: 'commercial',
+      status: 'intake'
     })
     setShowNewProjectModal(false)
   }
@@ -128,68 +131,58 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterCategory, setFilterCategory] = useState('all')
-  const [sortField, setSortField] = useState<'progress' | 'priority' | 'expectedCompletion' | 'projectName'>('expectedCompletion')
+  const [sortField, setSortField] = useState<'project_name' | 'status' | 'submitted_date'>('submitted_date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'in_queue': return 'bg-blue-100 text-blue-700 border-blue-300'
-      case 'in_progress': return 'bg-green-100 text-green-700 border-green-300'
-      case 'on_hold': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      case 'completed': return 'bg-gray-100 text-gray-700 border-gray-300'
+      case 'intake': return 'bg-blue-100 text-blue-700 border-blue-300'
+      case 'in_review': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+      case 'approved': return 'bg-green-100 text-green-700 border-green-300'
+      case 'rejected': return 'bg-red-100 text-red-700 border-red-300'
+      case 'issued': return 'bg-gray-100 text-gray-700 border-gray-300'
       case 'cancelled': return 'bg-red-100 text-red-700 border-red-300'
       default: return 'bg-gray-100 text-gray-700 border-gray-300'
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-700 border-red-300'
-      case 'high': return 'bg-orange-100 text-orange-700 border-orange-300'
-      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      case 'low': return 'bg-green-100 text-green-700 border-green-300'
-      default: return 'bg-gray-100 text-gray-700 border-gray-300'
-    }
-  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'in_queue': return <Clock className="h-4 w-4" />
-      case 'in_progress': return <PlayCircle className="h-4 w-4" />
-      case 'on_hold': return <PauseCircle className="h-4 w-4" />
-      case 'completed': return <CheckCircle className="h-4 w-4" />
-      case 'cancelled': return <AlertTriangle className="h-4 w-4" />
+      case 'intake': return <Clock className="h-4 w-4" />
+      case 'in_review': return <Eye className="h-4 w-4" />
+      case 'approved': return <CheckCircle className="h-4 w-4" />
+      case 'rejected': return <X className="h-4 w-4" />
+      case 'issued': return <FileText className="h-4 w-4" />
       default: return <Clock className="h-4 w-4" />
     }
   }
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.project_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (project.submittal_number?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
-                         (project.permit_number?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
+                         project.permit_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (project.city?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+                         (project.address?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+                         (project.applicant?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
     const matchesStatus = filterStatus === 'all' || project.status === filterStatus
-    const matchesCategory = filterCategory === 'all' || project.category === filterCategory
+    const matchesCategory = filterCategory === 'all' || project.project_type === filterCategory
     return matchesSearch && matchesStatus && matchesCategory
   })
 
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     let comparison = 0
     switch (sortField) {
-      case 'progress':
-        comparison = a.progress - b.progress
+      case 'status':
+        comparison = a.status.localeCompare(b.status)
         break
-      case 'priority':
-        const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 }
-        comparison = priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder]
+      case 'submitted_date':
+        comparison = new Date(a.submitted_date || 0).getTime() - new Date(b.submitted_date || 0).getTime()
         break
-      case 'expectedCompletion':
-        comparison = new Date(a.expectedCompletion).getTime() - new Date(b.expectedCompletion).getTime()
+      case 'project_name':
+        comparison = a.project_name.localeCompare(b.project_name)
         break
-      case 'projectName':
-        comparison = a.projectName.localeCompare(b.projectName)
-        break
+      default:
+        comparison = 0
     }
     return sortOrder === 'asc' ? comparison : -comparison
   })
@@ -273,10 +266,10 @@ export default function ProjectsPage() {
                   <button
                     className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider hover:text-gray-900 dark:hover:text-gray-100"
                     onClick={() => {
-                      if (sortField === 'projectName') {
+                      if (sortField === 'project_name') {
                         setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                       } else {
-                        setSortField('projectName')
+                        setSortField('project_name')
                         setSortOrder('asc')
                       }
                     }}
@@ -289,7 +282,7 @@ export default function ProjectsPage() {
                   City
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Submittal #
+                  Applicant
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                   Permit #
@@ -298,7 +291,7 @@ export default function ProjectsPage() {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                  Priority
+                  Type
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                   Actions
@@ -331,7 +324,7 @@ export default function ProjectsPage() {
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{project.project_name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{project.project_number}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{project.permit_number}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -341,7 +334,7 @@ export default function ProjectsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.submittal_number || '-'}</div>
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.applicant || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 dark:text-gray-100">{project.permit_number || '-'}</div>
@@ -353,9 +346,7 @@ export default function ProjectsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(project.priority)}`}>
-                        {project.priority}
-                      </span>
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.project_type || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
@@ -413,8 +404,8 @@ export default function ProjectsPage() {
                   <input
                     type="text"
                     className="input-modern text-gray-900 dark:text-gray-100"
-                    value={newProject.projectName}
-                    onChange={(e) => setNewProject({ ...newProject, projectName: e.target.value })}
+                    value={newProject.project_name}
+                    onChange={(e) => setNewProject({ ...newProject, project_name: e.target.value })}
                     required
                   />
                 </div>
@@ -439,8 +430,8 @@ export default function ProjectsPage() {
                   <input
                     type="text"
                     className="input-modern text-gray-900 dark:text-gray-100"
-                    value={newProject.submittalNumber}
-                    onChange={(e) => setNewProject({ ...newProject, submittalNumber: e.target.value })}
+                    value={newProject.applicant}
+                    onChange={(e) => setNewProject({ ...newProject, applicant: e.target.value })}
                     placeholder="e.g., 2024-0804-001"
                   />
                 </div>
@@ -450,8 +441,8 @@ export default function ProjectsPage() {
                   <input
                     type="text"
                     className="input-modern text-gray-900 dark:text-gray-100"
-                    value={newProject.permitNumber}
-                    onChange={(e) => setNewProject({ ...newProject, permitNumber: e.target.value })}
+                    value={newProject.permit_number}
+                    onChange={(e) => setNewProject({ ...newProject, permit_number: e.target.value })}
                     placeholder="e.g., PER-2024-0123"
                   />
                 </div>
@@ -524,7 +515,7 @@ export default function ProjectsPage() {
                 <button
                   type="submit"
                   className="btn-primary"
-                  disabled={!newProject.projectName || !newProject.city || !newProject.expectedCompletion}
+                  disabled={!newProject.project_name || !newProject.city}
                 >
                   Create Project
                 </button>
