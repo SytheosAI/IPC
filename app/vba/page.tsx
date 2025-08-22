@@ -562,7 +562,7 @@ export default function VBAPage() {
         </div>
 
         {/* This Week Stats */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 border-animated relative overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow overflow-y-auto max-h-[500px]">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
             This Week
             <TrendingUp className="h-5 w-5 text-gray-400" />
@@ -720,20 +720,20 @@ export default function VBAPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex gap-4 mb-6 glass-morphism rounded-xl p-4">
+      <div className="flex gap-4 mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
             placeholder="Search inspections..."
-            className="input-modern pl-10"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
         <select
-          className="input-modern"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent bg-white"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >
@@ -852,7 +852,7 @@ export default function VBAPage() {
       </div>
 
       {/* AI-Powered Inspections */}
-      <div className="mt-8 gradient-aurora rounded-2xl p-6 text-white border-animated relative overflow-hidden">
+      <div className="mt-8 bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 glass-morphism rounded-lg">

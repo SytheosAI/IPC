@@ -28,22 +28,25 @@ import {
   MoreVertical,
   ArrowUpDown
 } from 'lucide-react'
+import { db } from '@/lib/supabase-client'
 
 interface Project {
   id: string
-  projectNumber: string
-  projectName: string
+  project_number: string
+  project_name: string
   city: string
-  submittalNumber: string
-  permitNumber: string
+  submittal_number?: string
+  permit_number?: string
   status: 'in_queue' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled'
   priority: 'low' | 'medium' | 'high' | 'urgent'
-  startDate: string
-  expectedCompletion: string
-  actualCompletion?: string
+  start_date: string
+  expected_completion?: string
+  actual_completion?: string
   progress: number
   category: 'residential' | 'commercial' | 'industrial' | 'municipal'
-  lastActivity: string
+  last_activity?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export default function ProjectsPage() {
@@ -61,44 +64,51 @@ export default function ProjectsPage() {
     expectedCompletion: ''
   })
   
-  // Load projects from localStorage on mount
+  // Load projects from Supabase on mount
   useEffect(() => {
-    const savedProjects = localStorage.getItem('projects')
-    if (savedProjects) {
-      setProjects(JSON.parse(savedProjects))
+    const loadProjects = async () => {
+      try {
+        const data = await db.projects.getAll()
+        setProjects(data)
+      } catch (error) {
+        console.error('Failed to load projects:', error)
+      }
     }
+    loadProjects()
   }, [])
   
   // Generate project number
   const generateProjectNumber = () => {
     const year = new Date().getFullYear()
-    const count = projects.filter(p => p.projectNumber.startsWith(`PRJ-${year}`)).length + 1
+    const count = projects.filter(p => p.project_number?.startsWith(`PRJ-${year}`)).length + 1
     return `PRJ-${year}-${String(count).padStart(3, '0')}`
   }
   
   // Handle new project creation
-  const handleCreateProject = (e: React.FormEvent) => {
+  const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const project: Project = {
-      id: Date.now().toString(),
-      projectNumber: generateProjectNumber(),
-      projectName: newProject.projectName,
-      city: newProject.city,
-      submittalNumber: newProject.submittalNumber,
-      permitNumber: newProject.permitNumber,
-      status: newProject.status,
-      priority: newProject.priority,
-      category: newProject.category,
-      startDate: newProject.startDate,
-      expectedCompletion: newProject.expectedCompletion,
-      progress: newProject.status === 'completed' ? 100 : 0,
-      lastActivity: new Date().toISOString().split('T')[0]
+    try {
+      const project = await db.projects.create({
+        project_number: generateProjectNumber(),
+        project_name: newProject.projectName,
+        city: newProject.city,
+        submittal_number: newProject.submittalNumber,
+        permit_number: newProject.permitNumber,
+        status: newProject.status,
+        priority: newProject.priority,
+        category: newProject.category,
+        start_date: newProject.startDate,
+        expected_completion: newProject.expectedCompletion,
+        progress: newProject.status === 'completed' ? 100 : 0,
+        last_activity: new Date().toISOString().split('T')[0]
+      })
+      
+      setProjects([project, ...projects])
+    } catch (error) {
+      console.error('Failed to create project:', error)
+      alert('Failed to create project. Please try again.')
     }
-    
-    const updatedProjects = [project, ...projects]
-    setProjects(updatedProjects)
-    localStorage.setItem('projects', JSON.stringify(updatedProjects))
     
     // Reset form
     setNewProject({
@@ -154,11 +164,11 @@ export default function ProjectsPage() {
   }
 
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.projectNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = project.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         project.project_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.submittalNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.permitNumber.toLowerCase().includes(searchQuery.toLowerCase())
+                         (project.submittal_number?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
+                         (project.permit_number?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
     const matchesStatus = filterStatus === 'all' || project.status === filterStatus
     const matchesCategory = filterCategory === 'all' || project.category === filterCategory
     return matchesSearch && matchesStatus && matchesCategory
@@ -320,8 +330,8 @@ export default function ProjectsPage() {
                   >
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{project.projectName}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{project.projectNumber}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{project.project_name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{project.project_number}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -331,10 +341,10 @@ export default function ProjectsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.submittalNumber || '-'}</div>
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.submittal_number || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.permitNumber || '-'}</div>
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.permit_number || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>

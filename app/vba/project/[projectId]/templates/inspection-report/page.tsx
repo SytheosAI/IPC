@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { db } from '@/lib/supabase-client'
 import { useParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, FileText, Settings, Upload, Download, Camera

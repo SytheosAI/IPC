@@ -14,8 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
-  FileCheck,
-  Palette
+  FileCheck
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useUser } from '../../contexts/UserContext'
@@ -68,12 +67,6 @@ const navigation = [
     href: '/settings', 
     icon: Settings,
     description: 'App Settings'
-  },
-  { 
-    name: 'UI Showcase', 
-    href: '/ui-showcase', 
-    icon: Palette,
-    description: 'UI Components Demo'
   },
 ]
 

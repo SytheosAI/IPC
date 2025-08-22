@@ -7,7 +7,7 @@ import {
   Download, Eye, Edit2, Save, X, Calendar, ChevronRight, Building, 
   CheckCircle, Shield, Clock, Camera, Trash2
 } from 'lucide-react'
-import { db } from '@/lib/supabase-client'
+import { db, supabase } from '@/lib/supabase-client'
 
 interface VBAProject {
   id: string
@@ -74,11 +74,28 @@ export default function ProjectHub() {
         setEditedProject(foundProject)
       }
 
-      // For now, keep photos and reports in localStorage until we add them to Supabase
-      // Load inspection photos
-      const savedPhotos = localStorage.getItem(`vba-inspection-photos-${projectId}`)
-      if (savedPhotos) {
-        setInspectionPhotos(JSON.parse(savedPhotos))
+      // Load inspection photos from Supabase
+      try {
+        const photos = await db.inspections.getByVBAProject(projectId)
+        // Group photos by inspection type
+        const photosByInspection: Record<string, FileItem[]> = {}
+        photos.forEach((photo: any) => {
+          const inspectionType = photo.category || 'General'
+          if (!photosByInspection[inspectionType]) {
+            photosByInspection[inspectionType] = []
+          }
+          photosByInspection[inspectionType].push({
+            id: photo.id,
+            name: photo.caption || 'Photo',
+            type: 'file' as const,
+            size: '0 KB',
+            uploadDate: photo.created_at || new Date().toISOString(),
+            data: photo.url
+          })
+        })
+        setInspectionPhotos(photosByInspection)
+      } catch (error) {
+        console.error('Failed to load inspection photos:', error)
       }
 
       // Load reports
@@ -209,23 +226,49 @@ export default function ProjectHub() {
                         const file = (e.target as HTMLInputElement).files?.[0]
                         if (file) {
                           const reader = new FileReader()
-                          reader.onload = (event) => {
-                            const newPhoto: FileItem = {
-                              id: Date.now().toString(),
-                              name: file.name,
-                              type: 'file',
-                              size: `${(file.size / 1024).toFixed(1)} KB`,
-                              uploadDate: new Date().toISOString(),
-                              uploadedBy: 'Current User',
-                              data: event.target?.result as string // Store base64 data
+                          reader.onload = async (event) => {
+                            try {
+                              // Upload to Supabase Storage
+                              const fileName = `vba-photos/${projectId}/${selectedInspection}/${Date.now()}-${file.name}`
+                              const { data: uploadData, error: uploadError } = await supabase.storage
+                                .from('inspection-photos')
+                                .upload(fileName, file)
+                              
+                              if (uploadError) throw uploadError
+                              
+                              // Get public URL
+                              const { data: { publicUrl } } = supabase.storage
+                                .from('inspection-photos')
+                                .getPublicUrl(fileName)
+                              
+                              // Save photo record
+                              await db.inspections.addPhoto(
+                                selectedInspection,
+                                projectId,
+                                publicUrl,
+                                file.name,
+                                selectedInspection
+                              )
+                              
+                              const newPhoto: FileItem = {
+                                id: Date.now().toString(),
+                                name: file.name,
+                                type: 'file',
+                                size: `${(file.size / 1024).toFixed(1)} KB`,
+                                uploadDate: new Date().toISOString(),
+                                uploadedBy: 'Current User',
+                                data: publicUrl
+                              }
+                              
+                              const updatedPhotos = {
+                                ...inspectionPhotos,
+                                [selectedInspection]: [...(inspectionPhotos[selectedInspection] || []), newPhoto]
+                              }
+                              setInspectionPhotos(updatedPhotos)
+                            } catch (error) {
+                              console.error('Failed to upload photo:', error)
+                              alert('Failed to upload photo. Please try again.')
                             }
-                            
-                            const updatedPhotos = {
-                              ...inspectionPhotos,
-                              [selectedInspection]: [...(inspectionPhotos[selectedInspection] || []), newPhoto]
-                            }
-                            setInspectionPhotos(updatedPhotos)
-                            localStorage.setItem(`vba-inspection-photos-${projectId}`, JSON.stringify(updatedPhotos))
                           }
                           reader.readAsDataURL(file)
                         }
@@ -268,12 +311,41 @@ export default function ProjectHub() {
                             })
                           }
                           
+                          // Upload all photos to Supabase Storage
+                          for (const photo of newPhotos) {
+                            try {
+                              const fileName = `vba-photos/${projectId}/${selectedInspection}/${Date.now()}-${photo.name}`
+                              const blob = await fetch(photo.data!).then(r => r.blob())
+                              
+                              const { data: uploadData, error: uploadError } = await supabase.storage
+                                .from('inspection-photos')
+                                .upload(fileName, blob)
+                              
+                              if (uploadError) throw uploadError
+                              
+                              const { data: { publicUrl } } = supabase.storage
+                                .from('inspection-photos')
+                                .getPublicUrl(fileName)
+                              
+                              await db.inspections.addPhoto(
+                                selectedInspection,
+                                projectId,
+                                publicUrl,
+                                photo.name,
+                                selectedInspection
+                              )
+                              
+                              photo.data = publicUrl
+                            } catch (error) {
+                              console.error('Failed to upload photo:', error)
+                            }
+                          }
+                          
                           const updatedPhotos = {
                             ...inspectionPhotos,
                             [selectedInspection]: [...(inspectionPhotos[selectedInspection] || []), ...newPhotos]
                           }
                           setInspectionPhotos(updatedPhotos)
-                          localStorage.setItem(`vba-inspection-photos-${projectId}`, JSON.stringify(updatedPhotos))
                         }
                       }
                       input.click()
@@ -299,13 +371,32 @@ export default function ProjectHub() {
                           </div>
                         </div>
                         <button
-                          onClick={() => {
+                          onClick={async () => {
+                            // Delete from Supabase Storage
+                            try {
+                              // Extract file path from URL
+                              const urlParts = photo.data?.split('/')
+                              if (urlParts && urlParts.length > 0) {
+                                const fileName = urlParts.slice(-4).join('/')
+                                await supabase.storage
+                                  .from('inspection-photos')
+                                  .remove([fileName])
+                              }
+                              
+                              // Delete record from database
+                              await supabase
+                                .from('inspection_photos')
+                                .delete()
+                                .eq('id', photo.id)
+                            } catch (error) {
+                              console.error('Failed to delete photo:', error)
+                            }
+                            
                             const updatedPhotos = {
                               ...inspectionPhotos,
                               [selectedInspection]: inspectionPhotos[selectedInspection].filter(p => p.id !== photo.id)
                             }
                             setInspectionPhotos(updatedPhotos)
-                            localStorage.setItem(`vba-inspection-photos-${projectId}`, JSON.stringify(updatedPhotos))
                           }}
                           className="p-2 text-red-400 hover:text-red-600"
                         >

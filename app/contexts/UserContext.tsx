@@ -167,42 +167,103 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Load settings from localStorage
-    const savedProfile = localStorage.getItem('userProfile')
-    const savedNotifications = localStorage.getItem('notificationSettings')
-    const savedSecurity = localStorage.getItem('securitySettings')
-    const savedTheme = localStorage.getItem('themeSettings')
+    // Load settings from Supabase
+    const loadSettings = async () => {
+      try {
+        const settings = await db.userSettings.get('default-user')
+        if (settings) {
+          if (settings.profile) setProfile(settings.profile)
+          if (settings.notifications) setNotifications(settings.notifications)
+          if (settings.security) setSecurity(settings.security)
+          if (settings.theme) {
+            setTheme(settings.theme)
+            applyThemeToDocument(settings.theme)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load user settings:', error)
+        // Fall back to localStorage if it exists for migration
+        const savedProfile = localStorage.getItem('userProfile')
+        const savedNotifications = localStorage.getItem('notificationSettings')
+        const savedSecurity = localStorage.getItem('securitySettings')
+        const savedTheme = localStorage.getItem('themeSettings')
 
-    if (savedProfile) setProfile(JSON.parse(savedProfile))
-    if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
-    if (savedSecurity) setSecurity(JSON.parse(savedSecurity))
-    if (savedTheme) {
-      const parsedTheme = JSON.parse(savedTheme)
-      setTheme(parsedTheme)
-      // Apply theme immediately on load
-      applyThemeToDocument(parsedTheme)
+        if (savedProfile) setProfile(JSON.parse(savedProfile))
+        if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
+        if (savedSecurity) setSecurity(JSON.parse(savedSecurity))
+        if (savedTheme) {
+          const parsedTheme = JSON.parse(savedTheme)
+          setTheme(parsedTheme)
+          applyThemeToDocument(parsedTheme)
+        }
+        
+        // Clear localStorage after migration
+        if (savedProfile || savedNotifications || savedSecurity || savedTheme) {
+          localStorage.removeItem('userProfile')
+          localStorage.removeItem('notificationSettings')
+          localStorage.removeItem('securitySettings')
+          localStorage.removeItem('themeSettings')
+        }
+      }
     }
+    loadSettings()
   }, [])
 
-  const updateProfile = (newProfile: UserProfile) => {
+  const updateProfile = async (newProfile: UserProfile) => {
     setProfile(newProfile)
-    localStorage.setItem('userProfile', JSON.stringify(newProfile))
+    try {
+      await db.userSettings.update('default-user', {
+        profile: newProfile,
+        notifications,
+        security,
+        theme
+      })
+    } catch (error) {
+      console.error('Failed to save profile:', error)
+    }
   }
 
-  const updateNotifications = (newNotifications: NotificationSettings) => {
+  const updateNotifications = async (newNotifications: NotificationSettings) => {
     setNotifications(newNotifications)
-    localStorage.setItem('notificationSettings', JSON.stringify(newNotifications))
+    try {
+      await db.userSettings.update('default-user', {
+        profile,
+        notifications: newNotifications,
+        security,
+        theme
+      })
+    } catch (error) {
+      console.error('Failed to save notifications:', error)
+    }
   }
 
-  const updateSecurity = (newSecurity: SecuritySettings) => {
+  const updateSecurity = async (newSecurity: SecuritySettings) => {
     setSecurity(newSecurity)
-    localStorage.setItem('securitySettings', JSON.stringify(newSecurity))
+    try {
+      await db.userSettings.update('default-user', {
+        profile,
+        notifications,
+        security: newSecurity,
+        theme
+      })
+    } catch (error) {
+      console.error('Failed to save security settings:', error)
+    }
   }
 
-  const updateTheme = (newTheme: ThemeSettings) => {
+  const updateTheme = async (newTheme: ThemeSettings) => {
     setTheme(newTheme)
-    localStorage.setItem('themeSettings', JSON.stringify(newTheme))
     applyThemeToDocument(newTheme)
+    try {
+      await db.userSettings.update('default-user', {
+        profile,
+        notifications,
+        security,
+        theme: newTheme
+      })
+    } catch (error) {
+      console.error('Failed to save theme:', error)
+    }
   }
 
   return (

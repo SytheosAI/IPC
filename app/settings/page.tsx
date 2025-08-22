@@ -27,6 +27,7 @@ import {
   FileText
 } from 'lucide-react'
 import { db } from '@/lib/supabase-client'
+import { useUser } from '@/app/contexts/UserContext'
 
 interface UserProfile {
   name: string
@@ -61,17 +62,18 @@ interface ThemeSettings {
 }
 
 export default function SettingsPage() {
+  const userContext = useUser()
   const [activeTab, setActiveTab] = useState('profile')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  // Profile state
+  // Profile state - initialize from context if available
   const [profile, setProfile] = useState<UserProfile>({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'Senior Inspector',
+    name: userContext?.profile?.name || 'John Doe',
+    email: userContext?.profile?.email || 'john.doe@example.com',
+    role: userContext?.profile?.title || 'Senior Inspector',
     department: 'Building & Safety',
-    phone: '(555) 123-4567'
+    phone: userContext?.profile?.phone || '(555) 123-4567'
   })
 
   // Notification settings
@@ -93,10 +95,10 @@ export default function SettingsPage() {
     loginAlerts: true
   })
 
-  // Theme settings
+  // Theme settings - use context value
   const [theme, setTheme] = useState<ThemeSettings>({
-    mode: 'light',
-    primaryColor: '#0ea5e9',
+    mode: userContext?.theme?.theme || 'light',
+    primaryColor: userContext?.theme?.accentColor || 'sky',
     fontSize: 'medium'
   })
 
@@ -115,6 +117,17 @@ export default function SettingsPage() {
 
   const handleProfileUpdate = () => {
     setLoading(true)
+    // Update profile in context
+    if (userContext?.updateProfile) {
+      userContext.updateProfile({
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        title: profile.role,
+        company: profile.department,
+        address: ''
+      })
+    }
     // Simulate API call
     setTimeout(() => {
       setLoading(false)
@@ -575,7 +588,14 @@ export default function SettingsPage() {
                     <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Theme</h3>
                     <div className="grid grid-cols-3 gap-3">
                       <button
-                        onClick={() => setTheme({ ...theme, mode: 'light' })}
+                        onClick={() => {
+                          const newTheme = { ...theme, mode: 'light' as const }
+                          setTheme(newTheme)
+                          // Apply theme immediately via context
+                          if (userContext?.updateTheme) {
+                            userContext.updateTheme({ theme: 'light', accentColor: theme.primaryColor })
+                          }
+                        }}
                         className={`p-4 rounded-lg border-2 ${
                           theme.mode === 'light' 
                             ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/20' 
@@ -586,7 +606,14 @@ export default function SettingsPage() {
                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Light</span>
                       </button>
                       <button
-                        onClick={() => setTheme({ ...theme, mode: 'dark' })}
+                        onClick={() => {
+                          const newTheme = { ...theme, mode: 'dark' as const }
+                          setTheme(newTheme)
+                          // Apply theme immediately via context
+                          if (userContext?.updateTheme) {
+                            userContext.updateTheme({ theme: 'dark', accentColor: theme.primaryColor })
+                          }
+                        }}
                         className={`p-4 rounded-lg border-2 ${
                           theme.mode === 'dark' 
                             ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/20' 
@@ -597,7 +624,14 @@ export default function SettingsPage() {
                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Dark</span>
                       </button>
                       <button
-                        onClick={() => setTheme({ ...theme, mode: 'system' })}
+                        onClick={() => {
+                          const newTheme = { ...theme, mode: 'system' as const }
+                          setTheme(newTheme)
+                          // Apply theme immediately via context
+                          if (userContext?.updateTheme) {
+                            userContext.updateTheme({ theme: 'auto', accentColor: theme.primaryColor })
+                          }
+                        }}
                         className={`p-4 rounded-lg border-2 ${
                           theme.mode === 'system' 
                             ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/20' 
