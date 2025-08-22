@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   Settings,
   User,
@@ -126,10 +126,20 @@ import {
   Plus,
   Check,
   ChevronRight,
-  MoreVertical
+  MoreVertical,
+  Bot,
+  Folder,
+  ExternalLink,
+  Loader2,
+  CheckCircle2,
+  Copy as CopyIcon
 } from 'lucide-react'
 import { db } from '@/lib/supabase-client'
 import { useUser } from '@/app/contexts/UserContext'
+import OrganizationTab from './OrganizationTab'
+import IntegrationsTab from './IntegrationsTab'
+import ActivityTab from './ActivityTab'
+import SupportTab from './SupportTab'
 
 interface UserProfile {
   name: string
@@ -171,6 +181,63 @@ interface ThemeSettings {
   compactMode: boolean
   animations: boolean
   highContrast: boolean
+}
+
+interface OrganizationData {
+  companyName: string
+  legalName: string
+  taxId: string
+  address: string
+  city: string
+  state: string
+  zipCode: string
+  country: string
+  phone: string
+  email: string
+  website: string
+  yearEstablished: string
+  numberOfEmployees: string
+  licenseNumber: string
+  licenseState: string
+  licenseExpiry: string
+  insuranceCarrier: string
+  policyNumber: string
+  documents: {
+    license?: File | null
+    w9?: File | null
+    generalLiability?: File | null
+    workersComp?: File | null
+  }
+}
+
+interface Integration {
+  id: string
+  name: string
+  category: string
+  description: string
+  icon: string
+  connected: boolean
+  status: 'active' | 'inactive' | 'error'
+  lastSync?: string
+}
+
+interface ActivityLog {
+  id: string
+  timestamp: string
+  user: string
+  action: string
+  details: string
+  type: 'login' | 'create' | 'update' | 'delete' | 'view' | 'export'
+  status: 'success' | 'warning' | 'error'
+}
+
+interface ApiKey {
+  id: string
+  name: string
+  key: string
+  created: string
+  lastUsed: string
+  permissions: string[]
 }
 
 export default function SettingsPage() {
@@ -230,6 +297,75 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
+  // Organization state
+  const [organization, setOrganization] = useState<OrganizationData>({
+    companyName: '',
+    legalName: '',
+    taxId: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'USA',
+    phone: '',
+    email: '',
+    website: '',
+    yearEstablished: '',
+    numberOfEmployees: '',
+    licenseNumber: '',
+    licenseState: '',
+    licenseExpiry: '',
+    insuranceCarrier: '',
+    policyNumber: '',
+    documents: {
+      license: null,
+      w9: null,
+      generalLiability: null,
+      workersComp: null
+    }
+  })
+
+  // Integrations state
+  const [integrations, setIntegrations] = useState<Integration[]>([
+    { id: '1', name: 'Procore', category: 'Project Management', description: 'Construction project management platform', icon: '🏗️', connected: true, status: 'active', lastSync: '2 mins ago' },
+    { id: '2', name: 'QuickBooks', category: 'Accounting', description: 'Financial management and accounting', icon: '💰', connected: true, status: 'active', lastSync: '1 hour ago' },
+    { id: '3', name: 'Slack', category: 'Communication', description: 'Team communication and collaboration', icon: '💬', connected: false, status: 'inactive' },
+    { id: '4', name: 'Google Drive', category: 'Storage', description: 'Cloud document storage', icon: '📁', connected: true, status: 'active', lastSync: '5 mins ago' },
+    { id: '5', name: 'Autodesk', category: 'BIM/CAD', description: 'Building information modeling', icon: '📐', connected: false, status: 'inactive' },
+    { id: '6', name: 'Weather API', category: 'Data Services', description: 'Real-time weather data', icon: '🌤️', connected: true, status: 'active', lastSync: 'Live' },
+    { id: '7', name: 'Fieldwire', category: 'Field Management', description: 'Field task management', icon: '📋', connected: false, status: 'inactive' },
+    { id: '8', name: 'SafetyCulture', category: 'Compliance', description: 'Safety and compliance tracking', icon: '🦺', connected: true, status: 'error', lastSync: 'Connection failed' }
+  ])
+
+  // API Keys state
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
+    { id: '1', name: 'Production API Key', key: 'pk_live_51234567890abcdef', created: '2024-01-15', lastUsed: '2 hours ago', permissions: ['read', 'write'] },
+    { id: '2', name: 'Development API Key', key: 'pk_test_0987654321fedcba', created: '2024-02-01', lastUsed: '1 day ago', permissions: ['read'] }
+  ])
+
+  // Activity state
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
+  const [activityFilter, setActivityFilter] = useState('all')
+  const [activitySearch, setActivitySearch] = useState('')
+  const [activityMetrics, setActivityMetrics] = useState({
+    totalActions: 1247,
+    successRate: 94.3,
+    activeUsers: 28,
+    peakHour: '2:00 PM - 3:00 PM',
+    mostCommonAction: 'View Project'
+  })
+
+  // Chat state for support
+  const [chatMessages, setChatMessages] = useState([
+    { id: '1', sender: 'bot', message: 'Hello! I\'m your IPC Assistant. How can I help you today?' }
+  ])
+  const [chatInput, setChatInput] = useState('')
+  const [isListening, setIsListening] = useState(false)
+  
+  // Refs
+  const chatEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
+
   // Streamlined tabs - removed unnecessary ones
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -237,9 +373,7 @@ export default function SettingsPage() {
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'company', label: 'Organization', icon: Building },
-    { id: 'team', label: 'Team', icon: Users },
-    { id: 'integrations', label: 'Integrations', icon: Link },
-    { id: 'api', label: 'API & Developer', icon: Code },
+    { id: 'integrations', label: 'Integrations & API', icon: Link },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'data', label: 'Data & Privacy', icon: Database },
     { id: 'activity', label: 'Activity Log', icon: Activity },
@@ -305,6 +439,92 @@ export default function SettingsPage() {
       setNewPassword('')
       setConfirmPassword('')
     }, 1000)
+  }
+
+  // Load activity logs on mount
+  useEffect(() => {
+    loadActivityLogs()
+  }, [])
+
+  // Scroll chat to bottom when new messages
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
+
+  const loadActivityLogs = () => {
+    // Simulate loading activity logs
+    const logs: ActivityLog[] = [
+      { id: '1', timestamp: new Date().toISOString(), user: 'John Doe', action: 'Logged in', details: 'Successfully authenticated', type: 'login', status: 'success' },
+      { id: '2', timestamp: new Date(Date.now() - 3600000).toISOString(), user: 'Jane Smith', action: 'Created project', details: 'New VBA project #VBA-2024-001', type: 'create', status: 'success' },
+      { id: '3', timestamp: new Date(Date.now() - 7200000).toISOString(), user: 'Bob Johnson', action: 'Updated inspection', details: 'Modified inspection checklist', type: 'update', status: 'success' },
+      { id: '4', timestamp: new Date(Date.now() - 10800000).toISOString(), user: 'Alice Brown', action: 'Exported report', details: 'Generated PDF report', type: 'export', status: 'success' },
+      { id: '5', timestamp: new Date(Date.now() - 14400000).toISOString(), user: 'John Doe', action: 'Failed login', details: 'Invalid credentials', type: 'login', status: 'error' },
+    ]
+    setActivityLogs(logs)
+  }
+
+  const handleFileUpload = (docType: keyof OrganizationData['documents'], file: File) => {
+    setOrganization(prev => ({
+      ...prev,
+      documents: {
+        ...prev.documents,
+        [docType]: file
+      }
+    }))
+  }
+
+  const handleIntegrationToggle = (id: string) => {
+    setIntegrations(prev => prev.map(integration => 
+      integration.id === id 
+        ? { ...integration, connected: !integration.connected, status: !integration.connected ? 'active' : 'inactive' }
+        : integration
+    ))
+  }
+
+  const generateApiKey = () => {
+    const newKey = {
+      id: Date.now().toString(),
+      name: `API Key ${apiKeys.length + 1}`,
+      key: `pk_${Math.random().toString(36).substring(2, 15)}`,
+      created: new Date().toISOString().split('T')[0],
+      lastUsed: 'Never',
+      permissions: ['read']
+    }
+    setApiKeys([...apiKeys, newKey])
+  }
+
+  const handleChatSubmit = () => {
+    if (!chatInput.trim()) return
+
+    const userMessage = { id: Date.now().toString(), sender: 'user', message: chatInput }
+    setChatMessages(prev => [...prev, userMessage])
+
+    // Simulate bot response
+    setTimeout(() => {
+      const botResponses = [
+        'To create a new project, click on the Projects tab in the main navigation and select "New Project".',
+        'You can upload inspection photos by opening any project and clicking the camera icon.',
+        'The VBA module allows you to conduct virtual building assessments. Access it from the main dashboard.',
+        'To generate reports, go to any completed inspection and click "Export Report" in the top right.',
+        'You can manage team members in the Members section. Add new users by clicking "Invite Member".'
+      ]
+      const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)]
+      const botMessage = { id: (Date.now() + 1).toString(), sender: 'bot', message: randomResponse }
+      setChatMessages(prev => [...prev, botMessage])
+    }, 1000)
+
+    setChatInput('')
+  }
+
+  const startVoiceRecognition = () => {
+    setIsListening(!isListening)
+    // Implement actual voice recognition here
+    if (!isListening) {
+      setTimeout(() => {
+        setChatInput('How do I create a new inspection report?')
+        setIsListening(false)
+      }, 2000)
+    }
   }
 
   const exportData = async () => {
@@ -977,6 +1197,53 @@ export default function SettingsPage() {
                   This section is coming soon. We&apos;re working on bringing you more features!
                 </p>
               </div>
+            )}
+
+            {/* Organization Tab */}
+            {activeTab === 'company' && (
+              <OrganizationTab
+                organization={organization}
+                setOrganization={setOrganization}
+                handleFileUpload={handleFileUpload}
+                handleSave={handleSave}
+                fileInputRefs={fileInputRefs}
+              />
+            )}
+
+            {/* Integrations & API Tab */}
+            {activeTab === 'integrations' && (
+              <IntegrationsTab
+                integrations={integrations}
+                handleIntegrationToggle={handleIntegrationToggle}
+                apiKeys={apiKeys}
+                setApiKeys={setApiKeys}
+                generateApiKey={generateApiKey}
+              />
+            )}
+
+            {/* Activity Log Tab */}
+            {activeTab === 'activity' && (
+              <ActivityTab
+                activityLogs={activityLogs}
+                activityFilter={activityFilter}
+                setActivityFilter={setActivityFilter}
+                activitySearch={activitySearch}
+                setActivitySearch={setActivitySearch}
+                activityMetrics={activityMetrics}
+              />
+            )}
+
+            {/* Help & Support Tab */}
+            {activeTab === 'support' && (
+              <SupportTab
+                chatMessages={chatMessages}
+                chatInput={chatInput}
+                setChatInput={setChatInput}
+                isListening={isListening}
+                handleChatSubmit={handleChatSubmit}
+                startVoiceRecognition={startVoiceRecognition}
+                chatEndRef={chatEndRef}
+              />
             )}
           </div>
         </div>
