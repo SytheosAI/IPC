@@ -28,7 +28,8 @@ import {
   Shield,
   Activity,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react'
 import { db, subscriptions } from '@/lib/supabase-client'
 
@@ -51,18 +52,44 @@ interface FieldReport {
   signature?: string
   created_at?: string
   updated_at?: string
+  // Enhanced fields
+  work_performed?: string
+  materials_used?: string
+  equipment_used?: string
+  subcontractors?: string
+  visitors?: string
+  delays?: string
+  safety_incidents?: string
+  quality_issues?: string
   // Related data (loaded separately)
   work_completed?: any[]
   issues?: any[]
   safety_observations?: any[]
   personnel?: any[]
-  photos?: any[]
+  photos?: string[]  // Array of photo URLs
 }
 
 interface NotificationEmail {
   id: string
   email: string
   name?: string
+}
+
+interface Project {
+  id: string
+  projectNumber: string
+  name: string
+  address: string
+  city: string
+  state: string
+}
+
+interface TeamMember {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: string
 }
 
 export default function FieldReportsPage() {
@@ -82,10 +109,17 @@ export default function FieldReportsPage() {
   const [notificationEmails, setNotificationEmails] = useState<NotificationEmail[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [selectedReporter, setSelectedReporter] = useState<string>('')
+  const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([])
 
   useEffect(() => {
     loadFieldReports()
     loadNotificationEmails()
+    loadProjects()
+    loadTeamMembers()
     
     // Subscribe to real-time updates
     const channel = subscriptions.subscribeToFieldReports(() => {
@@ -127,6 +161,53 @@ export default function FieldReportsPage() {
     } catch (err) {
       console.error('Error loading notification emails:', err)
     }
+  }
+
+  const loadProjects = async () => {
+    try {
+      const projectsData = await db.projects.getAll()
+      setProjects(projectsData.map(p => ({
+        id: p.id,
+        projectNumber: p.projectNumber || p.id,
+        name: p.name || 'Unnamed Project',
+        address: p.address || '',
+        city: p.city || '',
+        state: p.state || ''
+      })))
+    } catch (err) {
+      console.error('Error loading projects:', err)
+      setProjects([])
+    }
+  }
+
+  const loadTeamMembers = async () => {
+    try {
+      // Load from members table if it exists, otherwise use mock data
+      const mockMembers: TeamMember[] = [
+        { id: '1', name: 'John Smith', email: 'john@example.com', phone: '(239) 555-0101', role: 'Project Manager' },
+        { id: '2', name: 'Sarah Johnson', email: 'sarah@example.com', phone: '(239) 555-0102', role: 'Site Supervisor' },
+        { id: '3', name: 'Mike Williams', email: 'mike@example.com', phone: '(239) 555-0103', role: 'Inspector' },
+        { id: '4', name: 'Emily Davis', email: 'emily@example.com', phone: '(239) 555-0104', role: 'Quality Control' },
+        { id: '5', name: 'David Brown', email: 'david@example.com', phone: '(239) 555-0105', role: 'Safety Officer' }
+      ]
+      setTeamMembers(mockMembers)
+    } catch (err) {
+      console.error('Error loading team members:', err)
+      setTeamMembers([])
+    }
+  }
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (uploadedPhotos.length + files.length > 6) {
+      alert('Maximum 6 photos allowed')
+      return
+    }
+    setUploadedPhotos([...uploadedPhotos, ...files.slice(0, 6 - uploadedPhotos.length)])
+  }
+
+  const removePhoto = (index: number) => {
+    setUploadedPhotos(uploadedPhotos.filter((_, i) => i !== index))
   }
 
   const filteredReports = reports.filter(report => {
@@ -420,13 +501,6 @@ export default function FieldReportsPage() {
                     ? 'Try adjusting your filters or search query'
                     : 'Get started by creating your first field report'}
                 </p>
-                <button
-                  onClick={() => setShowNewReportModal(true)}
-                  className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Create Field Report
-                </button>
               </div>
             ) : (
               filteredReports.map((report) => (
@@ -515,84 +589,317 @@ export default function FieldReportsPage() {
         )}
       </div>
 
-      {/* New Report Modal */}
+      {/* Enhanced New Report Modal */}
       {showNewReportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6 my-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Create New Field Report</h2>
             <form
               onSubmit={(e) => {
                 e.preventDefault()
                 const formData = new FormData(e.currentTarget)
+                const selectedProj = projects.find(p => p.id === selectedProject)
+                const selectedRep = teamMembers.find(m => m.id === selectedReporter)
+                
                 handleNewReport({
-                  project_name: formData.get('project_name') as string,
-                  project_address: formData.get('project_address') as string,
+                  project_id: selectedProject,
+                  project_name: selectedProj?.name || (formData.get('project_name') as string),
+                  project_address: selectedProj?.address || (formData.get('project_address') as string),
                   report_type: formData.get('report_type') as FieldReport['report_type'],
                   priority: formData.get('priority') as FieldReport['priority'],
-                  reported_by: formData.get('reported_by') as string
+                  reported_by: selectedRep?.name || (formData.get('reported_by') as string),
+                  reporter_id: selectedReporter,
+                  work_performed: formData.get('work_performed') as string,
+                  materials_used: formData.get('materials_used') as string,
+                  equipment_used: formData.get('equipment_used') as string,
+                  subcontractors: formData.get('subcontractors') as string,
+                  visitors: formData.get('visitors') as string,
+                  delays: formData.get('delays') as string,
+                  safety_incidents: formData.get('safety_incidents') as string,
+                  quality_issues: formData.get('quality_issues') as string,
+                  weather_conditions: formData.get('weather_conditions') as string,
+                  weather_temperature: parseInt(formData.get('weather_temperature') as string) || undefined
                 })
               }}
             >
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-                  <input
-                    type="text"
-                    name="project_name"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Left Column */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Building className="h-4 w-4 inline mr-1" />
+                      Select Project
+                    </label>
+                    <select
+                      value={selectedProject}
+                      onChange={(e) => {
+                        setSelectedProject(e.target.value)
+                        const proj = projects.find(p => p.id === e.target.value)
+                        if (proj) {
+                          // Auto-fill project details
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="">-- Select a Project --</option>
+                      {projects.map(project => (
+                        <option key={project.id} value={project.id}>
+                          {project.projectNumber} - {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {!selectedProject && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                        <input
+                          type="text"
+                          name="project_name"
+                          required={!selectedProject}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Project Address</label>
+                        <input
+                          type="text"
+                          name="project_address"
+                          required={!selectedProject}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {selectedProject && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">
+                        <strong>Project:</strong> {projects.find(p => p.id === selectedProject)?.name}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <strong>Address:</strong> {projects.find(p => p.id === selectedProject)?.address}
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <User className="h-4 w-4 inline mr-1" />
+                      Reported By (Team Member)
+                    </label>
+                    <select
+                      value={selectedReporter}
+                      onChange={(e) => setSelectedReporter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="">-- Select Team Member --</option>
+                      {teamMembers.map(member => (
+                        <option key={member.id} value={member.id}>
+                          {member.name} - {member.role}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {!selectedReporter && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Or Enter Name</label>
+                      <input
+                        type="text"
+                        name="reported_by"
+                        required={!selectedReporter}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
+                      <select
+                        name="report_type"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      >
+                        <option value="Daily">Daily</option>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Safety">Safety</option>
+                        <option value="Progress">Progress</option>
+                        <option value="Quality">Quality</option>
+                        <option value="Incident">Incident</option>
+                        <option value="Inspection">Inspection</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                      <select
+                        name="priority"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Weather</label>
+                      <input
+                        type="text"
+                        name="weather_conditions"
+                        placeholder="e.g., Sunny, Rainy"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Temperature (°F)</label>
+                      <input
+                        type="number"
+                        name="weather_temperature"
+                        placeholder="75"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Address</label>
-                  <input
-                    type="text"
-                    name="project_address"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
-                  <select
-                    name="report_type"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  >
-                    <option value="Daily">Daily</option>
-                    <option value="Weekly">Weekly</option>
-                    <option value="Safety">Safety</option>
-                    <option value="Progress">Progress</option>
-                    <option value="Quality">Quality</option>
-                    <option value="Incident">Incident</option>
-                    <option value="Inspection">Inspection</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                  <select
-                    name="priority"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="critical">Critical</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Reported By</label>
-                  <input
-                    type="text"
-                    name="reported_by"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
+
+                {/* Right Column */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Work Performed</label>
+                    <textarea
+                      name="work_performed"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      placeholder="Describe work completed today..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Materials Used</label>
+                    <textarea
+                      name="materials_used"
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      placeholder="List materials used..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Equipment Used</label>
+                    <input
+                      type="text"
+                      name="equipment_used"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      placeholder="e.g., Excavator, Crane"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Subcontractors</label>
+                    <input
+                      type="text"
+                      name="subcontractors"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      placeholder="List subcontractors on site"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Visitors</label>
+                    <input
+                      type="text"
+                      name="visitors"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      placeholder="List any site visitors"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Delays</label>
+                      <textarea
+                        name="delays"
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        placeholder="Any delays?"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Quality Issues</label>
+                      <textarea
+                        name="quality_issues"
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        placeholder="Any quality concerns?"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Safety Incidents</label>
+                    <textarea
+                      name="safety_incidents"
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      placeholder="Report any safety incidents..."
+                    />
+                  </div>
                 </div>
               </div>
+
+              {/* Photo Upload Section */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Camera className="h-4 w-4 inline mr-1" />
+                  Upload Photos (Max 6)
+                </label>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                  {uploadedPhotos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={URL.createObjectURL(photo)}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {uploadedPhotos.length < 6 && (
+                    <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-sky-500 transition-colors">
+                      <Upload className="h-6 w-6 text-gray-400" />
+                      <span className="text-xs text-gray-500 mt-1">Add Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
-                  onClick={() => setShowNewReportModal(false)}
+                  onClick={() => {
+                    setShowNewReportModal(false)
+                    setSelectedProject('')
+                    setSelectedReporter('')
+                    setUploadedPhotos([])
+                  }}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel

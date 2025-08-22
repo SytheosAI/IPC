@@ -483,7 +483,7 @@ export default function VBAPage() {
         <div 
           className="relative rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 bg-gray-800"
           onClick={() => window.open('https://earth.nullschool.net/', '_blank')}
-          style={{ height: '320px' }}
+          style={{ minHeight: '400px' }}
         >
           {/* Animated weather background - FIXED AND VISIBLE */}
           <div className="absolute inset-0">
@@ -672,7 +672,7 @@ export default function VBAPage() {
         </div>
 
         {/* This Week Stats */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow" style={{ height: '320px', overflowY: 'auto' }}>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow" style={{ minHeight: '400px' }}>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
             This Week
             <TrendingUp className="h-5 w-5 text-gray-400" />
@@ -730,7 +730,7 @@ export default function VBAPage() {
         </div>
 
         {/* Construction News */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 card-modern" style={{ height: '320px', display: 'flex', flexDirection: 'column' }}>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 card-modern" style={{ minHeight: '400px', maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
             Construction AI & Industry News
             <Newspaper className="h-5 w-5 text-gray-400" />
