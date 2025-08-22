@@ -116,9 +116,9 @@ export default function DebugPage() {
       <div className="mt-8 p-4 bg-blue-50 rounded-lg">
         <h3 className="font-semibold mb-2">Instructions:</h3>
         <ul className="list-disc list-inside space-y-1 text-sm">
-          <li>Check the "Supabase Config" - both URL and key should show "Set"</li>
-          <li>Look at each table test - they should show "SUCCESS" status</li>
-          <li>If you see "ERROR" status, check the error message</li>
+          <li>Check the &quot;Supabase Config&quot; - both URL and key should show &quot;Set&quot;</li>
+          <li>Look at each table test - they should show &quot;SUCCESS&quot; status</li>
+          <li>If you see &quot;ERROR&quot; status, check the error message</li>
           <li>Common issues: RLS policies, missing tables, wrong env variables</li>
         </ul>
       </div>

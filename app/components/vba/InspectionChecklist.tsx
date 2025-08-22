@@ -627,7 +627,7 @@ export default function InspectionChecklist({
         { id: '5', category: 'General', description: 'Work area clean and organized', status: 'pending' },
       ]
       setItems(template.map(item => ({ ...item, id: `${projectId}-${item.id}` })))
-    }
+    // }
 
     // TODO: Load timer state from Supabase database instead of localStorage
     // const { data: savedTimer } = await supabase

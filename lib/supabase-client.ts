@@ -393,11 +393,10 @@ export const db = {
       // Ensure required fields have defaults
       const projectWithDefaults = {
         project_name: project.project_name || 'Untitled Project',
-        project_number: projectNumber,
         address: project.address || '',
         status: project.status || 'scheduled',
         ...project,
-        project_number: projectNumber // Ensure project_number is set
+        project_number: projectNumber // Override with generated project_number
       }
       const { data, error } = await supabase
         .from('vba_projects')
