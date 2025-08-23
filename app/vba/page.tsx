@@ -176,9 +176,10 @@ export default function VBAPage() {
   const fetchNewsData = async () => {
     try {
       setNewsLoading(true)
+      setNewsItems([]) // Clear existing items
       
       const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY
-      console.log('News API key:', apiKey ? 'configured' : 'missing')
+      console.log('Fetching news data...')
       
       // Use broader date range and simpler query for better results
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]
@@ -821,20 +822,20 @@ export default function VBAPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex gap-3 mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
-        <div className="flex-1 relative">
-          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="inline-flex gap-2 mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-1.5">
+        <div className="relative" style={{ width: '300px' }}>
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
           <input
             type="text"
             placeholder="Search inspections..."
-            className="w-full pl-8 pr-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+            className="w-full pl-7 pr-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-sky-500 focus:border-transparent"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
         <select
-          className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent bg-white"
+          className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-sky-500 focus:border-transparent bg-white"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >

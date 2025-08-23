@@ -208,13 +208,13 @@ export default function DocumentsPage() {
   return (
     <div className="p-6">
       {/* Upload Document Button */}
-      <div className="absolute top-4 right-6">
+      <div className="absolute top-2 right-6">
         <button 
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
+          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors flex items-center"
         >
-          <Plus className="h-5 w-5 mr-2" />
-          Upload Document
+          <Plus className="h-4 w-4 mr-1" />
+          Upload
         </button>
       </div>
 

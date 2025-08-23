@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import PageTitle from '@/components/PageTitle'
+import { submitToJurisdiction, getJurisdictionConfig, supportsElectronicSubmission } from '@/lib/jurisdiction-api'
 import { 
   FileText,
   Plus,
@@ -125,7 +126,7 @@ export default function SubmittalsPage() {
   }
 
   // Handle new submittal creation
-  const handleCreateSubmittal = (e: React.FormEvent) => {
+  const handleCreateSubmittal = async (e: React.FormEvent) => {
     e.preventDefault()
     
     const submittal: Submittal = {
@@ -144,6 +145,41 @@ export default function SubmittalsPage() {
       completeness: calculateCompleteness(newSubmittal),
       documents: newSubmittal.documents.length,
       comments: 0
+    }
+    
+    // Check if jurisdiction supports electronic submission
+    const supportsElectronic = supportsElectronicSubmission(newSubmittal.jurisdiction)
+    
+    if (supportsElectronic) {
+      // Submit to jurisdiction API
+      const response = await submitToJurisdiction({
+        submittalNumber: submittal.submittalNumber,
+        projectName: newSubmittal.projectName,
+        projectAddress: newSubmittal.projectAddress,
+        applicant: newSubmittal.applicant,
+        contractor: newSubmittal.contractor,
+        type: newSubmittal.type,
+        category: newSubmittal.category,
+        jurisdiction: newSubmittal.jurisdiction,
+        documents: newSubmittal.documents
+      })
+      
+      if (response.success) {
+        submittal.status = 'submitted'
+        if (response.jurisdictionId) {
+          submittal.reviewer = `Tracking: ${response.trackingNumber || response.jurisdictionId}`
+        }
+        
+        // Show success message
+        alert(`✅ ${response.message}\n\nNext steps:\n${response.nextSteps?.join('\n')}`)
+      } else {
+        // Show error but still save as draft
+        alert(`⚠️ ${response.message}\n\nSubmittal saved as draft for manual submission.`)
+      }
+    } else {
+      // Manual submission required
+      const config = getJurisdictionConfig(newSubmittal.jurisdiction)
+      alert(`📋 Manual submission required for ${newSubmittal.jurisdiction}\n\nSubmittal saved as draft. Please submit manually through the jurisdiction's portal or office.`)
     }
     
     const updatedSubmittals = [submittal, ...submittals]
@@ -235,12 +271,12 @@ export default function SubmittalsPage() {
   return (
     <div className="p-6">
       {/* New Submittal Button */}
-      <div className="absolute top-4 right-6">
+      <div className="absolute top-2 right-6">
         <button
           onClick={() => setShowNewSubmittalModal(true)}
-          className="btn-primary"
+          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors flex items-center"
         >
-          <Plus className="h-5 w-5 mr-2" />
+          <Plus className="h-4 w-4 mr-1" />
           New Submittal
         </button>
       </div>
@@ -489,7 +525,7 @@ export default function SubmittalsPage() {
                     <option value="">Select Jurisdiction</option>
                     {FLORIDA_JURISDICTIONS.map((jurisdiction) => (
                       <option key={jurisdiction} value={jurisdiction}>
-                        {jurisdiction}
+                        {jurisdiction} {supportsElectronicSubmission(jurisdiction) ? '⚡' : ''}
                       </option>
                     ))}
                   </select>

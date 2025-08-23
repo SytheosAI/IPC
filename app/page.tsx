@@ -186,8 +186,8 @@ export default function DashboardPage() {
       <PageTitle 
         title="Intelligent Plan Check Dashboard"
       />
-      <div className="mb-8">
-        <div className="flex items-center justify-end mb-6">
+      <div className="mb-4">
+        <div className="flex items-center justify-end mb-4">
           <button 
             onClick={loadDashboardData}
             className="p-2 text-gray-600 hover:text-sky-600 transition-colors"

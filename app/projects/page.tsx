@@ -195,12 +195,12 @@ export default function ProjectsPage() {
   return (
     <div className="p-6">
       {/* New Project Button */}
-      <div className="absolute top-4 right-6">
+      <div className="absolute top-2 right-6">
         <button 
           onClick={() => setShowNewProjectModal(true)}
-          className="btn-primary"
+          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors flex items-center"
         >
-          <Plus className="h-5 w-5 mr-2" />
+          <Plus className="h-4 w-4 mr-1" />
           New Project
         </button>
       </div>

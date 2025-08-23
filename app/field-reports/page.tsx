@@ -399,12 +399,12 @@ export default function FieldReportsPage() {
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* New Report Button */}
-      <div className="absolute top-4 right-6 z-10">
+      <div className="absolute top-2 right-6 z-10">
         <button
           onClick={() => setShowNewReportModal(true)}
-          className="btn-primary"
+          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors flex items-center"
         >
-          <Plus className="h-5 w-5 mr-2" />
+          <Plus className="h-4 w-4 mr-1" />
           New Report
         </button>
       </div>
