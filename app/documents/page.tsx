@@ -209,15 +209,14 @@ export default function DocumentsPage() {
     <div className="p-6">
       {/* Header */}
       <PageTitle title="Document Management" />
-        <div className="flex justify-end">
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Upload Document
-          </button>
-        </div>
+      <div className="flex justify-end mb-6">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Upload Document
+        </button>
       </div>
 
       {/* Search and Filters */}

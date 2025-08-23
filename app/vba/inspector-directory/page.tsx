@@ -221,9 +221,8 @@ export default function InspectorDirectoryPage() {
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2"
         >
           <UserPlus className="h-4 w-4" />
-            Add Inspector
-          </button>
-        </div>
+          Add Inspector
+        </button>
       </div>
 
       {/* Search and Filters */}
