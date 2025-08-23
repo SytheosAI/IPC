@@ -21,6 +21,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { db, subscriptions } from '@/lib/supabase-client'
+import PageTitle from '@/components/PageTitle'
 
 interface DashboardStat {
   label: string
@@ -182,13 +183,14 @@ export default function DashboardPage() {
   return (
     <div className="p-6">
       {/* Header */}
+      <PageTitle 
+        title="Intelligent Plan Check Dashboard"
+      />
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Building2 className="h-8 w-8 text-sky-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Intelligent Plan Check Dashboard</h1>
+        <div className="flex items-center justify-end mb-6">
           <button 
             onClick={loadDashboardData}
-            className="ml-auto p-2 text-gray-600 hover:text-sky-600 transition-colors"
+            className="p-2 text-gray-600 hover:text-sky-600 transition-colors"
             title="Refresh data"
           >
             <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
@@ -233,10 +235,16 @@ export default function DashboardPage() {
                   key={index} 
                   className={`relative overflow-hidden bg-white rounded-xl shadow-lg border-2 ${colorClasses} p-6 card-hover`}
                 >
-                  {/* Background Pattern */}
-                  <div className="absolute inset-0 opacity-5">
+                  {/* Modern Gradient Background */}
+                  <div className="absolute inset-0">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-white/30"></div>
+                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-current to-transparent opacity-10 rounded-full blur-3xl"></div>
+                    <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-gradient-to-tr from-current to-transparent opacity-10 rounded-full blur-2xl"></div>
                     <div className="absolute inset-0" style={{
-                      backgroundImage: `repeating-linear-gradient(45deg, currentColor, currentColor 10px, transparent 10px, transparent 20px)`
+                      backgroundImage: `radial-gradient(circle at 20% 50%, currentColor 0%, transparent 50%),
+                                       radial-gradient(circle at 80% 80%, currentColor 0%, transparent 50%),
+                                       radial-gradient(circle at 40% 20%, currentColor 0%, transparent 50%)`,
+                      opacity: 0.03
                     }}></div>
                   </div>
                   

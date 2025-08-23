@@ -42,6 +42,7 @@ import { supabase } from '@/lib/supabase-client'
 import { useUser } from '@/app/contexts/UserContext'
 import { BackupSystem } from '@/lib/backup-system'
 import { logError } from '@/lib/error-handler'
+import PageTitle from '@/components/PageTitle'
 
 interface SecurityMetric {
   label: string
@@ -507,16 +508,11 @@ export default function SecurityCenter() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-lg">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Security Center</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Real-time security monitoring and management</p>
-            </div>
-          </div>
+        <PageTitle 
+          title="Security Center"
+          subtitle="Real-time security monitoring and management"
+        />
+        <div className="flex items-center justify-end -mt-12">
           
           <div className="flex items-center gap-3">
             <button

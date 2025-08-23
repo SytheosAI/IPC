@@ -178,10 +178,11 @@ export default function VBAPage() {
       setNewsLoading(true)
       
       const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY
+      console.log('News API key:', apiKey ? 'configured' : 'missing')
       
-      // Add date-based query for daily updates
-      const today = new Date().toISOString().split('T')[0]
-      const topics = ['construction technology', 'building automation', 'AI construction', 'smart buildings', 'construction robotics']
+      // Use broader date range and simpler query for better results
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]
+      const topics = ['construction', 'building', 'real estate', 'infrastructure', 'engineering']
       const randomTopic = topics[Math.floor(Math.random() * topics.length)]
       
       if (!apiKey || apiKey === 'your_news_api_key_here') {
@@ -207,10 +208,10 @@ export default function VBAPage() {
           }
         }
       } else {
-        // Use News API with the provided key and date-based query
-        const response = await fetch(
-          `https://newsapi.org/v2/everything?q=${encodeURIComponent(randomTopic)}&from=${today}&sortBy=publishedAt&pageSize=5&apiKey=${apiKey}`
-        )
+        // Use News API with the provided key and broader search
+        const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(randomTopic)}&from=${weekAgo}&language=en&sortBy=popularity&pageSize=10&apiKey=${apiKey}`
+        console.log('Fetching news for topic:', randomTopic)
+        const response = await fetch(url)
         
         if (response.ok) {
           const data = await response.json()
@@ -820,13 +821,13 @@ export default function VBAPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex gap-4 mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div className="flex gap-4 mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search inspections..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+            className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

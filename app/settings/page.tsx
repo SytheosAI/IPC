@@ -136,6 +136,7 @@ import {
 } from 'lucide-react'
 import { db } from '@/lib/supabase-client'
 import { useUser } from '@/app/contexts/UserContext'
+import PageTitle from '@/components/PageTitle'
 import OrganizationTab from './OrganizationTab'
 import IntegrationsTab from './IntegrationsTab'
 import ActivityTab from './ActivityTab'
@@ -698,9 +699,7 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center">Settings</h1>
-      </div>
+      <PageTitle title="Settings" />
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar */}
