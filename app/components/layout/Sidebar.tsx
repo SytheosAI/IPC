@@ -9,7 +9,7 @@ import {
   Building2,
   FileArchive,
   Users,
-  FolderOpen,
+  Building,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -52,10 +52,10 @@ const navigation = [
     description: 'Field Inspection Reports'
   },
   { 
-    name: 'Documents', 
-    href: '/documents', 
-    icon: FolderOpen,
-    description: 'Document Library'
+    name: 'Organization', 
+    href: '/organization', 
+    icon: Building,
+    description: 'Company Settings'
   },
   { 
     name: 'Members', 

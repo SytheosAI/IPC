@@ -112,6 +112,7 @@ export default function ProjectsPage() {
       })
       
       setProjects([project, ...projects])
+      setShowNewProjectModal(false) // Close modal on success
     } catch (error) {
       console.error('Failed to create project:', error)
       alert('Failed to create project. Please try again.')
