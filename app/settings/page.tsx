@@ -137,7 +137,6 @@ import {
 import { db } from '@/lib/supabase-client'
 import { useUser } from '@/app/contexts/UserContext'
 import PageTitle from '@/components/PageTitle'
-import OrganizationTab from './OrganizationTab'
 import IntegrationsTab from './IntegrationsTab'
 import ActivityTab from './ActivityTab'
 import SupportTab from './SupportTab'
@@ -394,7 +393,6 @@ export default function SettingsPage() {
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'company', label: 'Organization', icon: Building },
     { id: 'integrations', label: 'Integrations & API', icon: Link },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'data', label: 'Data & Privacy', icon: Database },
@@ -1425,16 +1423,6 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Organization Tab */}
-            {activeTab === 'company' && (
-              <OrganizationTab
-                organization={organization}
-                setOrganization={setOrganization}
-                handleFileUpload={handleFileUpload}
-                handleSave={handleSave}
-                fileInputRefs={fileInputRefs}
-              />
-            )}
 
             {/* Integrations & API Tab */}
             {activeTab === 'integrations' && (
