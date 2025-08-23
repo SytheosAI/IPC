@@ -425,7 +425,9 @@ export default function SecurityCenter() {
 
   const handleBackup = async () => {
     try {
-      const blob = await BackupSystem.createBackup(userContext?.profile?.id || '')
+      // Use email as user identifier since profile doesn't have id
+      const userId = userContext?.profile?.email || 'admin'
+      const blob = await BackupSystem.createBackup(userId)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -449,7 +451,7 @@ export default function SecurityCenter() {
     try {
       const result = await BackupSystem.restoreBackup(
         file,
-        userContext?.profile?.id || '',
+        userContext?.profile?.email || 'admin',
         {
           clearExisting: false,
           validateChecksum: true
