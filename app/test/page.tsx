@@ -1,9 +1,10 @@
 import Link from 'next/link'
+import PageTitle from '@/components/PageTitle'
 
 export default function TestPage() {
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold">IPC Test Page</h1>
+      <PageTitle title="IPC Test Page" subtitle="Deployment verification and navigation testing" />
       <p className="mt-4">If you can see this, the deployment is working!</p>
       <p className="mt-2">Time: {new Date().toISOString()}</p>
       <div className="mt-8">

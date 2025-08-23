@@ -27,6 +27,7 @@ import {
   Briefcase,
   UserCheck
 } from 'lucide-react'
+import PageTitle from '@/components/PageTitle'
 
 interface Member {
   id: string
@@ -165,8 +166,8 @@ export default function MembersPage() {
   return (
     <div className="p-6">
       {/* Page Header */}
+      <PageTitle title="Team Members & Contacts" />
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">Team Members & Contacts</h1>
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setShowMessaging(!showMessaging)}

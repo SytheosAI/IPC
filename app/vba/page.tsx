@@ -821,20 +821,20 @@ export default function VBAPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex gap-4 mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+      <div className="flex gap-3 mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search inspections..."
-            className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+            className="w-full pl-8 pr-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
         <select
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent bg-white"
+          className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent bg-white"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >

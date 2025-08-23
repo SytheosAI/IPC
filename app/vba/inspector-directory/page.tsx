@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import PageTitle from '@/components/PageTitle'
 import { 
   ArrowLeft, 
   Users, 
@@ -207,25 +208,19 @@ export default function InspectorDirectoryPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => router.push('/vba')}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">Inspector Directory</h1>
-              <p className="text-sm text-gray-600">Manage and view inspector information</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
+      <PageTitle title="Inspector Directory" subtitle="Manage and view inspector information" />
+      <div className="mb-6 flex items-center justify-between">
+        <button 
+          onClick={() => router.push('/vba')}
+          className="text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+        >
+          <UserPlus className="h-4 w-4" />
             Add Inspector
           </button>
         </div>

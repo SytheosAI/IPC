@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import PageTitle from '@/components/PageTitle'
 import { 
   FileText,
   Plus,
@@ -234,8 +235,8 @@ export default function SubmittalsPage() {
   return (
     <div className="p-6">
       {/* Page Header */}
+      <PageTitle title="Permit Submittals" subtitle="Manage and track building permit applications" />
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">Permit Submittals</h1>
         <div className="flex justify-end">
           <button
             onClick={() => setShowNewSubmittalModal(true)}

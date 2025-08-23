@@ -24,6 +24,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { db, supabase } from '@/lib/supabase-client'
+import PageTitle from '@/components/PageTitle'
 
 interface Document {
   id: string
@@ -207,15 +208,7 @@ export default function DocumentsPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-          <Home className="h-4 w-4" />
-          <ChevronRight className="h-4 w-4" />
-          <span>Documents</span>
-        </div>
-        <div className="flex flex-col items-center gap-4 mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">Document Management</h1>
-        </div>
+      <PageTitle title="Document Management" />
         <div className="flex justify-end">
           <button 
             onClick={() => setShowAddModal(true)}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { db } from '@/lib/supabase-client'
+import PageTitle from '@/components/PageTitle'
 
 export default function DebugPage() {
   const [results, setResults] = useState<any>({})
@@ -92,7 +93,7 @@ export default function DebugPage() {
   if (loading) {
     return (
       <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Debugging Supabase Connection...</h1>
+        <PageTitle title="Debugging Supabase Connection..." />
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
@@ -100,7 +101,7 @@ export default function DebugPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Supabase Debug Results</h1>
+      <PageTitle title="Supabase Debug Results" subtitle="Connection and table test results" />
       
       <div className="space-y-6">
         {Object.entries(results).map(([key, value]: [string, any]) => (

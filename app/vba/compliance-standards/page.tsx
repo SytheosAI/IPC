@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import PageTitle from '@/components/PageTitle'
 import { 
   ArrowLeft, 
   Shield, 
@@ -190,21 +191,14 @@ export default function ComplianceStandardsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => router.push('/vba')}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">Compliance Standards</h1>
-              <p className="text-sm text-gray-600">Building codes and regulatory requirements</p>
-            </div>
-          </div>
-        </div>
+      <PageTitle title="Compliance Standards" subtitle="Building codes and regulatory requirements" />
+      <div className="mb-6">
+        <button 
+          onClick={() => router.push('/vba')}
+          className="text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Search and Filter */}

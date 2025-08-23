@@ -30,6 +30,7 @@ import {
   ArrowUpDown
 } from 'lucide-react'
 import { db } from '@/lib/supabase-client'
+import PageTitle from '@/components/PageTitle'
 
 interface Project {
   id: string
@@ -194,8 +195,8 @@ export default function ProjectsPage() {
   return (
     <div className="p-6">
       {/* Page Header */}
+      <PageTitle title="Project Queue" />
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-4">Project Queue</h1>
         <div className="flex justify-end">
           <button 
             onClick={() => setShowNewProjectModal(true)}

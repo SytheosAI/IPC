@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import PageTitle from '@/components/PageTitle'
 import { 
   ArrowLeft, 
   FileText, 
@@ -22,21 +23,14 @@ export default function InspectionGuidelinesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => router.push('/vba')}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">General Inspection Guidelines</h1>
-              <p className="text-sm text-gray-600">Standards and best practices for all inspections</p>
-            </div>
-          </div>
-        </div>
+      <PageTitle title="General Inspection Guidelines" subtitle="Standards and best practices for all inspections" />
+      <div className="mb-6">
+        <button 
+          onClick={() => router.push('/vba')}
+          className="text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Main Content */}

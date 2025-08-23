@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Zap, Settings, Building2 } from 'lucide-react'
 import Link from 'next/link'
+import PageTitle from '@/components/PageTitle'
 
 export default function MobileLandingPage() {
   const router = useRouter()
@@ -21,19 +22,7 @@ export default function MobileLandingPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700">
-        <div className="p-6">
-          <div className="flex items-center gap-3 justify-center">
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--accent-500), var(--accent-600))' }}>
-              <Zap className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">IPC Mobile</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Field Access Portal</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageTitle title="IPC Mobile" subtitle="Field Access Portal" />
 
       {/* Main Content */}
       <div className="flex-1 p-6">
