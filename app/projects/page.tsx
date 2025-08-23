@@ -194,19 +194,19 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-6">
+      {/* New Project Button */}
+      <div className="absolute top-4 right-6">
+        <button 
+          onClick={() => setShowNewProjectModal(true)}
+          className="btn-primary"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          New Project
+        </button>
+      </div>
+
       {/* Page Header */}
       <PageTitle title="Project Queue" />
-      <div className="mb-6">
-        <div className="flex justify-end">
-          <button 
-            onClick={() => setShowNewProjectModal(true)}
-            className="btn-primary"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            New Project
-          </button>
-        </div>
-      </div>
 
       {/* Filters and Search */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 mb-6">

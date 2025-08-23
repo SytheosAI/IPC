@@ -234,19 +234,19 @@ export default function SubmittalsPage() {
 
   return (
     <div className="p-6">
-      {/* Page Header */}
-      <PageTitle title="Permit Submittals" subtitle="Manage and track building permit applications" />
-      <div className="mb-6">
-        <div className="flex justify-end">
-          <button
-            onClick={() => setShowNewSubmittalModal(true)}
-            className="btn-primary"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            New Submittal
-          </button>
-        </div>
+      {/* New Submittal Button */}
+      <div className="absolute top-4 right-6">
+        <button
+          onClick={() => setShowNewSubmittalModal(true)}
+          className="btn-primary"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          New Submittal
+        </button>
       </div>
+
+      {/* Page Header */}
+      <PageTitle title="Permit Submittals" />
 
       {/* Filters and Search */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 mb-6">

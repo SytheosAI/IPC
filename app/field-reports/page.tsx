@@ -397,19 +397,21 @@ export default function FieldReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* New Report Button */}
+      <div className="absolute top-4 right-6 z-10">
+        <button
+          onClick={() => setShowNewReportModal(true)}
+          className="btn-primary"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          New Report
+        </button>
+      </div>
+
       {/* Header */}
-      <PageTitle title="Field Reports" subtitle="Track site conditions and project progress" />
-      <div className="mb-6">
-        <div className="flex items-center justify-end">
-          <button
-            onClick={() => setShowNewReportModal(true)}
-              className="btn-primary"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              New Report
-            </button>
-        </div>
+      <div className="p-6">
+        <PageTitle title="Field Reports" />
       </div>
 
       {/* Filters and Search */}
