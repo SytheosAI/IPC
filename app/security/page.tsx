@@ -105,7 +105,8 @@ export default function SecurityCenter() {
 
   useEffect(() => {
     // Check if user is admin
-    if (userContext?.profile?.role !== 'admin') {
+    if (userContext?.profile?.title?.toLowerCase() !== 'admin' && 
+        userContext?.profile?.title?.toLowerCase() !== 'administrator') {
       router.push('/dashboard')
       return
     }

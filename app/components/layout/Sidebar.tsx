@@ -77,7 +77,8 @@ export default function Sidebar() {
   const { profile, theme } = useUser()
   
   // Add Security Center for admin users
-  const isAdmin = profile?.role === 'admin'
+  // Check if user is admin based on title
+  const isAdmin = profile?.title?.toLowerCase() === 'admin' || profile?.title?.toLowerCase() === 'administrator'
   const navItems = isAdmin ? [
     ...navigation.slice(0, -1), // All items except settings
     { 
