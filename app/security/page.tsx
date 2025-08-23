@@ -229,11 +229,11 @@ export default function SecurityCenter() {
       return {
         failed,
         total,
-        trend: failed > yesterdayFailed ? 'up' : failed < yesterdayFailed ? 'down' : 'stable'
+        trend: (failed > yesterdayFailed ? 'up' : failed < yesterdayFailed ? 'down' : 'stable') as 'up' | 'down' | 'stable'
       }
     } catch (error) {
       console.error('Error loading login attempts:', error)
-      return { failed: 0, total: 0, trend: 'stable' as const }
+      return { failed: 0, total: 0, trend: 'stable' as 'up' | 'down' | 'stable' }
     }
   }
 
