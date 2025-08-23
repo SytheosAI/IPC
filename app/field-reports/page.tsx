@@ -189,15 +189,12 @@ export default function FieldReportsPage() {
 
   const loadTeamMembers = async () => {
     try {
-      // Load from members table if it exists, otherwise use mock data
-      const mockMembers: TeamMember[] = [
-        { id: '1', name: 'John Smith', email: 'john@example.com', phone: '(239) 555-0101', role: 'Project Manager' },
-        { id: '2', name: 'Sarah Johnson', email: 'sarah@example.com', phone: '(239) 555-0102', role: 'Site Supervisor' },
-        { id: '3', name: 'Mike Williams', email: 'mike@example.com', phone: '(239) 555-0103', role: 'Inspector' },
-        { id: '4', name: 'Emily Davis', email: 'emily@example.com', phone: '(239) 555-0104', role: 'Quality Control' },
-        { id: '5', name: 'David Brown', email: 'david@example.com', phone: '(239) 555-0105', role: 'Safety Officer' }
-      ]
-      setTeamMembers(mockMembers)
+      // TODO: Load from contacts table once it's set up
+      // const members = await db.contacts.getAll()
+      // setTeamMembers(members)
+      
+      // For now, set empty array until database is configured
+      setTeamMembers([])
     } catch (err) {
       console.error('Error loading team members:', err)
       setTeamMembers([])

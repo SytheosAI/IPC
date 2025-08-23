@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
-  FileCheck
+  FileCheck,
+  Shield
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useUser } from '../../contexts/UserContext'
@@ -74,6 +75,19 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
   const { profile, theme } = useUser()
+  
+  // Add Security Center for admin users
+  const isAdmin = profile?.role === 'admin'
+  const navItems = isAdmin ? [
+    ...navigation.slice(0, -1), // All items except settings
+    { 
+      name: 'Security', 
+      href: '/security', 
+      icon: Shield,
+      description: 'Security Center'
+    },
+    navigation[navigation.length - 1] // Settings at the end
+  ] : navigation
 
   return (
     <div
@@ -113,7 +127,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="px-2 py-4">
         <div className="space-y-1">
-          {navigation.map((item) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href || 
               (item.href !== '/' && pathname.startsWith(item.href))
             

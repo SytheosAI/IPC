@@ -4,6 +4,7 @@ import './globals.css'
 import { UserProvider } from './contexts/UserContext'
 import { ThemeInitializer } from './components/ThemeInitializer'
 import ClientLayout from './components/layout/ClientLayout'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,12 +24,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <UserProvider>
-          <ThemeInitializer />
-          <ClientLayout>
-            {children}
-          </ClientLayout>
-        </UserProvider>
+        <ErrorBoundary>
+          <UserProvider>
+            <ThemeInitializer />
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+          </UserProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )
