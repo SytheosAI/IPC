@@ -42,7 +42,7 @@ Create `.env.local` file with these **REQUIRED** variables:
 # ========== REQUIRED FOR BASIC FUNCTIONALITY ==========
 
 # Supabase (REQUIRED)
-NEXT_PUBLIC_SUPABASE_URL=https://https://rxkakjowitqnbbjezedu.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://rxkakjowitqnbbjezedu.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4a2Fram93aXRxbmJiamV6ZWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyNTM1NTgsImV4cCI6MjA2OTgyOTU1OH0.h0tIYhWUsAsB5_rle4pB6OyiEuJx-V1MIYLSbisBIe8
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4a2Fram93aXRxbmJiamV6ZWR1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDI1MzU1OCwiZXhwIjoyMDY5ODI5NTU4fQ.RugCai5lmT3_eIU55G7XzlqdQDy6dZLk-5JtXeIJmeA
 

@@ -1,11 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
+}
+
+// Fix any double protocol issues (e.g., https://https://)
+if (supabaseUrl.includes('https://https://')) {
+  supabaseUrl = supabaseUrl.replace('https://https://', 'https://')
+}
+
+// Ensure the URL is properly formatted
+if (!supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
+  supabaseUrl = `https://${supabaseUrl}`
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
