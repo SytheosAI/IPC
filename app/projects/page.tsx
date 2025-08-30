@@ -60,6 +60,11 @@ export default function ProjectsPage() {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [showNewProjectModal, setShowNewProjectModal] = useState(false)
+  
+  // Debug log when modal state changes
+  useEffect(() => {
+    console.log('showNewProjectModal state:', showNewProjectModal)
+  }, [showNewProjectModal])
   const [newProject, setNewProject] = useState({
     project_name: '',
     address: '',
@@ -98,7 +103,7 @@ export default function ProjectsPage() {
     e.preventDefault()
     
     try {
-      const project = await db.projects.create({
+      const projectData = {
         permit_number: newProject.permit_number || generatePermitNumber(),
         project_name: newProject.project_name,
         address: newProject.address,
@@ -109,13 +114,20 @@ export default function ProjectsPage() {
         project_type: newProject.project_type,
         status: newProject.status,
         submitted_date: new Date().toISOString()
-      })
+      }
+      
+      console.log('Creating project with data:', projectData)
+      const project = await db.projects.create(projectData)
+      console.log('Project created successfully:', project)
       
       setProjects([project, ...projects])
       setShowNewProjectModal(false) // Close modal on success
-    } catch (error) {
-      console.error('Failed to create project:', error)
-      alert('Failed to create project. Please try again.')
+    } catch (error: any) {
+      console.error('Failed to create project - Full error:', error)
+      console.error('Error message:', error?.message)
+      console.error('Error code:', error?.code)
+      console.error('Error details:', error?.details)
+      alert(`Failed to create project: ${error?.message || 'Unknown error'}`)
     }
     
     // Reset form
@@ -198,10 +210,13 @@ export default function ProjectsPage() {
       {/* New Project Button */}
       <div className="absolute top-2 right-6">
         <button 
-          onClick={() => setShowNewProjectModal(true)}
-          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors flex items-center"
+          type="button"
+          onClick={() => {
+            console.log('Button clicked - opening modal')
+            setShowNewProjectModal(true)
+          }}
+          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors"
         >
-          <Plus className="h-4 w-4 mr-1" />
           New Project
         </button>
       </div>
@@ -312,11 +327,14 @@ export default function ProjectsPage() {
                     <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No projects found</p>
                     <p className="text-gray-500 dark:text-gray-500 text-sm mb-4">Get started by creating your first project</p>
                     <button
-                      onClick={() => setShowNewProjectModal(true)}
+                      type="button"
+                      onClick={() => {
+                        console.log('Empty state button clicked - opening modal')
+                        setShowNewProjectModal(true)
+                      }}
                       className="btn-primary"
                     >
-                      <Plus className="h-5 w-5 mr-2" />
-                      Create New Project
+                      New Project
                     </button>
                   </td>
                 </tr>

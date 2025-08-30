@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { db } from '@/lib/supabase-client'
+import { supabase } from '@/lib/supabase-client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface UserProfile {
   name: string
@@ -170,18 +172,49 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // Load settings from Supabase
     const loadSettings = async () => {
       try {
+        // First, try to get the current user's profile from Supabase
+        const supabaseClient = createClientComponentClient()
+        const { data: { user } } = await supabaseClient.auth.getUser()
+        
+        if (user) {
+          // Fetch the user's profile from the profiles table
+          const { data: profileData, error: profileError } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+          
+          if (profileData && !profileError) {
+            // Update the profile with data from Supabase
+            setProfile({
+              name: profileData.name || user.email?.split('@')[0] || '',
+              email: profileData.email || user.email || '',
+              phone: profileData.phone || '',
+              title: profileData.title || profileData.role || 'Inspector',
+              company: profileData.company || '',
+              address: profileData.address || ''
+            })
+          }
+        }
+
+        // Load other settings from local storage
         const settings = await db.userSettings.get('default-user')
         if (settings) {
-          if (settings.profile) setProfile(settings.profile)
           if (settings.notifications) setNotifications(settings.notifications)
           if (settings.security) setSecurity(settings.security)
           if (settings.theme) {
             setTheme(settings.theme)
             applyThemeToDocument(settings.theme)
           }
+        } else {
+          // No settings found, use defaults
+          applyThemeToDocument(defaultTheme)
         }
-      } catch (error) {
-        console.error('Failed to load user settings:', error)
+      } catch (error: any) {
+        // Only log if it's not a "table doesn't exist" or "not found" error
+        if (error?.code !== 'PGRST116' && error?.code !== '42P01') {
+          console.warn('User settings not available, using defaults')
+        }
         // Use defaults if Supabase fails
         applyThemeToDocument(defaultTheme)
       }

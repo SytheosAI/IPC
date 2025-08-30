@@ -16,6 +16,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     checkMobile()
   }, [])
 
+  // Check if on login page
+  const isLoginPage = pathname === '/login'
+
+  // If on login page, render without any navigation
+  if (isLoginPage) {
+    return <>{children}</>
+  }
+
   // Mobile paths that don't need sidebar
   const mobilePaths = ['/mobile', '/vba', '/settings']
   const isMobilePath = mobilePaths.some(path => pathname.startsWith(path))

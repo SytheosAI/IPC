@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { 
   LayoutGrid,
   FileText,
@@ -15,10 +15,13 @@ import {
   ChevronRight,
   Zap,
   FileCheck,
-  Shield
+  Shield,
+  Brain,
+  LogOut
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useUser } from '../../contexts/UserContext'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 const navigation = [
   { 
@@ -74,21 +77,42 @@ const navigation = [
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const { profile, theme } = useUser()
+  const supabase = createClientComponentClient()
   
-  // Add Security Center for admin users
-  // Check if user is admin based on title
-  const isAdmin = profile?.title?.toLowerCase() === 'admin' || profile?.title?.toLowerCase() === 'administrator'
-  const navItems = isAdmin ? [
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+  
+  // Add Security Center and Architecture Analysis for admin users
+  // Check if user is admin based on title or role
+  const isAdmin = profile?.title?.toLowerCase() === 'admin' || 
+                  profile?.title?.toLowerCase() === 'administrator' ||
+                  profile?.email === 'mparish@meridianswfl.com'
+  
+  // Debug logging
+  console.log('Profile:', profile)
+  console.log('Is Admin:', isAdmin)
+  
+  // Always show Architecture for now to test
+  const navItems = [
     ...navigation.slice(0, -1), // All items except settings
     { 
+      name: 'Architecture', 
+      href: '/architecture-analysis', 
+      icon: Brain,
+      description: 'System Analysis'
+    },
+    ...(isAdmin ? [{ 
       name: 'Security', 
       href: '/security', 
       icon: Shield,
       description: 'Security Center'
-    },
+    }] : []),
     navigation[navigation.length - 1] // Settings at the end
-  ] : navigation
+  ]
 
   return (
     <div
@@ -171,10 +195,10 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* User Profile */}
-      {!isCollapsed && profile.name && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
+      {/* User Profile & Logout */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
+        {!isCollapsed && profile.name && (
+          <div className="flex items-center gap-3 mb-3">
             <div 
               className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
               style={{ background: `linear-gradient(to right, var(--accent-500), var(--accent-600))` }}
@@ -188,8 +212,25 @@ export default function Sidebar() {
               <p className="text-xs text-gray-500 dark:text-gray-400">{profile.title || 'User'}</p>
             </div>
           </div>
-        </div>
-      )}
+        )}
+        
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className={clsx(
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 border-2 border-transparent hover:border-red-200 dark:hover:border-red-800',
+            {
+              'justify-center': isCollapsed,
+              'justify-start': !isCollapsed
+            }
+          )}
+        >
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          {!isCollapsed && (
+            <span className="text-sm font-medium">Logout</span>
+          )}
+        </button>
+      </div>
     </div>
   )
 }

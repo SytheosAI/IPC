@@ -5,7 +5,9 @@ import { useParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, FileText, FileCheck, BookOpen, Archive, Plus, Upload, 
   Download, Eye, Edit2, Save, X, Calendar, ChevronRight, Building, 
-  CheckCircle, Shield, Clock, Camera, Trash2
+  CheckCircle, Shield, Clock, Camera, Trash2, Phone, Mail, MapPin,
+  User, Users, Briefcase, Home, DollarSign, FileSearch, AlertCircle,
+  ClipboardList, HardHat, UserCheck, Building2, CreditCard
 } from 'lucide-react'
 import { db, supabase } from '@/lib/supabase-client'
 
@@ -14,35 +16,107 @@ interface VBAProject {
   job_number?: string
   project_name: string
   address: string
+  city?: string
+  state?: string
+  zip_code?: string
+  
+  // Owner Information
   owner?: string
+  owner_company?: string
+  owner_phone?: string
+  owner_email?: string
+  owner_address?: string
+  
+  // Contractor Information
   contractor?: string
+  contractor_company?: string
+  contractor_license?: string
+  contractor_phone?: string
+  contractor_email?: string
+  contractor_address?: string
+  
+  // Inspector Information
+  inspector?: string
+  inspector_license?: string
+  inspector_phone?: string
+  inspector_email?: string
+  inspector_company?: string
+  
+  // Consultant Information
+  consultant?: string
+  consultant_company?: string
+  consultant_phone?: string
+  consultant_email?: string
+  consultant_specialty?: string
+  
+  // Architect/Engineer Information
+  architect?: string
+  architect_firm?: string
+  architect_license?: string
+  architect_phone?: string
+  architect_email?: string
+  
+  engineer?: string
+  engineer_firm?: string
+  engineer_license?: string
+  engineer_phone?: string
+  engineer_email?: string
+  
+  // Project Details
   project_type?: string
+  building_type?: string
+  construction_type?: string
+  occupancy_type?: string
+  square_footage?: number
+  number_of_stories?: number
+  number_of_units?: number
+  
+  // Permit Information
+  permit_number?: string
+  permit_type?: string
+  permit_issued_date?: string
+  permit_expiration_date?: string
+  
+  // Financial Information
+  project_value?: number
+  permit_fee?: number
+  inspection_fee?: number
+  total_fees?: number
+  payment_status?: string
+  
+  // Schedule Information
   start_date?: string
-  status: 'scheduled' | 'in_progress' | 'completed' | 'failed'
+  estimated_completion?: string
+  actual_completion?: string
+  
+  // Status and Compliance
+  status: 'scheduled' | 'in_progress' | 'completed' | 'on_hold' | 'failed'
+  compliance_status?: 'compliant' | 'non_compliant' | 'pending'
+  compliance_notes?: string
+  
+  // Additional Information
+  special_instructions?: string
+  site_conditions?: string
+  access_notes?: string
+  safety_requirements?: string
+  
   selected_inspections?: string[]
   created_at?: string
   updated_at?: string
 }
 
-interface FileItem {
-  id: string
-  name: string
-  type: 'file' | 'folder'
-  size?: string
-  uploadDate: string
-  uploadedBy?: string
-  data?: string // Base64 image data
-}
-
-interface InspectionEvent {
-  id: string
+interface ContactSection {
   title: string
-  date: Date
-  type: string
-  status: 'scheduled' | 'completed' | 'cancelled'
+  icon: React.ReactNode
+  fields: Array<{
+    label: string
+    key: keyof VBAProject
+    type?: 'text' | 'email' | 'tel' | 'number' | 'date' | 'textarea'
+    placeholder?: string
+  }>
 }
 
-export default function ProjectHub() {
+export default function EnhancedProjectHub() {
   const params = useParams()
   const router = useRouter()
   const projectId = params.projectId as string
@@ -50,13 +124,9 @@ export default function ProjectHub() {
   const [project, setProject] = useState<VBAProject | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editedProject, setEditedProject] = useState<VBAProject | null>(null)
-  const [activeView, setActiveView] = useState<'hub' | 'inspections' | 'reports' | 'templates' | 'misc' | 'photoDocumentation'>('hub')
-  const [selectedInspection, setSelectedInspection] = useState<string | null>(null)
-  const [inspectionPhotos, setInspectionPhotos] = useState<Record<string, FileItem[]>>({})
-  const [reports, setReports] = useState<FileItem[]>([])
+  const [activeView, setActiveView] = useState<'hub' | 'inspections' | 'reports' | 'templates' | 'contacts'>('hub')
+  const [activeContactTab, setActiveContactTab] = useState('owner')
   const [loading, setLoading] = useState(true)
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [inspectionEvents, setInspectionEvents] = useState<InspectionEvent[]>([])
 
   useEffect(() => {
     loadProjectDetails()
@@ -73,36 +143,6 @@ export default function ProjectHub() {
         setProject(foundProject)
         setEditedProject(foundProject)
       }
-
-      // Load inspection photos from Supabase
-      try {
-        const photos = await db.inspections.getByVBAProject(projectId)
-        // Group photos by inspection type
-        const photosByInspection: Record<string, FileItem[]> = {}
-        photos.forEach((photo: any) => {
-          const inspectionType = photo.category || 'General'
-          if (!photosByInspection[inspectionType]) {
-            photosByInspection[inspectionType] = []
-          }
-          photosByInspection[inspectionType].push({
-            id: photo.id,
-            name: photo.caption || 'Photo',
-            type: 'file' as const,
-            size: '0 KB',
-            uploadDate: photo.created_at || new Date().toISOString(),
-            data: photo.url
-          })
-        })
-        setInspectionPhotos(photosByInspection)
-      } catch (error) {
-        console.error('Failed to load inspection photos:', error)
-      }
-
-      // Load reports - TODO: Implement reports table in Supabase
-      setReports([])
-
-      // Load inspection events - TODO: Implement events table in Supabase
-      setInspectionEvents([])
     } catch (error) {
       console.error('Failed to load project details:', error)
     } finally {
@@ -131,22 +171,75 @@ export default function ProjectHub() {
     }
   }
 
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  }
-
-  const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-  }
-
-  const getEventsForDay = (day: number) => {
-    return inspectionEvents.filter(event => {
-      const eventDate = new Date(event.date)
-      return eventDate.getDate() === day &&
-             eventDate.getMonth() === currentMonth.getMonth() &&
-             eventDate.getFullYear() === currentMonth.getFullYear()
-    })
-  }
+  const contactSections: ContactSection[] = [
+    {
+      title: 'Owner Information',
+      icon: <Home className="h-5 w-5" />,
+      fields: [
+        { label: 'Owner Name', key: 'owner' },
+        { label: 'Company', key: 'owner_company' },
+        { label: 'Phone', key: 'owner_phone', type: 'tel' },
+        { label: 'Email', key: 'owner_email', type: 'email' },
+        { label: 'Address', key: 'owner_address' }
+      ]
+    },
+    {
+      title: 'Contractor Information',
+      icon: <HardHat className="h-5 w-5" />,
+      fields: [
+        { label: 'Contractor Name', key: 'contractor' },
+        { label: 'Company', key: 'contractor_company' },
+        { label: 'License #', key: 'contractor_license' },
+        { label: 'Phone', key: 'contractor_phone', type: 'tel' },
+        { label: 'Email', key: 'contractor_email', type: 'email' },
+        { label: 'Address', key: 'contractor_address' }
+      ]
+    },
+    {
+      title: 'Inspector Information',
+      icon: <UserCheck className="h-5 w-5" />,
+      fields: [
+        { label: 'Inspector Name', key: 'inspector' },
+        { label: 'License #', key: 'inspector_license' },
+        { label: 'Company', key: 'inspector_company' },
+        { label: 'Phone', key: 'inspector_phone', type: 'tel' },
+        { label: 'Email', key: 'inspector_email', type: 'email' }
+      ]
+    },
+    {
+      title: 'Consultant Information',
+      icon: <Users className="h-5 w-5" />,
+      fields: [
+        { label: 'Consultant Name', key: 'consultant' },
+        { label: 'Company', key: 'consultant_company' },
+        { label: 'Specialty', key: 'consultant_specialty' },
+        { label: 'Phone', key: 'consultant_phone', type: 'tel' },
+        { label: 'Email', key: 'consultant_email', type: 'email' }
+      ]
+    },
+    {
+      title: 'Architect Information',
+      icon: <Building2 className="h-5 w-5" />,
+      fields: [
+        { label: 'Architect Name', key: 'architect' },
+        { label: 'Firm', key: 'architect_firm' },
+        { label: 'License #', key: 'architect_license' },
+        { label: 'Phone', key: 'architect_phone', type: 'tel' },
+        { label: 'Email', key: 'architect_email', type: 'email' }
+      ]
+    },
+    {
+      title: 'Engineer Information',
+      icon: <Briefcase className="h-5 w-5" />,
+      fields: [
+        { label: 'Engineer Name', key: 'engineer' },
+        { label: 'Firm', key: 'engineer_firm' },
+        { label: 'License #', key: 'engineer_license' },
+        { label: 'Phone', key: 'engineer_phone', type: 'tel' },
+        { label: 'Email', key: 'engineer_email', type: 'email' }
+      ]
+    }
+  ]
 
   if (loading) {
     return (
@@ -167,392 +260,8 @@ export default function ProjectHub() {
     )
   }
 
-  // Inspections View
-  if (activeView === 'inspections') {
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="mb-6">
-          <button 
-            onClick={() => selectedInspection ? setSelectedInspection(null) : setActiveView('hub')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            {selectedInspection ? 'Back to Inspections' : 'Back to Project'}
-          </button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <FileCheck className="h-5 w-5" />
-              Inspections
-            </h2>
-            <button
-              onClick={() => {
-                const input = document.createElement('input')
-                input.type = 'file'
-                input.multiple = true
-                input.accept = 'image/*'
-                input.click()
-              }}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Upload File
-            </button>
-          </div>
-
-          <div className="p-4">
-            {selectedInspection ? (
-              // Show photo upload interface for selected inspection
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">{selectedInspection}</h3>
-                <p className="text-sm text-gray-500">{inspectionPhotos[selectedInspection]?.length || 0} photos uploaded</p>
-                
-                <div className="grid grid-cols-1 gap-3">
-                  <button
-                    onClick={() => {
-                      const input = document.createElement('input')
-                      input.type = 'file'
-                      input.capture = 'environment'
-                      input.accept = 'image/*'
-                      input.onchange = (e: Event) => {
-                        const file = (e.target as HTMLInputElement).files?.[0]
-                        if (file) {
-                          const reader = new FileReader()
-                          reader.onload = async (event) => {
-                            try {
-                              // Upload to Supabase Storage
-                              const fileName = `vba-photos/${projectId}/${selectedInspection}/${Date.now()}-${file.name}`
-                              const { data: uploadData, error: uploadError } = await supabase.storage
-                                .from('inspection-photos')
-                                .upload(fileName, file)
-                              
-                              if (uploadError) throw uploadError
-                              
-                              // Get public URL
-                              const { data: { publicUrl } } = supabase.storage
-                                .from('inspection-photos')
-                                .getPublicUrl(fileName)
-                              
-                              // Save photo record
-                              await db.inspections.addPhoto(
-                                selectedInspection,
-                                projectId,
-                                publicUrl,
-                                file.name,
-                                selectedInspection
-                              )
-                              
-                              const newPhoto: FileItem = {
-                                id: Date.now().toString(),
-                                name: file.name,
-                                type: 'file',
-                                size: `${(file.size / 1024).toFixed(1)} KB`,
-                                uploadDate: new Date().toISOString(),
-                                uploadedBy: 'Current User',
-                                data: publicUrl
-                              }
-                              
-                              const updatedPhotos = {
-                                ...inspectionPhotos,
-                                [selectedInspection]: [...(inspectionPhotos[selectedInspection] || []), newPhoto]
-                              }
-                              setInspectionPhotos(updatedPhotos)
-                            } catch (error) {
-                              console.error('Failed to upload photo:', error)
-                              alert('Failed to upload photo. Please try again.')
-                            }
-                          }
-                          reader.readAsDataURL(file)
-                        }
-                      }
-                      input.click()
-                    }}
-                    className="w-full bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2"
-                  >
-                    <Camera className="h-5 w-5" />
-                    Take Photo
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      const input = document.createElement('input')
-                      input.type = 'file'
-                      input.multiple = true
-                      input.accept = 'image/*'
-                      input.onchange = async (e: Event) => {
-                        const files = (e.target as HTMLInputElement).files
-                        if (files) {
-                          const newPhotos: FileItem[] = []
-                          
-                          // Read each file as base64
-                          for (const file of Array.from(files)) {
-                            const reader = new FileReader()
-                            const photoData = await new Promise<string>((resolve) => {
-                              reader.onload = (event) => resolve(event.target?.result as string)
-                              reader.readAsDataURL(file)
-                            })
-                            
-                            newPhotos.push({
-                              id: Date.now().toString() + Math.random().toString(),
-                              name: file.name,
-                              type: 'file' as const,
-                              size: `${(file.size / 1024).toFixed(1)} KB`,
-                              uploadDate: new Date().toISOString(),
-                              uploadedBy: 'Current User',
-                              data: photoData // Store base64 data
-                            })
-                          }
-                          
-                          // Upload all photos to Supabase Storage
-                          for (const photo of newPhotos) {
-                            try {
-                              const fileName = `vba-photos/${projectId}/${selectedInspection}/${Date.now()}-${photo.name}`
-                              const blob = await fetch(photo.data!).then(r => r.blob())
-                              
-                              const { data: uploadData, error: uploadError } = await supabase.storage
-                                .from('inspection-photos')
-                                .upload(fileName, blob)
-                              
-                              if (uploadError) throw uploadError
-                              
-                              const { data: { publicUrl } } = supabase.storage
-                                .from('inspection-photos')
-                                .getPublicUrl(fileName)
-                              
-                              await db.inspections.addPhoto(
-                                selectedInspection,
-                                projectId,
-                                publicUrl,
-                                photo.name,
-                                selectedInspection
-                              )
-                              
-                              photo.data = publicUrl
-                            } catch (error) {
-                              console.error('Failed to upload photo:', error)
-                            }
-                          }
-                          
-                          const updatedPhotos = {
-                            ...inspectionPhotos,
-                            [selectedInspection]: [...(inspectionPhotos[selectedInspection] || []), ...newPhotos]
-                          }
-                          setInspectionPhotos(updatedPhotos)
-                        }
-                      }
-                      input.click()
-                    }}
-                    className="w-full bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 flex items-center justify-center gap-2"
-                  >
-                    <Upload className="h-5 w-5" />
-                    Upload from Gallery
-                  </button>
-                </div>
-
-                <div className="space-y-2 mt-6">
-                  {(inspectionPhotos[selectedInspection] || []).length === 0 ? (
-                    <p className="text-center py-8 text-gray-500">0 photos uploaded</p>
-                  ) : (
-                    (inspectionPhotos[selectedInspection] || []).map((photo) => (
-                      <div key={photo.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Camera className="h-5 w-5 text-gray-400" />
-                          <div>
-                            <p className="font-medium text-gray-900">{photo.name}</p>
-                            <p className="text-sm text-gray-500">{photo.size}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={async () => {
-                            // Delete from Supabase Storage
-                            try {
-                              // Extract file path from URL
-                              const urlParts = photo.data?.split('/')
-                              if (urlParts && urlParts.length > 0) {
-                                const fileName = urlParts.slice(-4).join('/')
-                                await supabase.storage
-                                  .from('inspection-photos')
-                                  .remove([fileName])
-                              }
-                              
-                              // Delete record from database
-                              await supabase
-                                .from('inspection_photos')
-                                .delete()
-                                .eq('id', photo.id)
-                            } catch (error) {
-                              console.error('Failed to delete photo:', error)
-                            }
-                            
-                            const updatedPhotos = {
-                              ...inspectionPhotos,
-                              [selectedInspection]: inspectionPhotos[selectedInspection].filter(p => p.id !== photo.id)
-                            }
-                            setInspectionPhotos(updatedPhotos)
-                          }}
-                          className="p-2 text-red-400 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            ) : (
-              // Show list of inspections
-              <div>
-                <h3 className="font-medium text-gray-900 mb-4">Select an inspection to view checklist:</h3>
-                <div className="space-y-3">
-                  {project.selected_inspections?.map((inspection, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedInspection(inspection)}
-                      className="w-full bg-white border border-gray-200 px-4 py-4 rounded-lg text-left hover:bg-gray-50 hover:border-indigo-300 transition-all flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="font-medium text-gray-900">{inspection}</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {inspectionPhotos[inspection]?.length || 0} photos uploaded
-                        </p>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Templates View
-  if (activeView === 'templates') {
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="mb-6">
-          <button 
-            onClick={() => setActiveView('hub')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            Back to Project
-          </button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Templates
-            </h2>
-          </div>
-
-          <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button 
-                onClick={() => router.push(`/vba/project/${projectId}/templates/inspection-report`)}
-                className="bg-white border-2 border-indigo-500 px-6 py-8 rounded-lg text-left hover:bg-indigo-50 transition-all"
-              >
-                <h3 className="font-medium text-gray-900 text-lg mb-2">Inspection Report</h3>
-                <p className="text-sm text-gray-600">Generate inspection reports from templates</p>
-              </button>
-              
-              <button className="bg-white border border-gray-200 px-6 py-8 rounded-lg text-left hover:bg-gray-50 hover:border-indigo-300 transition-all">
-                <h3 className="font-medium text-gray-900 text-lg mb-2">Executive Summary</h3>
-                <p className="text-sm text-gray-600">Create executive summary documents</p>
-              </button>
-              
-              <button 
-                onClick={() => router.push(`/vba/project/${projectId}/templates/project-information`)}
-                className="bg-white border border-gray-200 px-6 py-8 rounded-lg text-left hover:bg-gray-50 hover:border-indigo-300 transition-all"
-              >
-                <h3 className="font-medium text-gray-900 text-lg mb-2">Project Information</h3>
-                <p className="text-sm text-gray-600">Update project details and information</p>
-              </button>
-              
-              <button 
-                onClick={() => setActiveView('photoDocumentation')}
-                className="bg-white border border-gray-200 px-6 py-8 rounded-lg text-left hover:bg-gray-50 hover:border-indigo-300 transition-all"
-              >
-                <h3 className="font-medium text-gray-900 text-lg mb-2">Photo Documentation</h3>
-                <p className="text-sm text-gray-600">Organize and document project photos</p>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Reports View
-  if (activeView === 'reports') {
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="mb-6">
-          <button 
-            onClick={() => setActiveView('hub')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            Back to Project
-          </button>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Inspection Reports
-            </h2>
-          </div>
-
-          <div className="p-4">
-            {reports.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No reports generated yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {reports.map((report) => (
-                  <div
-                    key={report.id}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium text-gray-900">{report.name}</p>
-                        <p className="text-sm text-gray-500">
-                          Generated {new Date(report.uploadDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 text-gray-400 hover:text-gray-600">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600">
-                        <Download className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Photo Documentation View
-  if (activeView === 'photoDocumentation') {
+  // Contacts View
+  if (activeView === 'contacts') {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
         <div className="mb-6">
@@ -568,55 +277,114 @@ export default function ProjectHub() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              Photo-Documentation
+              <Users className="h-5 w-5" />
+              Project Contacts & Information
             </h2>
-            <button 
-              onClick={() => {
-                const input = document.createElement('input')
-                input.type = 'file'
-                input.multiple = true
-                input.accept = 'image/*'
-                input.click()
-              }}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Upload File
-            </button>
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-indigo-600 hover:text-indigo-800 flex items-center gap-2"
+              >
+                <Edit2 className="h-4 w-4" />
+                Edit All
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveEdit}
+                  className="text-green-600 hover:text-green-800 flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save All
+                </button>
+                <button
+                  onClick={() => {
+                    setEditedProject(project)
+                    setIsEditing(false)
+                  }}
+                  className="text-red-600 hover:text-red-800 flex items-center gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex border-b border-gray-200">
+            {contactSections.map((section, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveContactTab(section.title.toLowerCase().split(' ')[0])}
+                className={`px-4 py-3 text-sm font-medium transition-colors ${
+                  activeContactTab === section.title.toLowerCase().split(' ')[0]
+                    ? 'text-indigo-600 border-b-2 border-indigo-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {section.icon}
+                  <span className="hidden md:inline">{section.title.split(' ')[0]}</span>
+                </div>
+              </button>
+            ))}
           </div>
 
           <div className="p-6">
-            <h3 className="text-base font-medium text-gray-900 mb-4">Photo Documentation by Inspection:</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {project?.selected_inspections?.map((inspection) => (
-                <div 
-                  key={inspection}
-                  className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-indigo-300 cursor-pointer transition-all"
-                  onClick={() => setSelectedInspection(inspection)}
-                >
-                  <h4 className="font-medium text-gray-900 mb-1">{inspection}</h4>
-                  <p className="text-sm text-gray-500">
-                    {inspectionPhotos[inspection]?.length || 0} photos
-                  </p>
+            {contactSections.map((section) => {
+              if (activeContactTab !== section.title.toLowerCase().split(' ')[0]) return null
+              
+              return (
+                <div key={section.title} className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                    {section.icon}
+                    {section.title}
+                  </h3>
+                  
+                  {!isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {section.fields.map((field) => (
+                        <div key={field.key}>
+                          <label className="block text-sm font-medium text-gray-600 mb-1">
+                            {field.label}
+                          </label>
+                          <p className="text-gray-900">
+                            {project[field.key] || 'Not specified'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {section.fields.map((field) => (
+                        <div key={field.key}>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {field.label}
+                          </label>
+                          <input
+                            type={field.type || 'text'}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            value={editedProject?.[field.key] || ''}
+                            onChange={(e) => setEditedProject({ 
+                              ...editedProject!, 
+                              [field.key]: e.target.value 
+                            })}
+                            placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-
-            {project?.selected_inspections?.length === 0 && (
-              <div className="text-center py-12">
-                <Camera className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No inspections selected for this project</p>
-              </div>
-            )}
+              )
+            })}
           </div>
         </div>
       </div>
     )
   }
 
-  // Main Project Hub View
+  // Main Project Hub View (Enhanced)
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -630,55 +398,7 @@ export default function ProjectHub() {
         </button>
       </div>
 
-
-      {/* Project Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Total</h3>
-            <Building className="h-4 w-4 text-gray-400" />
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{project?.selected_inspections?.length || 0}</p>
-          <p className="text-xs text-gray-600 mt-1">Scheduled for project</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Done</h3>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </div>
-          <p className="text-2xl font-bold text-green-600">
-            {inspectionEvents.filter(e => e.status === 'completed').length}
-          </p>
-          <p className="text-xs text-gray-600 mt-1">Passed inspections</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Pending</h3>
-            <Clock className="h-4 w-4 text-blue-500" />
-          </div>
-          <p className="text-2xl font-bold text-blue-600">
-            {inspectionEvents.filter(e => e.status === 'scheduled').length}
-          </p>
-          <p className="text-xs text-gray-600 mt-1">Upcoming inspections</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Compliance Rate</h3>
-            <Shield className="h-4 w-4 text-indigo-500" />
-          </div>
-          <p className="text-2xl font-bold text-indigo-600">
-            {inspectionEvents.length > 0 
-              ? Math.round((inspectionEvents.filter(e => e.status === 'completed').length / inspectionEvents.length) * 100)
-              : 0}%
-          </p>
-          <p className="text-xs text-gray-600 mt-1">Overall compliance</p>
-        </div>
-      </div>
-
-      {/* Project Info */}
+      {/* Enhanced Project Info with More Fields */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex justify-between items-start mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Project Information</h2>
@@ -714,97 +434,303 @@ export default function ProjectHub() {
         </div>
 
         {!isEditing ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+          <div>
+            {/* Project Header */}
+            <div className="mb-6 pb-4 border-b border-gray-200">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{project.project_name}</h1>
-              <p className="text-gray-600 mb-4">{project.address}</p>
+              <div className="flex items-center gap-4 text-gray-600">
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {project.address}, {project.city}, {project.state} {project.zip_code}
+                </span>
+                <span className="flex items-center gap-1">
+                  <ClipboardList className="h-4 w-4" />
+                  Job #{project.job_number || project.id}
+                </span>
+              </div>
+            </div>
+
+            {/* Key Contacts Quick View */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                  <UserCheck className="h-4 w-4" />
+                  Inspector
+                </h4>
+                <p className="font-medium text-gray-900">{project.inspector || 'Not assigned'}</p>
+                {project.inspector_phone && (
+                  <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+                    <Phone className="h-3 w-3" />
+                    {project.inspector_phone}
+                  </p>
+                )}
+              </div>
               
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <span className="text-gray-600 font-medium">Job #:</span>
-                  <span className="text-gray-900">{project.job_number || project.id}</span>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                  <HardHat className="h-4 w-4" />
+                  Contractor
+                </h4>
+                <p className="font-medium text-gray-900">{project.contractor || 'Not specified'}</p>
+                {project.contractor_phone && (
+                  <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+                    <Phone className="h-3 w-3" />
+                    {project.contractor_phone}
+                  </p>
+                )}
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Consultant
+                </h4>
+                <p className="font-medium text-gray-900">{project.consultant || 'Not specified'}</p>
+                {project.consultant_phone && (
+                  <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+                    <Phone className="h-3 w-3" />
+                    {project.consultant_phone}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Project Details Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <h4 className="text-sm font-medium text-gray-600 mb-3">Project Details</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Type:</span>
+                    <span className="text-gray-900">{project.project_type || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Building Type:</span>
+                    <span className="text-gray-900">{project.building_type || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Square Footage:</span>
+                    <span className="text-gray-900">{project.square_footage ? `${project.square_footage.toLocaleString()} sq ft` : 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Stories:</span>
+                    <span className="text-gray-900">{project.number_of_stories || 'N/A'}</span>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-gray-600 font-medium">Type:</span>
-                  <span className="text-gray-900">{project.project_type || 'N/A'}</span>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-gray-600 mb-3">Permit Information</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Permit #:</span>
+                    <span className="text-gray-900">{project.permit_number || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Type:</span>
+                    <span className="text-gray-900">{project.permit_type || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Issued:</span>
+                    <span className="text-gray-900">
+                      {project.permit_issued_date ? new Date(project.permit_issued_date).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Expires:</span>
+                    <span className="text-gray-900">
+                      {project.permit_expiration_date ? new Date(project.permit_expiration_date).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-gray-600 font-medium">Status:</span>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">Active</span>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-gray-600 mb-3">Financial</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Project Value:</span>
+                    <span className="text-gray-900">
+                      {project.project_value ? `$${project.project_value.toLocaleString()}` : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Permit Fee:</span>
+                    <span className="text-gray-900">
+                      {project.permit_fee ? `$${project.permit_fee.toLocaleString()}` : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Fees:</span>
+                    <span className="text-gray-900">
+                      {project.total_fees ? `$${project.total_fees.toLocaleString()}` : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Payment:</span>
+                    <span className={`font-medium ${
+                      project.payment_status === 'paid' ? 'text-green-600' : 
+                      project.payment_status === 'pending' ? 'text-yellow-600' : 'text-gray-900'
+                    }`}>
+                      {project.payment_status || 'N/A'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <span className="text-gray-600 font-medium">Owner:</span>
-                <span className="text-gray-900">{project.owner || 'N/A'}</span>
+            {/* Special Instructions */}
+            {(project.special_instructions || project.access_notes || project.safety_requirements) && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h4 className="text-sm font-medium text-gray-600 mb-3">Special Notes</h4>
+                {project.special_instructions && (
+                  <div className="mb-3">
+                    <p className="text-sm font-medium text-gray-700">Special Instructions:</p>
+                    <p className="text-gray-900">{project.special_instructions}</p>
+                  </div>
+                )}
+                {project.access_notes && (
+                  <div className="mb-3">
+                    <p className="text-sm font-medium text-gray-700">Access Notes:</p>
+                    <p className="text-gray-900">{project.access_notes}</p>
+                  </div>
+                )}
+                {project.safety_requirements && (
+                  <div className="mb-3">
+                    <p className="text-sm font-medium text-gray-700">Safety Requirements:</p>
+                    <p className="text-gray-900">{project.safety_requirements}</p>
+                  </div>
+                )}
               </div>
-              <div className="flex gap-2">
-                <span className="text-gray-600 font-medium">Contractor:</span>
-                <span className="text-gray-900">{project.contractor || 'N/A'}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-gray-600 font-medium">Start Date:</span>
-                <span className="text-gray-900">
-                  {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          // Edit Mode - Comprehensive Form
+          <div className="space-y-6">
+            {/* Basic Information */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                value={editedProject?.project_name || ''}
-                onChange={(e) => setEditedProject({ ...editedProject!, project_name: e.target.value })}
-              />
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.project_name || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, project_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.job_number || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, job_number: e.target.value })}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.address || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, address: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.city || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, city: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.state || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, state: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.zip_code || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, zip_code: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Quick Contact Fields */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                value={editedProject?.job_number || ''}
-                onChange={(e) => setEditedProject({ ...editedProject!, job_number: e.target.value })}
-              />
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Key Contacts</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Inspector Name</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.inspector || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, inspector: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Inspector Phone</label>
+                  <input
+                    type="tel"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.inspector_phone || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, inspector_phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Consultant Name</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.consultant || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, consultant: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Consultant Phone</label>
+                  <input
+                    type="tel"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    value={editedProject?.consultant_phone || ''}
+                    onChange={(e) => setEditedProject({ ...editedProject!, consultant_phone: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                value={editedProject?.address || ''}
-                onChange={(e) => setEditedProject({ ...editedProject!, address: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                value={editedProject?.owner || ''}
-                onChange={(e) => setEditedProject({ ...editedProject!, owner: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contractor</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                value={editedProject?.contractor || ''}
-                onChange={(e) => setEditedProject({ ...editedProject!, contractor: e.target.value })}
-              />
+
+            {/* Note about more fields */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                For complete contact information and additional project details, click the "View All Contacts" button below.
+              </p>
             </div>
           </div>
         )}
       </div>
 
       {/* Main Navigation Buttons */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+        <button
+          onClick={() => setActiveView('contacts')}
+          className="bg-indigo-500 hover:bg-indigo-600 text-white p-6 rounded-lg transition-all flex items-center gap-3"
+        >
+          <Users className="h-6 w-6" />
+          <span className="font-medium text-lg">View All Contacts</span>
+        </button>
+        
         <button
           onClick={() => setActiveView('inspections')}
           className="bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-lg transition-all flex items-center gap-3"
@@ -830,70 +756,54 @@ export default function ProjectHub() {
         </button>
         
         <button
-          onClick={() => setActiveView('photoDocumentation')}
-          className="bg-gray-500 hover:bg-gray-600 text-white p-6 rounded-lg transition-all flex items-center gap-3"
+          className="bg-orange-500 hover:bg-orange-600 text-white p-6 rounded-lg transition-all flex items-center gap-3"
         >
           <Camera className="h-6 w-6" />
-          <span className="font-medium text-lg">Photo Documentation</span>
+          <span className="font-medium text-lg">Photos</span>
+        </button>
+        
+        <button
+          className="bg-gray-500 hover:bg-gray-600 text-white p-6 rounded-lg transition-all flex items-center gap-3"
+        >
+          <Archive className="h-6 w-6" />
+          <span className="font-medium text-lg">Documents</span>
         </button>
       </div>
 
-      {/* Calendar */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <button 
-            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-            className="p-2 hover:bg-gray-100 rounded"
-          >
-            <ChevronRight className="h-5 w-5 text-gray-600 rotate-180" />
-          </button>
-          <h3 className="text-lg font-medium text-gray-900">
-            {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </h3>
-          <button 
-            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-            className="p-2 hover:bg-gray-100 rounded"
-          >
-            <ChevronRight className="h-5 w-5 text-gray-600" />
-          </button>
+      {/* Status Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">Project Status</h3>
+            <Building className="h-4 w-4 text-gray-400" />
+          </div>
+          <p className="text-2xl font-bold text-gray-900 capitalize">{project.status}</p>
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-            <div key={day} className="text-center text-sm font-medium text-gray-900 py-2">
-              {day}
-            </div>
-          ))}
-          
-          {Array.from({ length: getFirstDayOfMonth(currentMonth) }).map((_, index) => (
-            <div key={`empty-${index}`} />
-          ))}
-          
-          {Array.from({ length: getDaysInMonth(currentMonth) }).map((_, index) => {
-            const day = index + 1
-            const events = getEventsForDay(day)
-            
-            return (
-              <div
-                key={day}
-                className="min-h-[80px] border border-gray-200 rounded p-2 hover:bg-gray-50 cursor-pointer"
-              >
-                <div className="font-medium text-sm mb-1">{day}</div>
-                {events.slice(0, 2).map((event, idx) => (
-                  <div
-                    key={idx}
-                    className={`text-xs p-1 rounded mb-1 truncate ${
-                      event.status === 'completed' ? 'bg-green-100 text-green-700' :
-                      event.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                      'bg-blue-100 text-blue-700'
-                    }`}
-                  >
-                    {event.title}
-                  </div>
-                ))}
-              </div>
-            )
-          })}
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">Compliance</h3>
+            <Shield className="h-4 w-4 text-green-500" />
+          </div>
+          <p className="text-2xl font-bold text-green-600">{project.compliance_status || 'Pending'}</p>
+        </div>
+
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">Inspections</h3>
+            <ClipboardList className="h-4 w-4 text-blue-500" />
+          </div>
+          <p className="text-2xl font-bold text-blue-600">{project.selected_inspections?.length || 0}</p>
+        </div>
+
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">Completion</h3>
+            <Calendar className="h-4 w-4 text-purple-500" />
+          </div>
+          <p className="text-lg font-bold text-purple-600">
+            {project.estimated_completion ? new Date(project.estimated_completion).toLocaleDateString() : 'TBD'}
+          </p>
         </div>
       </div>
     </div>

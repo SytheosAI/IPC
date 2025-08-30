@@ -44,25 +44,23 @@ import { db } from '@/lib/supabase-client'
 
 interface VBAProject {
   id: string
+  project_id?: string
   project_number?: string
   project_name: string
   address: string
-  inspection_type: string
-  status: 'scheduled' | 'in_progress' | 'completed' | 'failed'
-  scheduled_date: string
-  inspector: string
-  completion_rate: number
-  compliance_score?: number
-  last_updated: string
-  virtual_inspector_enabled: boolean
-  gps_location?: { lat: number; lng: number }
-  photo_count: number
-  violations: number
-  ai_confidence?: number
-  selected_inspections?: string[]
-  owner?: string
+  city?: string
+  state?: string
   contractor?: string
-  project_type?: string
+  owner?: string
+  status: 'active' | 'pending' | 'completed' | 'on-hold'
+  start_date?: string
+  completion_date?: string
+  inspection_count?: number
+  last_inspection_date?: string
+  compliance_score?: number
+  virtual_inspector_enabled?: boolean
+  notes?: string
+  created_by?: string
   created_at?: string
   updated_at?: string
 }
@@ -874,10 +872,10 @@ export default function VBAPage() {
           onChange={(e) => setFilterStatus(e.target.value)}
         >
           <option value="all">All</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="in_progress">In Progress</option>
+          <option value="active">Active</option>
+          <option value="pending">Pending</option>
           <option value="completed">Completed</option>
-          <option value="failed">Failed</option>
+          <option value="on-hold">On Hold</option>
         </select>
         
         <button className="btn-secondary">
@@ -965,7 +963,7 @@ export default function VBAPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center justify-between">
-                        <span>{new Date(project.scheduled_date).toLocaleDateString()}</span>
+                        <span>{project.start_date ? new Date(project.start_date).toLocaleDateString() : 'Not set'}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -1011,12 +1009,17 @@ export default function VBAPage() {
           onClose={() => setShowNewProjectModal(false)}
           onSave={async (newProject) => {
             try {
+              console.log('Creating project with data:', newProject)
               const created = await db.vbaProjects.create(newProject)
+              console.log('Project created successfully:', created)
               setProjects([created, ...projects])
               setShowNewProjectModal(false)
-            } catch (error) {
-              console.error('Failed to create project:', error)
-              alert('Failed to create project. Please try again.')
+            } catch (error: any) {
+              console.error('Failed to create project - Full error:', error)
+              console.error('Error message:', error?.message)
+              console.error('Error code:', error?.code)
+              console.error('Error details:', error?.details)
+              alert(`Failed to create project: ${error?.message || 'Unknown error'}`)
             }
           }}
         />
@@ -1152,22 +1155,19 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
     e.preventDefault()
     
     const newProject: Partial<VBAProject> = {
-      project_number: projectData.jobNumber,
+      project_number: projectData.jobNumber || `VBA-${Date.now()}`,
       project_name: projectData.projectName,
       address: projectData.address,
-      inspection_type: selectedInspections.join(', '),
-      status: 'scheduled',
-      scheduled_date: new Date().toISOString(),
-      inspector: '',
-      completion_rate: 0,
-      last_updated: new Date().toISOString(),
-      virtual_inspector_enabled: false,
-      photo_count: 0,
-      violations: 0,
-      selected_inspections: selectedInspections,
+      city: 'Fort Myers',
+      state: 'FL',
       owner: projectData.owner,
       contractor: projectData.contractor,
-      project_type: projectData.projectType
+      status: 'active', // Changed from 'scheduled' to match DB constraint
+      start_date: new Date().toISOString(),
+      virtual_inspector_enabled: false,
+      inspection_count: 0,
+      compliance_score: 100,
+      notes: `Project Type: ${projectData.projectType}\nInspections: ${selectedInspections.join(', ')}`
     }
 
     onSave(newProject)

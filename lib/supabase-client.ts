@@ -27,6 +27,7 @@ export interface Profile {
   email: string
   name?: string
   role?: string
+  title?: string
   department?: string
   phone?: string
   avatar_url?: string
@@ -489,7 +490,7 @@ export const db = {
       return true
     },
 
-    async addPhoto(inspectionId: string, vbaProjectId: string, url: string, caption?: string, category?: string) {
+    async addPhoto(inspectionId: string | null, vbaProjectId: string, url: string, caption?: string, category?: string) {
       const { data, error } = await supabase
         .from('inspection_photos')
         .insert({
@@ -503,6 +504,25 @@ export const db = {
         .single()
       if (error) throw error
       return data
+    },
+
+    async getPhotosByProject(vbaProjectId: string) {
+      const { data, error } = await supabase
+        .from('inspection_photos')
+        .select('*')
+        .eq('vba_project_id', vbaProjectId)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data || []
+    },
+
+    async deletePhoto(photoId: string) {
+      const { error } = await supabase
+        .from('inspection_photos')
+        .delete()
+        .eq('id', photoId)
+      if (error) throw error
+      return true
     }
   },
 

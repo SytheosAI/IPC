@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Users,
   Plus,
@@ -25,9 +25,12 @@ import {
   FolderOpen,
   HardHat,
   Briefcase,
-  UserCheck
+  UserCheck,
+  Folder,
+  Loader2
 } from 'lucide-react'
 import PageTitle from '@/components/PageTitle'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface Member {
   id: string
@@ -38,16 +41,18 @@ interface Member {
   role: string
   folder: 'team' | 'residents' | 'contractors' | 'design'
   status: 'active' | 'inactive' | 'pending'
-  joinedDate: string
-  lastActive: string
-  avatar?: string
+  joined_date: string
+  last_active: string
+  avatar_url?: string
+  created_at?: string
+  updated_at?: string
 }
 
 interface Message {
   id: string
-  senderId: string
-  senderName: string
-  recipientId: string
+  sender_id: string
+  sender_name: string
+  recipient_id: string
   content: string
   timestamp: string
   read: boolean
@@ -55,8 +60,14 @@ interface Message {
 
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([])
-  const [selectedFolder, setSelectedFolder] = useState<'all' | 'team' | 'residents' | 'contractors' | 'design'>('all')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'team' | 'residents' | 'contractors' | 'design'>('team')
+  const [searchQueries, setSearchQueries] = useState({
+    team: '',
+    residents: '',
+    contractors: '',
+    design: ''
+  })
   const [showAddModal, setShowAddModal] = useState(false)
   const [showMessaging, setShowMessaging] = useState(false)
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
@@ -71,9 +82,11 @@ export default function MembersPage() {
     folder: 'contractors' as Member['folder']
   })
 
+  const supabase = createClientComponentClient()
+
   const folders = [
     { 
-      id: 'team', 
+      id: 'team' as const, 
       label: 'Team Members', 
       icon: Users, 
       color: 'from-purple-500 to-purple-600',
@@ -82,7 +95,7 @@ export default function MembersPage() {
       count: members.filter(m => m.folder === 'team').length 
     },
     { 
-      id: 'residents', 
+      id: 'residents' as const, 
       label: 'Residents', 
       icon: Home, 
       color: 'from-green-500 to-green-600',
@@ -91,7 +104,7 @@ export default function MembersPage() {
       count: members.filter(m => m.folder === 'residents').length 
     },
     { 
-      id: 'contractors', 
+      id: 'contractors' as const, 
       label: 'Contractors', 
       icon: HardHat, 
       color: 'from-blue-500 to-blue-600',
@@ -100,7 +113,7 @@ export default function MembersPage() {
       count: members.filter(m => m.folder === 'contractors').length 
     },
     { 
-      id: 'design', 
+      id: 'design' as const, 
       label: 'Design Professionals', 
       icon: Briefcase, 
       color: 'from-orange-500 to-orange-600',
@@ -110,61 +123,164 @@ export default function MembersPage() {
     }
   ]
 
-  const handleAddMember = (e: React.FormEvent) => {
+  // Load members from Supabase
+  useEffect(() => {
+    loadMembers()
+    loadMessages()
+  }, [])
+
+  const loadMembers = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error loading members:', error)
+      } else if (data) {
+        setMembers(data)
+      }
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadMessages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('member_messages')
+        .select('*')
+        .order('timestamp', { ascending: true })
+
+      if (error) {
+        console.error('Error loading messages:', error)
+      } else if (data) {
+        setMessages(data)
+      }
+    } catch (error) {
+      console.error('Error:', error)
+    }
+  }
+
+  const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const member: Member = {
-      id: Date.now().toString(),
+    const member = {
       name: newMember.name,
       email: newMember.email,
       phone: newMember.phone,
       company: newMember.company,
       role: newMember.role,
       folder: newMember.folder,
-      status: 'active',
-      joinedDate: new Date().toISOString().split('T')[0],
-      lastActive: new Date().toISOString().split('T')[0]
+      status: 'active' as const,
+      joined_date: new Date().toISOString().split('T')[0],
+      last_active: new Date().toISOString().split('T')[0]
     }
     
-    setMembers([...members, member])
-    setShowAddModal(false)
-    setNewMember({
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      role: '',
-      folder: 'contractors'
-    })
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .insert([member])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error adding member:', error)
+        alert('Failed to add member')
+      } else if (data) {
+        setMembers([data, ...members])
+        setShowAddModal(false)
+        setNewMember({
+          name: '',
+          email: '',
+          phone: '',
+          company: '',
+          role: '',
+          folder: 'contractors'
+        })
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Failed to add member')
+    }
   }
 
-  const handleSendMessage = () => {
+  const handleDeleteMember = async (memberId: string) => {
+    if (!confirm('Are you sure you want to delete this contact?')) return
+
+    try {
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', memberId)
+
+      if (error) {
+        console.error('Error deleting member:', error)
+        alert('Failed to delete member')
+      } else {
+        setMembers(members.filter(m => m.id !== memberId))
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Failed to delete member')
+    }
+  }
+
+  const handleSendMessage = async () => {
     if (!selectedMember || !newMessage.trim()) return
 
-    const message: Message = {
-      id: Date.now().toString(),
-      senderId: 'current-user',
-      senderName: 'You',
-      recipientId: selectedMember.id,
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const message = {
+      sender_id: user.id,
+      sender_name: 'You',
+      recipient_id: selectedMember.id,
       content: newMessage,
       timestamp: new Date().toISOString(),
       read: false
     }
 
-    setMessages([...messages, message])
-    setNewMessage('')
+    try {
+      const { data, error } = await supabase
+        .from('member_messages')
+        .insert([message])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error sending message:', error)
+        alert('Failed to send message')
+      } else if (data) {
+        setMessages([...messages, data])
+        setNewMessage('')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Failed to send message')
+    }
   }
 
-  const filteredMembers = members.filter(member => {
-    const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         member.company.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFolder = selectedFolder === 'all' || member.folder === selectedFolder
-    return matchesSearch && matchesFolder
-  })
+  const handleSearchChange = (folder: typeof activeTab, value: string) => {
+    setSearchQueries(prev => ({ ...prev, [folder]: value }))
+  }
+
+  const getFilteredMembers = (folder: typeof activeTab) => {
+    return members.filter(member => {
+      const matchesFolder = member.folder === folder
+      const matchesSearch = member.name.toLowerCase().includes(searchQueries[folder].toLowerCase()) ||
+                           member.email.toLowerCase().includes(searchQueries[folder].toLowerCase()) ||
+                           member.company.toLowerCase().includes(searchQueries[folder].toLowerCase())
+      return matchesFolder && matchesSearch
+    })
+  }
 
   return (
-    <div className="p-6">
+    <div className="p-6 h-full flex flex-col">
       {/* Page Header */}
       <PageTitle title="Team Members & Contacts" />
       <div className="mb-6">
@@ -186,156 +302,159 @@ export default function MembersPage() {
         </div>
       </div>
 
-      {/* Contact Folders */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {folders.map((folder) => {
-          const Icon = folder.icon
-          return (
-            <button
-              key={folder.id}
-              onClick={() => setSelectedFolder(selectedFolder === folder.id ? 'all' : folder.id as any)}
-              className={`relative overflow-hidden rounded-xl p-6 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl border-2 ${
-                selectedFolder === folder.id 
-                  ? folder.borderColor + ' shadow-lg' 
-                  : 'border-gray-200 dark:border-gray-700 hover:border-opacity-50'
-              } ${folder.bgColor}`}
-            >
-              <div className={`absolute inset-0 bg-gradient-to-br ${folder.color} opacity-10`} />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-lg bg-gradient-to-br ${folder.color} shadow-lg`}>
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{folder.count}</span>
-                </div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{folder.label}</h3>
-              </div>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Main Content Area */}
-      <div className={`grid grid-cols-1 ${showMessaging ? 'lg:grid-cols-3' : ''} gap-6`}>
-        {/* Members List */}
-        <div className={showMessaging ? 'lg:col-span-2' : ''}>
-          {/* Search and Filters */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 mb-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search contacts..."
-                  className="input-modern pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              
-              <div className="flex gap-3">
-                <button className="btn-secondary">
-                  <Filter className="h-5 w-5" />
-                  Filters
-                </button>
-                <button className="btn-secondary">
-                  <Download className="h-5 w-5" />
-                  Export
-                </button>
-              </div>
+      {/* Main Content with Messaging */}
+      <div className={`flex-1 grid grid-cols-1 ${showMessaging ? 'lg:grid-cols-3' : ''} gap-6`}>
+        {/* Large Tabbed Folder Box */}
+        <div className={`${showMessaging ? 'lg:col-span-2' : ''} bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col`}>
+          {/* Tab Headers */}
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <div className="flex">
+              {folders.map((folder) => {
+                const Icon = folder.icon
+                return (
+                  <button
+                    key={folder.id}
+                    onClick={() => setActiveTab(folder.id)}
+                    className={`flex-1 px-4 py-4 flex items-center justify-center gap-2 transition-all duration-200 border-b-2 ${
+                      activeTab === folder.id
+                        ? `border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20`
+                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="font-medium">{folder.label}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      activeTab === folder.id
+                        ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    }`}>
+                      {folder.count}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
-          {/* Members Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredMembers.length === 0 ? (
-              <div className="col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-                <FolderOpen className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No contacts found</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  {selectedFolder === 'all' 
-                    ? 'Add your first contact to get started' 
-                    : `No contacts in ${folders.find(f => f.id === selectedFolder)?.label.toLowerCase()}`}
-                </p>
-                <button onClick={() => setShowAddModal(true)} className="btn-primary">
-                  <UserPlus className="h-5 w-5 mr-2" />
-                  Add First Contact
-                </button>
+          {/* Tab Content */}
+          <div className="flex-1 flex flex-col">
+            {/* Search Bar for Active Tab */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder={`Search ${folders.find(f => f.id === activeTab)?.label.toLowerCase()}...`}
+                  className="input-modern pl-10"
+                  value={searchQueries[activeTab]}
+                  onChange={(e) => handleSearchChange(activeTab, e.target.value)}
+                />
               </div>
-            ) : (
-              filteredMembers.map((member) => (
-                <div 
-                  key={member.id} 
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 card-hover"
-                >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center">
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4 text-white font-semibold"
-                          style={{ background: `linear-gradient(to right, var(--accent-500), var(--accent-600))` }}>
-                          {member.name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{member.name}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{member.role}</p>
-                        </div>
-                      </div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        member.status === 'active' 
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
-                      }`}>
-                        {member.status}
-                      </div>
-                    </div>
+            </div>
 
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <Building className="h-4 w-4 mr-2 text-gray-400" />
-                        {member.company}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                        {member.email}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                        {member.phone}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Added {new Date(member.joinedDate).toLocaleDateString()}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => {
-                            setSelectedMember(member)
-                            setShowMessaging(true)
-                          }}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors"
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                        </button>
-                        <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors">
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+            {/* Scrollable Contact List */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Loader2 className="h-8 w-8 text-gray-400 animate-spin mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">Loading contacts...</p>
                 </div>
-              ))
-            )}
+              ) : getFilteredMembers(activeTab).length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Folder className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    No {folders.find(f => f.id === activeTab)?.label.toLowerCase()} found
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4 text-center">
+                    {searchQueries[activeTab] 
+                      ? 'Try adjusting your search terms' 
+                      : `Add your first ${folders.find(f => f.id === activeTab)?.label.toLowerCase().slice(0, -1)} to get started`}
+                  </p>
+                  {!searchQueries[activeTab] && (
+                    <button onClick={() => setShowAddModal(true)} className="btn-primary">
+                      <UserPlus className="h-5 w-5 mr-2" />
+                      Add Contact
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {getFilteredMembers(activeTab).map((member) => (
+                    <div 
+                      key={member.id} 
+                      className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 hover:shadow-md transition-all duration-200 border border-gray-200 dark:border-gray-700"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 text-white font-semibold text-sm"
+                            style={{ background: `linear-gradient(to right, var(--accent-500), var(--accent-600))` }}>
+                            {member.name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{member.name}</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{member.role}</p>
+                          </div>
+                        </div>
+                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          member.status === 'active' 
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
+                        }`}>
+                          {member.status}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 mb-3">
+                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                          <Building className="h-3.5 w-3.5 mr-2 text-gray-400" />
+                          {member.company}
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                          <Mail className="h-3.5 w-3.5 mr-2 text-gray-400" />
+                          {member.email}
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                          <Phone className="h-3.5 w-3.5 mr-2 text-gray-400" />
+                          {member.phone}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Added {new Date(member.joined_date).toLocaleDateString()}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button 
+                            onClick={() => {
+                              setSelectedMember(member)
+                              setShowMessaging(true)
+                            }}
+                            className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors"
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                          </button>
+                          <button className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors">
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteMember(member.id)}
+                            className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Messaging Portal */}
         {showMessaging && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
             <div className="border-b border-gray-200 dark:border-gray-700 p-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Internal Messaging</h3>
               {selectedMember && (
@@ -345,33 +464,33 @@ export default function MembersPage() {
               )}
             </div>
             
-            <div className="h-96 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {!selectedMember ? (
                 <div className="text-center py-12">
                   <MessageSquare className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-500 dark:text-gray-400">Select a contact to start messaging</p>
                 </div>
-              ) : messages.filter(m => m.recipientId === selectedMember.id || m.senderId === selectedMember.id).length === 0 ? (
+              ) : messages.filter(m => m.recipient_id === selectedMember.id || m.sender_id === selectedMember.id).length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500 dark:text-gray-400">No messages yet. Start the conversation!</p>
                 </div>
               ) : (
-                messages.filter(m => m.recipientId === selectedMember.id || m.senderId === selectedMember.id).map((message) => (
+                messages.filter(m => m.recipient_id === selectedMember.id || m.sender_id === selectedMember.id).map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.senderId === 'current-user' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${message.sender_id === 'current-user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div 
                       className={`max-w-xs px-4 py-2 rounded-lg ${
-                        message.senderId === 'current-user'
+                        message.sender_id === 'current-user'
                           ? 'text-white'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                       }`}
-                      style={message.senderId === 'current-user' ? { background: 'linear-gradient(to right, var(--accent-500), var(--accent-600))' } : {}}
+                      style={message.sender_id === 'current-user' ? { background: 'linear-gradient(to right, var(--accent-500), var(--accent-600))' } : {}}
                     >
                       <p className="text-sm">{message.content}</p>
                       <p className={`text-xs mt-1 ${
-                        message.senderId === 'current-user' ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
+                        message.sender_id === 'current-user' ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
                       }`}>
                         {new Date(message.timestamp).toLocaleTimeString()}
                       </p>
