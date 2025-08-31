@@ -90,7 +90,7 @@ interface VBAProject {
   actual_completion?: string
   
   // Status and Compliance
-  status: 'scheduled' | 'in_progress' | 'completed' | 'on_hold' | 'failed'
+  status: 'scheduled' | 'in_progress' | 'completed' | 'failed' | 'passed'
   compliance_status?: 'compliant' | 'non_compliant' | 'pending'
   compliance_notes?: string
   
@@ -714,7 +714,7 @@ export default function EnhancedProjectHub() {
             {/* Note about more fields */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                For complete contact information and additional project details, click the "View All Contacts" button below.
+                For complete contact information and additional project details, click the &quot;View All Contacts&quot; button below.
               </p>
             </div>
           </div>

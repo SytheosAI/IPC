@@ -170,7 +170,7 @@ export class FeedbackLoopManager {
   }
 
   private async adjustConfidenceScores(type: string, id: string, adjustment: number): Promise<void> {
-    const tableMap = {
+    const tableMap: Record<string, string> = {
       issue: 'architecture_issues',
       opportunity: 'optimization_opportunities',
       upgrade: 'component_upgrades',
@@ -224,7 +224,7 @@ export class FeedbackLoopManager {
       });
 
       // Mark feedback as processed
-      const feedbackIds = feedbackData.map(f => f.id);
+      const feedbackIds = feedbackData.map((f: any) => f.id);
       await this.supabase
         .from('analysis_feedback')
         .update({ processed_for_ml: true })
@@ -241,7 +241,7 @@ export class FeedbackLoopManager {
   }
 
   private prepareTrainingData(feedbackData: any[]): any {
-    const grouped = {
+    const grouped: Record<string, any[]> = {
       issues: [],
       patterns: [],
       optimizations: [],
@@ -263,7 +263,7 @@ export class FeedbackLoopManager {
   }
 
   private getCategoryFromType(type: string): string {
-    const mapping = {
+    const mapping: Record<string, string> = {
       'issue': 'issues',
       'pattern': 'patterns',
       'opportunity': 'optimizations',
@@ -273,7 +273,7 @@ export class FeedbackLoopManager {
   }
 
   private extractFeatures(feedback: any): number[] {
-    const features = [];
+    const features: number[] = [];
     
     // Extract numerical features from corrected data
     if (feedback.corrected_data) {
@@ -311,7 +311,7 @@ export class FeedbackLoopManager {
   }
 
   private encodeFeedbackType(type: string): number {
-    const encoding = {
+    const encoding: Record<string, number> = {
       'accuracy': 0.2,
       'usefulness': 0.4,
       'false_positive': 0.6,
@@ -322,7 +322,7 @@ export class FeedbackLoopManager {
   }
 
   private encodeReferenceType(type: string): number {
-    const encoding = {
+    const encoding: Record<string, number> = {
       'issue': 0.25,
       'pattern': 0.5,
       'opportunity': 0.75,
@@ -487,16 +487,16 @@ export class FeedbackLoopManager {
 
     if (!stats) return null;
 
-    const summary = {
+    const summary: any = {
       totalFeedback: stats.length,
-      averageRating: stats.reduce((sum, f) => sum + f.rating, 0) / stats.length,
+      averageRating: stats.reduce((sum: number, f: any) => sum + f.rating, 0) / stats.length,
       byType: {},
       byReferenceType: {},
       trends: []
     };
 
     // Group by feedback type
-    stats.forEach(f => {
+    stats.forEach((f: any) => {
       if (!summary.byType[f.feedback_type]) {
         summary.byType[f.feedback_type] = { count: 0, avgRating: 0 };
       }
@@ -524,7 +524,7 @@ export class FeedbackLoopManager {
     } else {
       // Convert to CSV
       const headers = Object.keys(data[0]).join(',');
-      const rows = data.map(row => Object.values(row).join(','));
+      const rows = data.map((row: any) => Object.values(row).join(','));
       return [headers, ...rows].join('\n');
     }
   }

@@ -52,7 +52,7 @@ interface VBAProject {
   state?: string
   contractor?: string
   owner?: string
-  status: 'active' | 'pending' | 'completed' | 'on-hold'
+  status: 'scheduled' | 'in_progress' | 'completed' | 'failed' | 'passed'
   start_date?: string
   completion_date?: string
   inspection_count?: number
@@ -321,14 +321,15 @@ export default function VBAPage() {
     
     // Filter projects for this week
     const thisWeekProjects = projects.filter(project => {
-      const projectDate = new Date(project.last_updated)
+      const dateStr = project.updated_at || project.created_at || new Date().toISOString()
+      const projectDate = new Date(dateStr)
       return projectDate >= startOfWeek
     })
     
     // Calculate metrics based on projects only (events will be added when we have a separate table)
     const completed = thisWeekProjects.filter(p => p.status === 'completed').length
-    const scheduled = thisWeekProjects.filter(p => p.status === 'scheduled').length
-    const passed = thisWeekProjects.filter(p => p.status === 'completed' && p.violations === 0).length
+    const scheduled = thisWeekProjects.filter(p => p.status === 'scheduled' || p.status === 'in_progress').length
+    const passed = thisWeekProjects.filter(p => p.status === 'completed').length
     const passRate = completed > 0 ? Math.round((passed / completed) * 100) : 0
     
     // Calculate average compliance score
@@ -446,8 +447,7 @@ export default function VBAPage() {
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.inspector.toLowerCase().includes(searchQuery.toLowerCase())
+                         project.address.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = filterStatus === 'all' || project.status === filterStatus
     return matchesSearch && matchesStatus
   })
@@ -872,10 +872,11 @@ export default function VBAPage() {
           onChange={(e) => setFilterStatus(e.target.value)}
         >
           <option value="all">All</option>
-          <option value="active">Active</option>
-          <option value="pending">Pending</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="in_progress">In Progress</option>
           <option value="completed">Completed</option>
-          <option value="on-hold">On Hold</option>
+          <option value="failed">Failed</option>
+          <option value="passed">Passed</option>
         </select>
         
         <button className="btn-secondary">
@@ -1162,7 +1163,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
       state: 'FL',
       owner: projectData.owner,
       contractor: projectData.contractor,
-      status: 'active', // Changed from 'scheduled' to match DB constraint
+      status: 'scheduled' as const,
       start_date: new Date().toISOString(),
       virtual_inspector_enabled: false,
       inspection_count: 0,
@@ -1363,11 +1364,12 @@ function ScheduleInspectionModal({
                 required
               >
                 <option value="">Select inspection type</option>
-                {project.selected_inspections?.map((inspection) => (
-                  <option key={inspection} value={inspection}>
-                    {inspection}
-                  </option>
-                ))}
+                <option value="Foundation">Foundation</option>
+                <option value="Framing">Framing</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="HVAC">HVAC</option>
+                <option value="Final">Final</option>
               </select>
             </div>
 
