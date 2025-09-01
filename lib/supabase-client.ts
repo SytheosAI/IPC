@@ -8,9 +8,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-// Fix any double protocol issues (e.g., https://https://)
+// Fix any double protocol issues
 if (supabaseUrl.includes('https://https://')) {
   supabaseUrl = supabaseUrl.replace('https://https://', 'https://')
+}
+if (supabaseUrl.includes('https://https//')) {
+  supabaseUrl = supabaseUrl.replace('https://https//', 'https://')
+}
+if (supabaseUrl.includes('https//')) {
+  supabaseUrl = supabaseUrl.replace('https//', 'https://')
 }
 
 // Ensure the URL is properly formatted

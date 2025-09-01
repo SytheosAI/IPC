@@ -168,18 +168,31 @@ export type Database = {
 }
 
 // Client-side Supabase client
-export const createClientComponentSupabase = () => 
-  createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+export const createClientComponentSupabase = () => {
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  // Fix malformed URLs
+  url = url.replace('https://https//', 'https://')
+           .replace('https://https://', 'https://')
+           .replace('https//', 'https://')
+  
+  return createBrowserClient<Database>(
+    url,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
+}
 
 // Server-side Supabase client  
 export const createServerComponentSupabase = async () => {
   const cookieStore = await cookies()
   
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  // Fix malformed URLs
+  url = url.replace('https://https//', 'https://')
+           .replace('https://https://', 'https://')
+           .replace('https//', 'https://')
+  
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    url,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
@@ -193,8 +206,13 @@ export const createServerComponentSupabase = async () => {
 
 // Admin Supabase client (with service role key)
 export const createAdminSupabase = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  
+  // Fix malformed URLs
+  supabaseUrl = supabaseUrl.replace('https://https//', 'https://')
+                           .replace('https://https://', 'https://')
+                           .replace('https//', 'https://')
   
   return createClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: {
