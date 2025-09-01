@@ -8,20 +8,32 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-// Fix any double protocol issues
-if (supabaseUrl.includes('https://https://')) {
-  supabaseUrl = supabaseUrl.replace('https://https://', 'https://')
-}
-if (supabaseUrl.includes('https://https//')) {
-  supabaseUrl = supabaseUrl.replace('https://https//', 'https://')
-}
-if (supabaseUrl.includes('https//')) {
-  supabaseUrl = supabaseUrl.replace('https//', 'https://')
+// Aggressive URL cleaning - fix ALL possible malformations
+// Remove all variations of double protocols
+supabaseUrl = supabaseUrl
+  .replace(/https:\/\/https:\/\//g, 'https://')
+  .replace(/https:\/\/https\/\//g, 'https://')
+  .replace(/https\/\//g, 'https://')
+  .replace(/http:\/\/http:\/\//g, 'http://')
+  .replace(/http:\/\/http\/\//g, 'http://')
+  .replace(/http\/\//g, 'http://')
+
+// If still malformed, extract just the domain
+if (supabaseUrl.includes('//') && !supabaseUrl.startsWith('http')) {
+  const parts = supabaseUrl.split('//')
+  supabaseUrl = 'https://' + parts[parts.length - 1]
 }
 
 // Ensure the URL is properly formatted
 if (!supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
   supabaseUrl = `https://${supabaseUrl}`
+}
+
+// Final validation - should be exactly this format
+const expectedUrl = 'https://rxkakjowitqnbbjezedu.supabase.co'
+if (supabaseUrl.includes('rxkakjowitqnbbjezedu') && !supabaseUrl.startsWith(expectedUrl)) {
+  console.warn('Malformed Supabase URL detected, using correct URL')
+  supabaseUrl = expectedUrl
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
