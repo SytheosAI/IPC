@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
 import { Zap, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,6 +18,14 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+
+  // Check for error in URL params
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,242 +146,206 @@ export default function LoginPage() {
 
   if (showResetForm) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-8">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 mb-4">
-                <Zap className="h-8 w-8 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Reset Password</h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Enter your email to receive a password reset link
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        <div className="bg-gray-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-700">
+          <div className="flex items-center justify-center mb-8">
+            <div className="bg-yellow-500 p-3 rounded-xl">
+              <Zap className="h-8 w-8 text-gray-900" />
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold text-white text-center mb-2">Reset Password</h2>
+          <p className="text-gray-400 text-center mb-8">
+            Enter your email to receive a password reset link
+          </p>
+
+          {resetSuccess ? (
+            <div className="bg-green-500/10 border border-green-500 rounded-lg p-4 mb-6">
+              <p className="text-green-400 text-sm text-center">
+                Check your email for the password reset link!
               </p>
             </div>
+          ) : (
+            <form onSubmit={handlePasswordReset} className="space-y-6">
+              {error && (
+                <div className="bg-red-500/10 border border-red-500 rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                </div>
+              )}
 
-            {resetSuccess ? (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
-                <p className="text-green-800 dark:text-green-400 text-sm">
-                  Password reset link sent! Check your email.
-                </p>
+              <div>
+                <label htmlFor="reset-email" className="block text-sm font-medium text-gray-300 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                  <input
+                    id="reset-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
               </div>
-            ) : (
-              <form onSubmit={handlePasswordReset} className="space-y-6">
-                <div>
-                  <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      id="reset-email"
-                      type="email"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      placeholder="Enter your email"
-                      required
-                    />
-                  </div>
-                </div>
 
-                {error && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                      <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-                    </div>
-                  </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <span>Send Reset Link</span>
                 )}
+              </button>
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowResetForm(false);
-                      setError('');
-                      setResetEmail('');
-                    }}
-                    className="flex-1 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Send Reset Link'
-                    )}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={() => setShowResetForm(false)}
+                className="w-full text-gray-400 hover:text-white text-sm transition-colors"
+              >
+                Back to Login
+              </button>
+            </form>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-8">
-          {/* Logo and Title */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 mb-4">
-              <Zap className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">IPC</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Inspection & Permit Control System
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+      <div className="bg-gray-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-700">
+        <div className="flex items-center justify-center mb-8">
+          <div className="bg-yellow-500 p-3 rounded-xl">
+            <Zap className="h-8 w-8 text-gray-900" />
           </div>
-
-          {/* Tab Switcher */}
-          <div className="flex mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-            <button
-              onClick={() => {
-                setIsSignUp(false);
-                setError('');
-              }}
-              className={`flex-1 py-2 px-4 rounded-md transition-all ${
-                !isSignUp
-                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => {
-                setIsSignUp(true);
-                setError('');
-              }}
-              className={`flex-1 py-2 px-4 rounded-md transition-all ${
-                isSignUp
-                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400'
-              }`}
-            >
-              Sign Up
-            </button>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter your password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {!isSignUp && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember"
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="remember" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                    Remember me
-                  </label>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowResetForm(true)}
-                  className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  Forgot password?
-                </button>
-              </div>
-            )}
-
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  {isSignUp ? 'Creating Account...' : 'Signing In...'}
-                </>
-              ) : (
-                <>{isSignUp ? 'Create Account' : 'Sign In'}</>
-              )}
-            </button>
-          </form>
-
-          {/* Admin Notice */}
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <p className="text-xs text-center text-blue-800 dark:text-blue-300">
-              Admin access: mparish@meridianswfl.com
-            </p>
-          </div>
-
-          {/* Footer */}
-          <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
-            By signing in, you agree to our Terms of Service and Privacy Policy
-          </p>
         </div>
+
+        <h1 className="text-3xl font-bold text-white text-center mb-2">
+          IPC Inspections
+        </h1>
+        <p className="text-gray-400 text-center mb-8">
+          {isSignUp ? 'Create your account' : 'Sign in to your account'}
+        </p>
+
+        <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-6">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              Email Address
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10 pr-12 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-colors"
+                placeholder="Enter your password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {!isSignUp && (
+            <div className="flex items-center justify-between">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-yellow-500 bg-gray-700 border-gray-600 rounded focus:ring-yellow-500 focus:ring-2"
+                />
+                <span className="ml-2 text-sm text-gray-400">Remember me</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowResetForm(true)}
+                className="text-sm text-yellow-500 hover:text-yellow-400 transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>{isSignUp ? 'Creating Account...' : 'Signing In...'}</span>
+              </>
+            ) : (
+              <span>{isSignUp ? 'Create Account' : 'Sign In'}</span>
+            )}
+          </button>
+
+          <div className="text-center">
+            <p className="text-gray-400 text-sm">
+              {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError('');
+                }}
+                className="text-yellow-500 hover:text-yellow-400 font-medium transition-colors"
+              >
+                {isSignUp ? 'Sign In' : 'Sign Up'}
+              </button>
+            </p>
+          </div>
+        </form>
       </div>
     </div>
   );
