@@ -136,23 +136,12 @@ export default function EnhancedProjectHub() {
     try {
       setLoading(true)
       
-      // Load from API route with proper auth
-      const response = await fetch(`/api/vba-projects/${projectId}`, {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.error('Project not found');
-          return;
-        }
-        throw new Error('Failed to load project');
-      }
-      
-      const { data: foundProject } = await response.json();
+      // Load from Supabase
+      const projects = await db.vbaProjects.getAll()
+      const foundProject = projects.find((p: VBAProject) => p.id === projectId)
       if (foundProject) {
-        setProject(foundProject);
-        setEditedProject(foundProject);
+        setProject(foundProject)
+        setEditedProject(foundProject)
       }
     } catch (error) {
       console.error('Failed to load project details:', error)
