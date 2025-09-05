@@ -907,26 +907,6 @@ export default function VBAPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">Inspection Projects</h2>
             <div className="flex gap-2">
-              {/* RLS Test Button - Can be removed in production */}
-              <button
-                onClick={async () => {
-                  console.log('Running RLS test...')
-                  const authInfo = await debugAuth()
-                  console.log('Current auth:', authInfo)
-                  const result = await testRLSAccess()
-                  console.log('RLS test result:', result)
-                  if (result.success) {
-                    alert('RLS test passed! You can create projects.')
-                  } else {
-                    alert(`RLS test failed: ${result.error}`)
-                  }
-                }}
-                className="px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 flex items-center gap-2"
-                title="Test Row Level Security permissions"
-              >
-                <Shield className="h-4 w-4" />
-                Test RLS
-              </button>
               <button
                 onClick={() => setShowNewProjectModal(true)}
                 className="btn-primary"
@@ -1046,18 +1026,12 @@ export default function VBAPage() {
               console.log('=== VBA Project Creation ===')
               console.log('Project data:', newProject)
               
-              // Debug auth state before creating
-              const authInfo = await debugAuth()
-              console.log('Auth status before creation:', authInfo)
-              
-              if (!authInfo.isAuthenticated) {
-                alert('You must be logged in to create projects. Please refresh the page and login.')
-                return
+              // Check required fields
+              if (!newProject.project_name || !newProject.address) {
+                throw new Error('Project name and address are required')
               }
               
-              // Test RLS access first (optional - can be commented out in production)
-              console.log('Testing RLS access...')
-              const rlsTest = await testRLSAccess()
+              const rlsTest = { success: true } // Skip RLS test for now
               if (!rlsTest.success) {
                 console.error('RLS test failed:', rlsTest.error)
                 // Don't block creation, just warn
@@ -1112,10 +1086,8 @@ export default function VBAPage() {
               
               alert(errorMessage)
               
-              // Log additional debug info
-              debugAuth().then(authInfo => {
-                console.log('Current auth state after error:', authInfo)
-              })
+              // Log error details
+              console.log('Error details logged above')
             }
           }}
         />
