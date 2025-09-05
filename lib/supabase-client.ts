@@ -394,6 +394,24 @@ export const db = {
     }
   },
 
+  // RLS Health Check
+  async checkRLSHealth() {
+    try {
+      const { data, error } = await supabase
+        .rpc('check_vba_rls_health')
+      
+      if (error) {
+        console.error('RLS health check failed:', error)
+        return { status: 'unknown', message: 'Could not check RLS health', error }
+      }
+      
+      return data
+    } catch (err) {
+      console.error('RLS health check error:', err)
+      return { status: 'error', message: 'Health check failed', error: err }
+    }
+  },
+  
   // VBA Projects
   vbaProjects: {
     async getAll() {
@@ -419,21 +437,40 @@ export const db = {
       // Generate a unique project number if not provided
       const projectNumber = project.project_number || `VBA-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       
+      // Get current user for created_by field
+      const { data: { user } } = await supabase.auth.getUser()
+      
       // Ensure required fields have defaults
       const projectWithDefaults = {
         project_name: project.project_name || 'Untitled Project',
         address: project.address || '',
         status: project.status || 'scheduled',
         ...project,
-        project_number: projectNumber // Override with generated project_number
+        project_number: projectNumber, // Override with generated project_number
+        created_by: project.created_by || user?.id || null // Set created_by if available
       }
-      const { data, error } = await supabase
-        .from('vba_projects')
-        .insert(projectWithDefaults)
-        .select()
-        .single()
-      if (error) throw error
-      return data
+      
+      try {
+        const { data, error } = await supabase
+          .from('vba_projects')
+          .insert(projectWithDefaults)
+          .select()
+          .single()
+        
+        if (error) {
+          console.error('Error creating VBA project:', error)
+          // If RLS error, provide helpful message
+          if (error.message?.includes('row-level security')) {
+            throw new Error('Permission denied. Please ensure you are logged in and have the necessary permissions.')
+          }
+          throw error
+        }
+        
+        return data
+      } catch (err) {
+        console.error('Failed to create VBA project:', err)
+        throw err
+      }
     },
     
     async update(id: string, updates: Partial<VBAProject>) {
