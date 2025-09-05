@@ -40,7 +40,7 @@ import {
   Loader2
 } from 'lucide-react'
 import Link from 'next/link'
-import { db } from '@/lib/supabase-client'
+import { supabase } from '@/lib/supabase-client'
 
 interface VBAProject {
   id: string
@@ -416,7 +416,18 @@ export default function VBAPage() {
     try {
       setIsLoading(true)
       // Load projects from Supabase
-      const loadedProjects = await db.vbaProjects.getAll()
+      // Use API route with proper auth
+      const response = await fetch('/api/vba-projects', {
+        method: 'GET',
+        credentials: 'include'
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to load projects')
+      }
+      
+      const { data } = await response.json()
+      const loadedProjects = data || []
       setProjects(loadedProjects)
 
       // Calculate stats
@@ -895,13 +906,35 @@ export default function VBAPage() {
         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">Inspection Projects</h2>
-            <button
-              onClick={() => setShowNewProjectModal(true)}
-              className="btn-primary"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              New Project
-            </button>
+            <div className="flex gap-2">
+              {/* RLS Test Button - Can be removed in production */}
+              <button
+                onClick={async () => {
+                  console.log('Running RLS test...')
+                  const authInfo = await debugAuth()
+                  console.log('Current auth:', authInfo)
+                  const result = await testRLSAccess()
+                  console.log('RLS test result:', result)
+                  if (result.success) {
+                    alert('RLS test passed! You can create projects.')
+                  } else {
+                    alert(`RLS test failed: ${result.error}`)
+                  }
+                }}
+                className="px-4 py-2 text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 flex items-center gap-2"
+                title="Test Row Level Security permissions"
+              >
+                <Shield className="h-4 w-4" />
+                Test RLS
+              </button>
+              <button
+                onClick={() => setShowNewProjectModal(true)}
+                className="btn-primary"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                New Project
+              </button>
+            </div>
           </div>
         </div>
         
@@ -1010,17 +1043,79 @@ export default function VBAPage() {
           onClose={() => setShowNewProjectModal(false)}
           onSave={async (newProject) => {
             try {
-              console.log('Creating project with data:', newProject)
-              const created = await db.vbaProjects.create(newProject)
+              console.log('=== VBA Project Creation ===')
+              console.log('Project data:', newProject)
+              
+              // Debug auth state before creating
+              const authInfo = await debugAuth()
+              console.log('Auth status before creation:', authInfo)
+              
+              if (!authInfo.isAuthenticated) {
+                alert('You must be logged in to create projects. Please refresh the page and login.')
+                return
+              }
+              
+              // Test RLS access first (optional - can be commented out in production)
+              console.log('Testing RLS access...')
+              const rlsTest = await testRLSAccess()
+              if (!rlsTest.success) {
+                console.error('RLS test failed:', rlsTest.error)
+                // Don't block creation, just warn
+                console.warn('Warning: RLS test failed, but attempting creation anyway')
+              }
+              
+              // Attempt to create the project
+              // Use API route with proper auth
+              const response = await fetch('/api/vba-projects', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(newProject)
+              })
+              
+              if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.error || 'Failed to create project')
+              }
+              
+              const { data: created } = await response.json()
               console.log('Project created successfully:', created)
+              
+              // Update the local state
               setProjects([created, ...projects])
               setShowNewProjectModal(false)
+              
+              // Success notification (optional)
+              console.log('VBA project created successfully!')
+              
             } catch (error: any) {
-              console.error('Failed to create project - Full error:', error)
+              console.error('=== VBA Project Creation Failed ===')
+              console.error('Full error object:', error)
               console.error('Error message:', error?.message)
               console.error('Error code:', error?.code)
               console.error('Error details:', error?.details)
-              alert(`Failed to create project: ${error?.message || 'Unknown error'}`)
+              
+              // More informative error messages
+              let errorMessage = 'Failed to create project: '
+              
+              if (error?.message?.includes('row-level security')) {
+                errorMessage += 'Permission denied. Please ensure you are logged in with appropriate permissions.'
+              } else if (error?.message?.includes('not authenticated')) {
+                errorMessage += 'You must be logged in to create projects.'
+              } else if (error?.message?.includes('duplicate')) {
+                errorMessage += 'A project with this project number already exists.'
+              } else {
+                errorMessage += error?.message || 'Unknown error occurred'
+              }
+              
+              alert(errorMessage)
+              
+              // Log additional debug info
+              debugAuth().then(authInfo => {
+                console.log('Current auth state after error:', authInfo)
+              })
             }
           }}
         />
