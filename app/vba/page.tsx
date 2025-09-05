@@ -1102,18 +1102,14 @@ export default function VBAPage() {
             const updatedSchedules = [...inspectionSchedules, schedule]
             setInspectionSchedules(updatedSchedules)
             
-            // Log activity
-            db.activityLogs.create(
-              'scheduled_inspection',
-              'vba_project',
-              selectedProjectForSchedule.id,
-              {
-                inspection_type: schedule.inspectionType,
-                date: schedule.date,
-                time: schedule.time,
-                assigned_to: schedule.assignedTo
-              }
-            )
+            // Activity logging removed - db is not available
+            console.log('Inspection scheduled:', {
+              project: selectedProjectForSchedule.id,
+              inspection_type: schedule.inspectionType,
+              date: schedule.date,
+              time: schedule.time,
+              assigned_to: schedule.assignedTo
+            })
             
             setShowScheduleModal(false)
             setSelectedProjectForSchedule(null)
