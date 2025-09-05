@@ -169,32 +169,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Load settings from Supabase
+    // Load settings from API
     const loadSettings = async () => {
       try {
-        // First, try to get the current user's profile from Supabase
-        const supabaseClient = createClientComponentClient()
-        const { data: { user } } = await supabaseClient.auth.getUser()
+        // Use API route to get user profile with proper auth
+        const response = await fetch('/api/user-profile', {
+          credentials: 'include'
+        });
         
-        if (user) {
-          // Fetch the user's profile from the profiles table
-          const { data: profileData, error: profileError } = await supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .single()
-          
-          if (profileData && !profileError) {
-            // Update the profile with data from Supabase
-            setProfile({
-              name: profileData.name || user.email?.split('@')[0] || '',
-              email: profileData.email || user.email || '',
-              phone: profileData.phone || '',
-              title: profileData.title || profileData.role || 'Inspector',
-              company: profileData.company || '',
-              address: profileData.address || ''
-            })
-          }
+        if (response.ok) {
+          const profileData = await response.json();
+          setProfile({
+            name: profileData.name || '',
+            email: profileData.email || '',
+            phone: profileData.phone || '',
+            title: profileData.title || 'Inspector',
+            company: profileData.company || '',
+            address: profileData.address || ''
+          });
         }
 
         // Load other settings from local storage

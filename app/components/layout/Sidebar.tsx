@@ -87,9 +87,10 @@ export default function Sidebar() {
   }
   
   // Add Security Center and Architecture Analysis for admin users
-  // Check if user is admin based on title or role
+  // Check if user is admin based on title, role, or email
   const isAdmin = profile?.title?.toLowerCase() === 'admin' || 
                   profile?.title?.toLowerCase() === 'administrator' ||
+                  (profile as any)?.role === 'admin' ||
                   profile?.email === 'mparish@meridianswfl.com'
   
   // Debug logging
