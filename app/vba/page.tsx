@@ -1031,12 +1031,7 @@ export default function VBAPage() {
                 throw new Error('Project name and address are required')
               }
               
-              const rlsTest = { success: true } // Skip RLS test for now
-              if (!rlsTest.success) {
-                console.error('RLS test failed:', rlsTest.error)
-                // Don't block creation, just warn
-                console.warn('Warning: RLS test failed, but attempting creation anyway')
-              }
+              // Skip RLS test - just proceed with creation
               
               // Attempt to create the project
               // Use API route with proper auth
