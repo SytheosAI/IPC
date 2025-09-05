@@ -33,45 +33,24 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Use the API route to set cookies properly
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
 
-      if (error) {
-        setError(error.message);
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || 'Login failed');
         setIsLoading(false);
         return;
       }
 
-      if (data.user) {
-        // Check if profile exists, if not create one
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', data.user.id)
-          .single();
-
-        if (profileError && profileError.code === 'PGRST116') {
-          // Profile doesn't exist, create one
-          const isAdmin = data.user.email === 'mparish@meridianswfl.com';
-          
-          await supabase
-            .from('profiles')
-            .insert({
-              user_id: data.user.id,
-              email: data.user.email,
-              name: data.user.email?.split('@')[0] || 'User',
-              role: isAdmin ? 'admin' : 'inspector',
-              title: isAdmin ? 'Administrator' : 'Inspector',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-        }
-
-        // Redirect to dashboard
-        router.push('/');
-        router.refresh();
+      if (result.success) {
+        // Force a hard refresh to ensure middleware picks up the new cookies
+        window.location.href = '/';
       }
     } catch (err) {
       console.error('Login error:', err);
