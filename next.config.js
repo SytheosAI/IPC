@@ -61,15 +61,8 @@ const nextConfig = {
       tls: false,
     };
 
-    // Fix "self is not defined" error on server
-    if (isServer) {
-      config.plugins = [
-        ...config.plugins,
-        new webpack.DefinePlugin({
-          'global.self': 'global',
-        }),
-      ];
-    } else {
+    // Handle server/client compatibility
+    if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         global: 'globalThis',
