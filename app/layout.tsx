@@ -5,7 +5,7 @@ import { UserProvider } from './contexts/UserContext'
 import { ThemeInitializer } from './components/ThemeInitializer'
 import ClientLayout from './components/layout/ClientLayout'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import QueryProvider from './providers/QueryProvider'
+// import QueryProvider from './providers/QueryProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -28,6 +28,11 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              // Polyfill for global self reference
+              if (typeof self === 'undefined') {
+                globalThis.self = globalThis;
+              }
+              
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
                   navigator.serviceWorker.register('/sw.js')
@@ -41,14 +46,12 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ErrorBoundary>
-          <QueryProvider>
-            <UserProvider>
-              <ThemeInitializer />
-              <ClientLayout>
-                {children}
-              </ClientLayout>
-            </UserProvider>
-          </QueryProvider>
+          <UserProvider>
+            <ThemeInitializer />
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+          </UserProvider>
         </ErrorBoundary>
       </body>
     </html>

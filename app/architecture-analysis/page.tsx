@@ -3,7 +3,7 @@
 import React, { useState, lazy, Suspense } from 'react';
 import { Activity, Shield, Zap, Package, GitBranch, RefreshCw, Download, AlertCircle, CheckCircle, XCircle, Monitor, Cpu, HardDrive, Network } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
-import { useSystemMetrics, useSecurityEvents } from '@/hooks/useSystemMetrics';
+// import { useSystemMetrics, useSecurityEvents } from '@/hooks/useSystemMetrics';
 
 // Lazy load performance-heavy components
 const PerformanceDial = lazy(() => import('@/components/PerformanceDial'));
@@ -12,11 +12,12 @@ export default function SystemAnalysisPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   
-  // Use React Query for intelligent caching
-  const { data: systemMetrics, isLoading: metricsLoading, refetch: refetchMetrics } = useSystemMetrics();
-  const { data: securityEventsData, isLoading: securityLoading, refetch: refetchSecurity } = useSecurityEvents();
+  // Use React Query for intelligent caching (temporarily disabled)
+  // const { data: systemMetrics, isLoading: metricsLoading, refetch: refetchMetrics } = useSystemMetrics();
+  // const { data: securityEventsData, isLoading: securityLoading, refetch: refetchSecurity } = useSecurityEvents();
   
-  const securityEvents = securityEventsData || [];
+  const [systemMetrics, setSystemMetrics] = useState<any>(null);
+  const securityEvents: any[] = [];
   
   // Calculate analysis results from live data
   const analysisResults = systemMetrics ? {
@@ -37,7 +38,15 @@ export default function SystemAnalysisPage() {
 
   // Manually trigger data refresh
   const loadSystemData = async () => {
-    await Promise.all([refetchMetrics(), refetchSecurity()]);
+    try {
+      const response = await fetch('/api/system-metrics');
+      if (response.ok) {
+        const metrics = await response.json();
+        setSystemMetrics(metrics);
+      }
+    } catch (error) {
+      console.error('Failed to load system data:', error);
+    }
   };
 
   const calculateHealthScore = (metrics: any) => {
