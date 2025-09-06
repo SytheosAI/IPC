@@ -108,7 +108,7 @@ export default function ProjectInformationTemplate() {
     try {
       setLoading(true)
       // Load project info from Supabase
-      const project = await db.vbaProjects.get(projectId)
+      const project: any = await db.vbaProjects.get(projectId)
       if (project) {
         setProjectInfo(prev => ({
           ...prev,
@@ -129,12 +129,12 @@ export default function ProjectInformationTemplate() {
 
   const handleSave = async () => {
     // Log activity instead of saving to localStorage
-    await db.activityLogs.create(
-      'updated_project_info',
-      'vba_project',
-      projectId,
-      projectInfo
-    )
+    await db.activityLogs.create({
+      action: 'updated_project_info',
+      entity_type: 'vba_project',
+      entity_id: projectId,
+      metadata: projectInfo
+    })
     alert('Project information saved successfully!')
   }
 

@@ -82,7 +82,7 @@ export default function InspectionReportTemplate() {
       setLoading(true)
       
       // Load project info from Supabase
-      const project = await db.vbaProjects.get(projectId)
+      const project: any = await db.vbaProjects.get(projectId)
       if (project) {
         setReportData(prev => ({
           ...prev,
@@ -155,19 +155,19 @@ export default function InspectionReportTemplate() {
     
     try {
       // Log activity instead of saving to localStorage
-      await db.activityLogs.create(
-        'generated_inspection_report',
-        'vba_project',
-        projectId,
-        { inspection_type: reportData.inspectionType }
-      )
+      await db.activityLogs.create({
+        action: 'generated_inspection_report',
+        entity_type: 'vba_project',
+        entity_id: projectId,
+        metadata: { inspection_type: reportData.inspectionType }
+      })
       
       // Load actual photos from the inspection type folder
       let actualPhotos = reportData.photos
       if (reportData.inspectionType) {
         // Load photos from Supabase
         console.log('Loading photos for inspection type:', reportData.inspectionType)
-        const photos = await db.inspections.getByVBAProject(projectId)
+        const photos: any[] = await db.inspections.getPhotosByProject(projectId)
         if (photos && photos.length > 0) {
           // Filter photos by inspection type if they have a category field
           const inspectionPhotos = photos.filter((photo: any) => 
@@ -492,18 +492,18 @@ export default function InspectionReportTemplate() {
     URL.revokeObjectURL(url)
     
     // Log activity for generated report
-    await db.activityLogs.create(
-      'generated_pdf_report',
-      'vba_project',
-      projectId,
-      {
+    await db.activityLogs.create({
+      action: 'generated_pdf_report',
+      entity_type: 'vba_project',
+      entity_id: projectId,
+      metadata: {
         filename: `${filename}.pdf`,
         date: new Date().toISOString(),
         inspectionType: reportData.inspectionType,
         sequence: reportData.reportSequence,
         type: 'inspection'
       }
-    )
+    })
     
     // Show success message
     alert(`Report generated successfully!\n\nFile saved as: ${filename}.pdf`)
@@ -518,7 +518,7 @@ export default function InspectionReportTemplate() {
   const loadInspectionPhotos = async () => {
     if (reportData.inspectionType) {
       // Load photos from Supabase
-      const photos = await db.inspections.getByVBAProject(projectId)
+      const photos: any[] = await db.inspections.getPhotosByProject(projectId)
       if (photos && photos.length > 0) {
         // Filter photos by inspection type
         const inspectionPhotos = photos.filter((photo: any) => 

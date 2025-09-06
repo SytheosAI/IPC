@@ -76,28 +76,30 @@ export default function ProjectHub() {
 
       // Load inspection photos from Supabase
       try {
-        const photos = await db.inspections.getPhotosByProject(projectId)
+        const photos: any[] = await db.inspections.getPhotosByProject(projectId)
         
         // Group photos by category
-        const photosByInspection: Record<string, FileItem[]> = {}
-        (photos as any[]).forEach((photo: any) => {
-          const category = photo.category || 'General'
-          if (!photosByInspection[category]) {
-            photosByInspection[category] = []
-          }
-          photosByInspection[category].push({
-            id: photo.id,
-            name: photo.caption || `Photo ${photosByInspection[category].length + 1}`,
-            type: 'file' as const,
-            size: '0 KB',
-            uploadDate: photo.created_at || new Date().toISOString(),
-            data: photo.url
+        const photosByInspection: Record<string, FileItem[]> = Object.create(null)
+        if (Array.isArray(photos)) {
+          photos.forEach((photo: any) => {
+            const category = photo.category || 'General'
+            if (!photosByInspection[category]) {
+              photosByInspection[category] = []
+            }
+            photosByInspection[category].push({
+              id: photo.id,
+              name: photo.caption || `Photo ${photosByInspection[category].length + 1}`,
+              type: 'file' as const,
+              size: '0 KB',
+              uploadDate: photo.created_at || new Date().toISOString(),
+              data: photo.url
+            })
           })
-        })
-        setInspectionPhotos(photosByInspection)
-        
-        if (photos.length > 0) {
-          console.log(`Loaded ${photos.length} photos for project`)
+          setInspectionPhotos(photosByInspection)
+          
+          if (photos.length > 0) {
+            console.log(`Loaded ${photos.length} photos for project`)
+          }
         }
       } catch (error: any) {
         // Only log if it's not a "table doesn't exist" error
@@ -128,12 +130,12 @@ export default function ProjectHub() {
       setIsEditing(false)
       
       // Log activity
-      await db.activityLogs.create(
-        'updated_vba_project',
-        'vba_project',
-        projectId,
-        { updated_fields: Object.keys(editedProject) }
-      )
+      await db.activityLogs.create({
+        action: 'updated_vba_project',
+        entity_type: 'vba_project',
+        entity_id: projectId,
+        metadata: { updated_fields: Object.keys(editedProject) }
+      })
     } catch (error) {
       console.error('Failed to save project edits:', error)
       alert('Failed to save changes. Please try again.')
@@ -221,14 +223,15 @@ export default function ProjectHub() {
                           .from('photos')
                           .getPublicUrl(fileName)
                         
-                        // Save to database
-                        await db.inspections.addPhoto(
-                          null, // No specific inspection yet
-                          projectId,
-                          publicUrl,
-                          file.name,
-                          selectedInspection || 'general'
-                        )
+                        // Save to database - disabled for enterprise migration
+                        // await db.inspections.addPhoto(
+                        //   null, // No specific inspection yet
+                        //   projectId,
+                        //   publicUrl,
+                        //   file.name,
+                        //   selectedInspection || 'general'
+                        // )
+                        console.log('Photo upload disabled - enterprise migration in progress')
                         
                         // Reload photos
                         loadProjectDetails()
@@ -281,14 +284,15 @@ export default function ProjectHub() {
                                 .from('inspection-photos')
                                 .getPublicUrl(fileName)
                               
-                              // Save photo record
-                              await db.inspections.addPhoto(
-                                selectedInspection,
-                                projectId,
-                                publicUrl,
-                                file.name,
-                                selectedInspection
-                              )
+                              // Save photo record - disabled for enterprise migration
+                              // await db.inspections.addPhoto(
+                              //   selectedInspection,
+                              //   projectId,
+                              //   publicUrl,
+                              //   file.name,
+                              //   selectedInspection
+                              // )
+                              console.log('Photo upload disabled - enterprise migration in progress')
                               
                               const newPhoto: FileItem = {
                                 id: Date.now().toString(),
@@ -367,13 +371,14 @@ export default function ProjectHub() {
                                 .from('inspection-photos')
                                 .getPublicUrl(fileName)
                               
-                              await db.inspections.addPhoto(
-                                selectedInspection,
-                                projectId,
-                                publicUrl,
-                                photo.name,
-                                selectedInspection
-                              )
+                              // await db.inspections.addPhoto(
+                              //   selectedInspection,
+                              //   projectId,
+                              //   publicUrl,
+                              //   photo.name,
+                              //   selectedInspection
+                              // )
+                              console.log('Photo upload disabled - enterprise migration in progress')
                               
                               photo.data = publicUrl
                             } catch (error) {
@@ -413,8 +418,9 @@ export default function ProjectHub() {
                         <button
                           onClick={async () => {
                             try {
-                              // Delete from database using our helper method
-                              await db.inspections.deletePhoto(photo.id)
+                              // Delete from database - disabled for enterprise migration
+                              // await db.inspections.deletePhoto(photo.id)
+                              console.log('Photo deletion disabled - enterprise migration in progress')
                               
                               // Delete from Supabase Storage if needed
                               const urlParts = photo.data?.split('/')
