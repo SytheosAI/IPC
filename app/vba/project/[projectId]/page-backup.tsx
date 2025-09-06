@@ -68,7 +68,7 @@ export default function ProjectHub() {
       
       // Load from Supabase
       const projects = await db.vbaProjects.getAll()
-      const foundProject = projects.find((p: VBAProject) => p.id === projectId)
+      const foundProject = (projects as VBAProject[]).find((p: VBAProject) => p.id === projectId)
       if (foundProject) {
         setProject(foundProject)
         setEditedProject(foundProject)
@@ -80,7 +80,7 @@ export default function ProjectHub() {
         
         // Group photos by category
         const photosByInspection: Record<string, FileItem[]> = {}
-        photos.forEach((photo: any) => {
+        (photos as any[]).forEach((photo: any) => {
           const category = photo.category || 'General'
           if (!photosByInspection[category]) {
             photosByInspection[category] = []

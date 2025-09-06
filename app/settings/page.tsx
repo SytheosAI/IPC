@@ -1,6 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+
+// Timestamp utility system
+const TimestampUtils = {
+  now: () => Date.now(),
+  fromDate: (date: Date) => date.getTime()
+}
 import { 
   Settings,
   User,
@@ -476,99 +482,12 @@ export default function SettingsPage() {
       // Load real activity logs from database
       const logs = await db.activityLogs.getRecent(50)
       
-      // If no logs in database, create some based on actual activity
-      if (!logs || logs.length === 0) {
-        const recentProjects = await db.projects.getAll()
-        const recentReports = await db.fieldReports.getAll()
-        const recentVBA = await db.vbaProjects.getAll()
-        
-        const generatedLogs: ActivityLog[] = []
-        const now = Date.now()
-        
-        // Generate logs from recent projects
-        recentProjects.slice(0, 3).forEach((project, index) => {
-          generatedLogs.push({
-            id: `proj-${project.id}`,
-            timestamp: new Date(now - (index * 3600000)).toISOString(),
-            user: userContext?.profile?.name || 'System User',
-            action: 'Created project',
-            details: `Project #${project.projectNumber || project.id}`,
-            type: 'create',
-            status: 'success'
-          })
-        })
-        
-        // Generate logs from field reports
-        recentReports.slice(0, 2).forEach((report, index) => {
-          generatedLogs.push({
-            id: `report-${report.id}`,
-            timestamp: new Date(now - ((index + 3) * 3600000)).toISOString(),
-            user: report.inspector || userContext?.profile?.name || 'Field Inspector',
-            action: 'Submitted field report',
-            details: `Report #${report.id} - ${report.workPerformed}`,
-            type: 'create',
-            status: 'success'
-          })
-        })
-        
-        // Generate logs from VBA projects
-        recentVBA.slice(0, 2).forEach((vba, index) => {
-          generatedLogs.push({
-            id: `vba-${vba.id}`,
-            timestamp: new Date(now - ((index + 5) * 3600000)).toISOString(),
-            user: userContext?.profile?.name || 'VBA Inspector',
-            action: 'VBA assessment',
-            details: `VBA Project #${vba.project_number} - ${vba.address}`,
-            type: 'update',
-            status: 'success'
-          })
-        })
-        
-        // Add login activity
-        generatedLogs.push({
-          id: 'login-1',
-          timestamp: new Date().toISOString(),
-          user: userContext?.profile?.name || 'Current User',
-          action: 'Logged in',
-          details: 'Successfully authenticated',
-          type: 'login',
-          status: 'success'
-        })
-        
-        // Calculate real metrics based on actual data
-        const totalActions = recentProjects.length + recentReports.length + recentVBA.length + 10
-        const successRate = 96.8
-        const activeUsers = new Set([
-          ...recentReports.map(r => r.inspector),
-          userContext?.profile?.name
-        ].filter(Boolean)).size
-        
-        setActivityMetrics({
-          totalActions,
-          successRate,
-          activeUsers: activeUsers || 1,
-          peakHour: '10:00 AM - 11:00 AM',
-          mostCommonAction: recentReports.length > recentProjects.length ? 'Submit Report' : 'Create Project'
-        })
-        
-        setActivityLogs(generatedLogs.sort((a, b) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        ))
-      } else {
-        setActivityLogs(logs)
-      }
+      // Enterprise: Use only live database data - no fallbacks or demo content
+      setActivityLogs((logs as ActivityLog[]) || [])
     } catch (error) {
       console.error('Error loading activity logs:', error)
-      // Fallback to minimal real data
-      setActivityLogs([{
-        id: '1',
-        timestamp: new Date().toISOString(),
-        user: userContext?.profile?.name || 'Current User',
-        action: 'Logged in',
-        details: 'Session started',
-        type: 'login',
-        status: 'success'
-      }])
+      // Enterprise: Log error but don't create fake data
+      setActivityLogs([])
     }
   }
 

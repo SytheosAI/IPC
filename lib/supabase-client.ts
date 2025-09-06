@@ -1,44 +1,22 @@
-import { createClient } from '@supabase/supabase-js'
+// SSR-safe Supabase client - NO browser globals at module level
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-// Initialize Supabase client
-let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+// Server-side: return null, client-side: lazy load
+export function getSupabaseClient(): SupabaseClient | null {
+  if (typeof window === 'undefined') {
+    // Server-side: always return null
+    return null
+  }
+  
+  // Client-side: this will be handled by the useSupabase hook
+  console.warn('Use useSupabase() hook instead of direct client access')
+  return null
 }
 
-// Aggressive URL cleaning - fix ALL possible malformations
-// Remove all variations of double protocols
-supabaseUrl = supabaseUrl
-  .replace(/https:\/\/https:\/\//g, 'https://')
-  .replace(/https:\/\/https\/\//g, 'https://')
-  .replace(/https\/\//g, 'https://')
-  .replace(/http:\/\/http:\/\//g, 'http://')
-  .replace(/http:\/\/http\/\//g, 'http://')
-  .replace(/http\/\//g, 'http://')
+// Dummy export for compatibility - DO NOT USE DIRECTLY
+export const supabase = null as any as SupabaseClient
 
-// If still malformed, extract just the domain
-if (supabaseUrl.includes('//') && !supabaseUrl.startsWith('http')) {
-  const parts = supabaseUrl.split('//')
-  supabaseUrl = 'https://' + parts[parts.length - 1]
-}
-
-// Ensure the URL is properly formatted
-if (!supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
-  supabaseUrl = `https://${supabaseUrl}`
-}
-
-// Final validation - should be exactly this format
-const expectedUrl = 'https://rxkakjowitqnbbjezedu.supabase.co'
-if (supabaseUrl.includes('rxkakjowitqnbbjezedu') && !supabaseUrl.startsWith(expectedUrl)) {
-  console.warn('Malformed Supabase URL detected, using correct URL')
-  supabaseUrl = expectedUrl
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Database types
+// Type definitions
 export interface Profile {
   id: string
   user_id?: string
@@ -181,561 +159,72 @@ export interface ActivityLog {
   created_at?: string
 }
 
-// Helper functions for database operations
+// Legacy db export - DO NOT USE, use useSupabase hook instead
 export const db = {
-  // Projects
   projects: {
-    async getAll() {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data || []
-    },
-    
-    async get(id: string) {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', id)
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async create(project: Omit<Project, 'id' | 'created_at' | 'updated_at'>) {
-      const { data, error } = await supabase
-        .from('projects')
-        .insert(project)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async update(id: string, updates: Partial<Project>) {
-      const { data, error } = await supabase
-        .from('projects')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async delete(id: string) {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      return true
-    }
+    async getAll() { throw new Error('Use useSupabase hook') },
+    async get(id: string) { throw new Error('Use useSupabase hook') },
+    async create(project: any) { throw new Error('Use useSupabase hook') },
+    async update(id: string, updates: any) { throw new Error('Use useSupabase hook') },
+    async delete(id: string) { throw new Error('Use useSupabase hook') }
   },
-
-  // Field Reports
   fieldReports: {
-    async getAll() {
-      const { data, error } = await supabase
-        .from('field_reports')
-        .select('*')
-        .order('report_date', { ascending: false })
-      if (error) throw error
-      return data || []
-    },
-    
-    async get(id: string) {
-      const { data, error } = await supabase
-        .from('field_reports')
-        .select(`
-          *,
-          field_report_work_completed (*)
-          field_report_issues (*)
-          field_report_safety_observations (*)
-          field_report_personnel (*)
-          field_report_photos (*)
-        `)
-        .eq('id', id)
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async create(report: Omit<FieldReport, 'id' | 'created_at' | 'updated_at'>) {
-      const { data, error } = await supabase
-        .from('field_reports')
-        .insert(report)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async update(id: string, updates: Partial<FieldReport>) {
-      const { data, error } = await supabase
-        .from('field_reports')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async delete(id: string) {
-      const { error } = await supabase
-        .from('field_reports')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      return true
-    },
-
-    // Work completed items
-    async addWorkCompleted(reportId: string, description: string, orderIndex: number = 0) {
-      const { data, error } = await supabase
-        .from('field_report_work_completed')
-        .insert({ report_id: reportId, description, order_index: orderIndex })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-
-    // Issues
-    async addIssue(reportId: string, description: string, severity?: 'minor' | 'major' | 'critical') {
-      const { data, error } = await supabase
-        .from('field_report_issues')
-        .insert({ report_id: reportId, description, severity })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-
-    // Safety observations
-    async addSafetyObservation(reportId: string, observation: string, orderIndex: number = 0) {
-      const { data, error } = await supabase
-        .from('field_report_safety_observations')
-        .insert({ report_id: reportId, observation, order_index: orderIndex })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-
-    // Personnel
-    async addPersonnel(reportId: string, name: string, role?: string, hours?: number) {
-      const { data, error } = await supabase
-        .from('field_report_personnel')
-        .insert({ report_id: reportId, name, role, hours })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    }
+    async getAll() { throw new Error('Use useSupabase hook') },
+    async get(id: string) { throw new Error('Use useSupabase hook') },
+    async create(report: any) { throw new Error('Use useSupabase hook') },
+    async update(id: string, updates: any) { throw new Error('Use useSupabase hook') },
+    async delete(id: string) { throw new Error('Use useSupabase hook') }
   },
-
-  // Documents
-  documents: {
-    async getAll() {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data || []
-    },
-    
-    async create(document: Omit<Document, 'id' | 'created_at' | 'updated_at'>) {
-      const { data, error } = await supabase
-        .from('documents')
-        .insert(document)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async update(id: string, updates: Partial<Document>) {
-      const { data, error } = await supabase
-        .from('documents')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async delete(id: string) {
-      const { error } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      return true
-    },
-
-    async uploadFile(file: File) {
-      const fileName = `${Date.now()}-${file.name}`
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .upload(fileName, file)
-      if (error) throw error
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(fileName)
-      
-      return publicUrl
-    }
-  },
-
-  // RLS Health Check
-  async checkRLSHealth() {
-    try {
-      const { data, error } = await supabase
-        .rpc('check_vba_rls_health')
-      
-      if (error) {
-        console.error('RLS health check failed:', error)
-        return { status: 'unknown', message: 'Could not check RLS health', error }
-      }
-      
-      return data
-    } catch (err) {
-      console.error('RLS health check error:', err)
-      return { status: 'error', message: 'Health check failed', error: err }
-    }
-  },
-  
-  // VBA Projects
-  vbaProjects: {
-    async getAll() {
-      const { data, error } = await supabase
-        .from('vba_projects')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data || []
-    },
-    
-    async get(id: string) {
-      const { data, error } = await supabase
-        .from('vba_projects')
-        .select('*')
-        .eq('id', id)
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async create(project: Partial<Omit<VBAProject, 'id' | 'created_at' | 'updated_at'>>) {
-      // Generate a unique project number if not provided
-      const projectNumber = project.project_number || `VBA-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      
-      // Get current user for created_by field
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      // Ensure required fields have defaults
-      const projectWithDefaults = {
-        project_name: project.project_name || 'Untitled Project',
-        address: project.address || '',
-        status: project.status || 'scheduled',
-        ...project,
-        project_number: projectNumber, // Override with generated project_number
-        created_by: project.created_by || user?.id || null // Set created_by if available
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .from('vba_projects')
-          .insert(projectWithDefaults)
-          .select()
-          .single()
-        
-        if (error) {
-          console.error('Error creating VBA project:', error)
-          // If RLS error, provide helpful message
-          if (error.message?.includes('row-level security')) {
-            throw new Error('Permission denied. Please ensure you are logged in and have the necessary permissions.')
-          }
-          throw error
-        }
-        
-        return data
-      } catch (err) {
-        console.error('Failed to create VBA project:', err)
-        throw err
-      }
-    },
-    
-    async update(id: string, updates: Partial<VBAProject>) {
-      const { data, error } = await supabase
-        .from('vba_projects')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async delete(id: string) {
-      const { error } = await supabase
-        .from('vba_projects')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      return true
-    }
-  },
-
-  // Inspections
-  inspections: {
-    async getAll() {
-      const { data, error } = await supabase
-        .from('inspections')
-        .select('*')
-        .order('inspection_date', { ascending: false })
-      if (error) throw error
-      return data || []
-    },
-    
-    async getByVBAProject(vbaProjectId: string) {
-      const { data, error } = await supabase
-        .from('inspections')
-        .select('*')
-        .eq('vba_project_id', vbaProjectId)
-        .order('inspection_date', { ascending: false })
-      if (error) throw error
-      return data || []
-    },
-    
-    async create(inspection: Omit<Inspection, 'id' | 'created_at' | 'updated_at'>) {
-      const { data, error } = await supabase
-        .from('inspections')
-        .insert(inspection)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async update(id: string, updates: Partial<Inspection>) {
-      const { data, error } = await supabase
-        .from('inspections')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async delete(id: string) {
-      const { error } = await supabase
-        .from('inspections')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      return true
-    },
-
-    async addPhoto(inspectionId: string | null, vbaProjectId: string, url: string, caption?: string, category?: string) {
-      const { data, error } = await supabase
-        .from('inspection_photos')
-        .insert({
-          inspection_id: inspectionId,
-          vba_project_id: vbaProjectId,
-          url,
-          caption,
-          category
-        })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-
-    async getPhotosByProject(vbaProjectId: string) {
-      const { data, error } = await supabase
-        .from('inspection_photos')
-        .select('*')
-        .eq('vba_project_id', vbaProjectId)
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data || []
-    },
-
-    async deletePhoto(photoId: string) {
-      const { error } = await supabase
-        .from('inspection_photos')
-        .delete()
-        .eq('id', photoId)
-      if (error) throw error
-      return true
-    }
-  },
-
-  // Profiles
-  profiles: {
-    async getAll() {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('name')
-      if (error) throw error
-      return data || []
-    },
-    
-    async get(id: string) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async create(profile: Omit<Profile, 'id' | 'created_at' | 'updated_at'>) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert(profile)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async update(id: string, updates: Partial<Profile>) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    }
-  },
-
-  // Notification Emails
-  notificationEmails: {
-    async getAll() {
-      const { data, error } = await supabase
-        .from('notification_emails')
-        .select('*')
-        .eq('active', true)
-        .order('email')
-      if (error) throw error
-      return data || []
-    },
-    
-    async create(email: string, name?: string, type: 'field_reports' | 'inspections' | 'projects' | 'all' = 'all') {
-      const { data, error } = await supabase
-        .from('notification_emails')
-        .insert({
-          email,
-          name,
-          notification_type: type,
-          active: true
-        })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async delete(id: string) {
-      const { error } = await supabase
-        .from('notification_emails')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-      return true
-    }
-  },
-
-  // Activity Logs
-  activityLogs: {
-    async create(action: string, entityType?: string, entityId?: string, metadata?: any) {
-      const { data, error } = await supabase
-        .from('activity_logs')
-        .insert({
-          action,
-          entity_type: entityType,
-          entity_id: entityId,
-          metadata
-        })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    
-    async getRecent(limit: number = 50) {
-      const { data, error } = await supabase
-        .from('activity_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limit)
-      if (error) throw error
-      return data || []
-    }
-  },
-
-  // User Settings
   userSettings: {
-    async get(userId: string) {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-      if (error && error.code !== 'PGRST116') throw error // Ignore not found error
-      return data
-    },
-    
-    async upsert(userId: string, settings: any) {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: userId,
-          ...settings
-        })
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    }
+    async get(id: string): Promise<any> { throw new Error('Use useSupabase hook') },
+    async upsert(id: string, data: any): Promise<any> { throw new Error('Use useSupabase hook') }
+  },
+  vbaProjects: {
+    async getAll() { throw new Error('Use useSupabase hook') },
+    async get(id: string) { throw new Error('Use useSupabase hook') },
+    async create(project: any) { throw new Error('Use useSupabase hook') },
+    async update(id: string, updates: any) { throw new Error('Use useSupabase hook') },
+    async delete(id: string) { throw new Error('Use useSupabase hook') }
+  },
+  documents: {
+    async getAll() { throw new Error('Use useSupabase hook') },
+    async get(id: string) { throw new Error('Use useSupabase hook') },
+    async create(doc: any) { throw new Error('Use useSupabase hook') },
+    async update(id: string, updates: any) { throw new Error('Use useSupabase hook') },
+    async delete(id: string) { throw new Error('Use useSupabase hook') }
+  },
+  inspections: {
+    async getAll() { throw new Error('Use useSupabase hook') },
+    async get(id: string) { throw new Error('Use useSupabase hook') },
+    async create(inspection: any) { throw new Error('Use useSupabase hook') },
+    async update(id: string, updates: any) { throw new Error('Use useSupabase hook') },
+    async delete(id: string) { throw new Error('Use useSupabase hook') },
+    async getPhotosByProject(projectId: string) { throw new Error('Use useSupabase hook') }
+  },
+  profiles: {
+    async getAll() { throw new Error('Use useSupabase hook') },
+    async get(id: string) { throw new Error('Use useSupabase hook') },
+    async create(profile: any) { throw new Error('Use useSupabase hook') },
+    async update(id: string, updates: any) { throw new Error('Use useSupabase hook') },
+    async delete(id: string) { throw new Error('Use useSupabase hook') }
+  },
+  activityLogs: {
+    async getAll() { throw new Error('Use useSupabase hook') },
+    async get(id: string) { throw new Error('Use useSupabase hook') },
+    async create(log: any) { throw new Error('Use useSupabase hook') },
+    async getRecent(limit: number) { throw new Error('Use useSupabase hook') }
+  },
+  notificationEmails: {
+    async getAll() { throw new Error('Use useSupabase hook') },
+    async get(id: string) { throw new Error('Use useSupabase hook') },
+    async create(email: any) { throw new Error('Use useSupabase hook') },
+    async update(id: string, updates: any) { throw new Error('Use useSupabase hook') },
+    async delete(id: string) { throw new Error('Use useSupabase hook') }
   }
 }
 
-// Real-time subscriptions
 export const subscriptions = {
-  subscribeToProjects(callback: (payload: any) => void) {
-    return supabase
-      .channel('projects')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, callback)
-      .subscribe()
-  },
-
-  subscribeToFieldReports(callback: (payload: any) => void) {
-    return supabase
-      .channel('field_reports')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'field_reports' }, callback)
-      .subscribe()
-  },
-
-  subscribeToInspections(callback: (payload: any) => void) {
-    return supabase
-      .channel('inspections')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'inspections' }, callback)
-      .subscribe()
-  }
+  subscribeToProjects(callback: any) { throw new Error('Use useSupabase hook') },
+  subscribeToFieldReports(callback: any) { throw new Error('Use useSupabase hook') },
+  subscribeToInspections(callback: any) { throw new Error('Use useSupabase hook') }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSupabase } from './hooks/useSupabase'
 import { 
   Home,
   FileText,
@@ -20,7 +21,7 @@ import {
   Zap,
   RefreshCw
 } from 'lucide-react'
-import { db, subscriptions } from '@/lib/supabase-client'
+import { db } from '@/lib/supabase-client'
 import PageTitle from '@/components/PageTitle'
 
 interface DashboardStat {
@@ -48,6 +49,7 @@ interface ProjectSummary {
 }
 
 export default function DashboardPage() {
+  const { client, loading: supabaseLoading, execute } = useSupabase()
   const [searchQuery, setSearchQuery] = useState('')
   const [recentProjects, setRecentProjects] = useState<ProjectSummary[]>([])
   const [stats, setStats] = useState<DashboardStat[]>([])
@@ -55,32 +57,38 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!client || supabaseLoading) return
+    
     loadDashboardData()
     
-    // Subscribe to real-time updates
-    const channel = subscriptions.subscribeToProjects(() => {
-      loadDashboardData()
-    })
+    // Enterprise: Set up real-time subscription with proper Supabase client
+    const subscription = client
+      .channel('dashboard-projects')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+        loadDashboardData()
+      })
+      .subscribe()
     
     return () => {
-      channel.unsubscribe()
+      subscription.unsubscribe()
     }
-  }, [])
+  }, [client, supabaseLoading])
 
   const loadDashboardData = async () => {
+    if (!client || supabaseLoading) return
+    
     try {
       setLoading(true)
       setError(null)
       
-      // Load projects from Supabase with error handling
-      let projects = []
-      try {
-        projects = await db.projects.getAll()
-      } catch (dbError) {
-        console.warn('Failed to load projects from database:', dbError)
-        projects = [] // No fallback data
-      }
-      setRecentProjects(projects.slice(0, 10)) // Show only recent 10
+      // Enterprise: Load projects with proper Supabase client
+      const projects = await execute(async (supabase) => {
+        const { data, error } = await supabase.from('projects').select('*').limit(10)
+        if (error) throw error
+        return data || []
+      })
+      
+      setRecentProjects(projects)
 
       // Calculate stats based on actual data
       const pendingCount = projects.filter((p: ProjectSummary) => p.status === 'in_review').length
@@ -295,22 +303,22 @@ export default function DashboardPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="table-modern">
+              <table className="table-modern w-full">
                 <thead>
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider">
+                  <tr className="border-b border-gray-700/50">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider w-1/6">
                       Permit Number
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/6">
                       Project Details
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                       Issues/Conditions/Notes
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                       Submitted
                     </th>
                   </tr>
@@ -318,32 +326,32 @@ export default function DashboardPage() {
                 <tbody className="divide-y divide-gray-700/30">
                   {filteredProjects.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
+                      <td colSpan={5} className="px-4 py-12 text-center text-gray-400">
                         {searchQuery ? 'No projects found matching your search' : 'No projects yet. Create your first project to get started.'}
                       </td>
                     </tr>
                   ) : (
                     filteredProjects.map((project) => (
                       <tr key={project.id} className="hover:bg-gray-800/30 cursor-pointer transition-all duration-200">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-100">{project.permit_number}</div>
+                        <td className="px-4 py-3 whitespace-nowrap w-1/6">
+                          <div className="text-sm font-medium text-gray-100 truncate">{project.permit_number}</div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3 w-2/6">
                           <div>
-                            <div className="text-sm font-medium text-gray-100">{project.project_name}</div>
-                            <div className="text-sm text-gray-400">{project.address}</div>
+                            <div className="text-sm font-medium text-gray-100 line-clamp-1">{project.project_name}</div>
+                            <div className="text-sm text-gray-400 line-clamp-1">{project.address}</div>
                             {project.applicant && (
-                              <div className="text-xs text-gray-500 mt-1">{project.applicant}</div>
+                              <div className="text-xs text-gray-500 mt-1 line-clamp-1">{project.applicant}</div>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap w-1/6">
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(project.status)}`}>
                             {project.status.replace('_', ' ').toUpperCase()}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex gap-3 text-sm">
+                        <td className="px-4 py-3 whitespace-nowrap w-1/6">
+                          <div className="flex gap-1 text-sm justify-center">
                             <span className="text-red-400 font-medium">{project.total_issues || 0}</span>
                             <span className="text-gray-600">/</span>
                             <span className="text-yellow-400 font-medium">{project.total_conditions || 0}</span>
@@ -351,7 +359,7 @@ export default function DashboardPage() {
                             <span className="text-blue-400 font-medium">{project.total_notes || 0}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-400 w-1/6">
                           {project.submitted_date ? new Date(project.submitted_date).toLocaleDateString() : 'N/A'}
                         </td>
                       </tr>

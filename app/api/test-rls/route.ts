@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerComponentSupabase } from '@/lib/supabase'
+import { createServerClient } from '@/lib/supabase-server'
 
 export async function GET(request: NextRequest) {
   try {
     console.log('=== RLS Test API Endpoint ===')
     
     // Create server-side Supabase client
-    const supabase = await createServerComponentSupabase()
+    const { supabase, error: clientError } = await createServerClient()
+    if (!supabase) {
+      return clientError || NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 })
+    }
     
     // Check current auth session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -49,7 +52,7 @@ export async function GET(request: NextRequest) {
     
     const { data: createdProject, error: createError } = await supabase
       .from('vba_projects')
-      .insert(testProject)
+      .insert(testProject as any)
       .select()
       .single()
     
@@ -61,7 +64,7 @@ export async function GET(request: NextRequest) {
       console.log('Test 3: Updating test project...')
       const { data: updated, error: updateError } = await supabase
         .from('vba_projects')
-        .update({ notes: 'Updated via RLS test' })
+        .update({ notes: 'Updated via RLS test' } as any)
         .eq('id', createdProject.id)
         .select()
         .single()
@@ -153,7 +156,10 @@ export async function POST(request: NextRequest) {
     console.log('Received data:', { project_name, address })
     
     // Create server-side Supabase client
-    const supabase = await createServerComponentSupabase()
+    const { supabase, error: clientError } = await createServerClient()
+    if (!supabase) {
+      return clientError || NextResponse.json({ success: false, message: 'Server configuration error' }, { status: 500 })
+    }
     
     // Check auth
     const { data: { user } } = await supabase.auth.getUser()

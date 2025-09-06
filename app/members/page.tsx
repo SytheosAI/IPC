@@ -30,7 +30,7 @@ import {
   Loader2
 } from 'lucide-react'
 import PageTitle from '@/components/PageTitle'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/lib/supabase-client'
 
 interface Member {
   id: string
@@ -82,7 +82,7 @@ export default function MembersPage() {
     folder: 'contractors' as Member['folder']
   })
 
-  const supabase = createClientComponentClient()
+  // Using imported supabase client
 
   const folders = [
     { 

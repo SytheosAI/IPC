@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { db } from '@/lib/supabase-client'
 import { supabase } from '@/lib/supabase-client'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface UserProfile {
   name: string

@@ -1,26 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true, // Use SWC for minification (faster than Terser)
   
-  // Aggressive performance optimizations
+  // Disable static optimization to avoid SSR issues with Supabase
+  output: 'standalone',
+  
+  // Performance optimizations
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
     },
-    optimizePackageImports: ['lucide-react', '@supabase/supabase-js'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
+    optimizePackageImports: ['lucide-react'],
   },
 
   // Webpack optimizations for speed
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+
     // Production optimizations
     if (!dev) {
       config.optimization = {
@@ -53,7 +48,7 @@ const nextConfig = {
       '@': require('path').resolve(__dirname),
     };
 
-    // Reduce bundle size
+    // Reduce bundle size and handle compatibility
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
@@ -61,7 +56,6 @@ const nextConfig = {
       tls: false,
     };
 
-    // Handle server/client compatibility
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,

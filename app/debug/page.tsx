@@ -50,8 +50,8 @@ export default function DebugPage() {
           
           testResults[table] = {
             status: 'SUCCESS',
-            count: Array.isArray(data) ? data.length : 0,
-            sample: Array.isArray(data) && data.length > 0 ? data[0] : null
+            count: Array.isArray(data) ? (data as any[]).length : 0,
+            sample: Array.isArray(data) && (data as any[]).length > 0 ? (data as any[])[0] : null
           }
         } catch (error: any) {
           testResults[table] = {

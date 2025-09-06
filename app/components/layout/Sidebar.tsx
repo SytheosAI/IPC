@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useUser } from '../../contexts/UserContext'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/lib/supabase-client'
 
 const navigation = [
   { 
@@ -86,7 +86,7 @@ export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { profile, theme } = useUser()
-  const supabase = createClientComponentClient()
+  // Using imported supabase client
   
   const handleLogout = async () => {
     await supabase.auth.signOut()

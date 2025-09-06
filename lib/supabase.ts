@@ -1,4 +1,3 @@
-import { createBrowserClient, createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
@@ -175,7 +174,7 @@ export const createClientComponentSupabase = () => {
            .replace('https://https://', 'https://')
            .replace('https//', 'https://')
   
-  return createBrowserClient<Database>(
+  return createClient<Database>(
     url,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
@@ -191,16 +190,9 @@ export const createServerComponentSupabase = async () => {
            .replace('https://https://', 'https://')
            .replace('https//', 'https://')
   
-  return createServerClient<Database>(
+  return createClient<Database>(
     url,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-      },
-    }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 }
 

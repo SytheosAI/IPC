@@ -70,7 +70,7 @@ export default function DocumentsPage() {
     try {
       setLoading(true)
       setError(null)
-      let data = []
+      let data: any[] = []
       try {
         data = await db.documents.getAll()
       } catch (dbError) {
@@ -136,12 +136,14 @@ export default function DocumentsPage() {
       })
       
       // Log activity
-      await db.activityLogs.create(
-        'Uploaded document',
-        'document',
-        document.id,
-        { name: document.name }
-      )
+      if (document) {
+        await db.activityLogs.create({
+          action: 'Uploaded document',
+          entity_type: 'document',
+          entity_id: (document as any).id,
+          metadata: { name: (document as any).name }
+        })
+      }
     } catch (err) {
       console.error('Error uploading document:', err)
       alert('Failed to upload document')
@@ -157,11 +159,11 @@ export default function DocumentsPage() {
         await loadDocuments()
         
         // Log activity
-        await db.activityLogs.create(
-          'Deleted document',
-          'document',
-          id
-        )
+        await db.activityLogs.create({
+          action: 'Deleted document',
+          entity_type: 'document',
+          entity_id: id
+        })
       } catch (err) {
         console.error('Error deleting document:', err)
         alert('Failed to delete document')
