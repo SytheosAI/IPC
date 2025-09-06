@@ -166,8 +166,13 @@ export type Database = {
   }
 }
 
-// Client-side Supabase client
+// Client-side Supabase client - SSR safe
 export const createClientComponentSupabase = () => {
+  // Only create client on browser
+  if (typeof window === 'undefined') {
+    return null as any
+  }
+  
   let url = process.env.NEXT_PUBLIC_SUPABASE_URL!
   // Fix malformed URLs
   url = url.replace('https://https//', 'https://')
