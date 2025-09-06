@@ -25,12 +25,21 @@ export const useAuth = () => {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClientComponentSupabase()
+  const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
+    // Initialize Supabase client only in browser
+    const client = createClientComponentSupabase()
+    setSupabase(client)
+    
+    if (!client) {
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await client.auth.getSession()
       setUser(session?.user ?? null)
       setLoading(false)
     }
@@ -38,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getInitialSession()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = client.auth.onAuthStateChange(
       async (event: any, session: any) => {
         setUser(session?.user ?? null)
         setLoading(false)
@@ -46,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase])
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
