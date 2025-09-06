@@ -206,12 +206,12 @@ export default function DocumentsPage() {
   })
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
       {/* Upload Document Button */}
-      <div className="absolute top-2 right-6">
+      <div className="absolute top-2 right-4">
         <button 
           onClick={() => setShowAddModal(true)}
-          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors flex items-center"
+          className="btn-primary flex items-center"
         >
           <Plus className="h-4 w-4 mr-1" />
           Upload
@@ -222,20 +222,20 @@ export default function DocumentsPage() {
       <PageTitle title="Document Management" />
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="card-modern hover-lift p-4 mb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search documents..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="input-modern pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <select
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="input-modern"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
           >
@@ -250,20 +250,20 @@ export default function DocumentsPage() {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center h-64">
-          <RefreshCw className="h-8 w-8 animate-spin text-sky-500" />
-          <span className="ml-2 text-gray-600">Loading documents...</span>
+          <div className="spinner-modern"></div>
+          <span className="ml-2 text-yellow-400">Loading documents...</span>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div className="card-modern bg-gradient-to-r from-red-900/20 to-red-800/20 border-red-500/30 p-4 mb-6">
           <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-            <span className="text-red-800">{error}</span>
+            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <span className="text-red-300">{error}</span>
             <button 
               onClick={loadDocuments}
-              className="ml-auto text-red-600 hover:text-red-800"
+              className="ml-auto text-red-400 hover:text-red-300 transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
@@ -275,17 +275,17 @@ export default function DocumentsPage() {
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDocuments.length === 0 ? (
-            <div className="col-span-full bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-              <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Documents Found</h3>
-              <p className="text-gray-500 mb-4">
+            <div className="col-span-full card-modern p-12 text-center">
+              <Folder className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-yellow-400 mb-2">No Documents Found</h3>
+              <p className="text-gray-400 mb-4">
                 {searchQuery || filterCategory !== 'all'
                   ? 'Try adjusting your filters or search query'
                   : 'Get started by uploading your first document'}
               </p>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
+                className="btn-primary inline-flex items-center"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Upload Document
@@ -293,7 +293,7 @@ export default function DocumentsPage() {
             </div>
           ) : (
             filteredDocuments.map((doc) => (
-              <div key={doc.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div key={doc.id} className="card-modern hover-lift p-6">
                 <div className="flex items-start justify-between mb-4">
                   {getFileIcon(doc.file_type)}
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(doc.category)}`}>
@@ -301,11 +301,11 @@ export default function DocumentsPage() {
                   </span>
                 </div>
                 
-                <h3 className="font-semibold text-gray-900 mb-2 truncate" title={doc.name}>
+                <h3 className="font-semibold text-gray-100 mb-2 truncate" title={doc.name}>
                   {doc.name}
                 </h3>
                 
-                <div className="space-y-1 text-sm text-gray-600 mb-4">
+                <div className="space-y-1 text-sm text-gray-400 mb-4">
                   {doc.project_name && (
                     <div className="flex items-center gap-1">
                       <Folder className="h-3 w-3" />
@@ -383,13 +383,13 @@ export default function DocumentsPage() {
 
       {/* Add Document Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
+          <div className="modal-modern max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Upload Document</h2>
+              <h2 className="text-xl font-semibold text-yellow-400">Upload Document</h2>
               <button 
                 onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-200 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -398,32 +398,32 @@ export default function DocumentsPage() {
             <form onSubmit={handleAddDocument}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">File</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">File</label>
                   <input
                     type="file"
                     required
                     onChange={(e) => setNewDocument({...newDocument, file: e.target.files?.[0] || null})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="input-modern"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Document Name (Optional)</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">Document Name (Optional)</label>
                   <input
                     type="text"
                     value={newDocument.name}
                     onChange={(e) => setNewDocument({...newDocument, name: e.target.value})}
                     placeholder="Leave blank to use file name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="input-modern"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">Category</label>
                   <select
                     value={newDocument.category}
                     onChange={(e) => setNewDocument({...newDocument, category: e.target.value as Document['category']})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="input-modern"
                   >
                     {categories.map(category => (
                       <option key={category} value={category}>{category}</option>
@@ -437,7 +437,7 @@ export default function DocumentsPage() {
                     type="text"
                     value={newDocument.project_name}
                     onChange={(e) => setNewDocument({...newDocument, project_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="input-modern"
                   />
                 </div>
 
@@ -447,7 +447,7 @@ export default function DocumentsPage() {
                     type="text"
                     value={newDocument.uploaded_by_name}
                     onChange={(e) => setNewDocument({...newDocument, uploaded_by_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="input-modern"
                   />
                 </div>
 
@@ -458,7 +458,7 @@ export default function DocumentsPage() {
                     value={newDocument.tags}
                     onChange={(e) => setNewDocument({...newDocument, tags: e.target.value})}
                     placeholder="e.g., important, review, 2024"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="input-modern"
                   />
                 </div>
               </div>
@@ -467,14 +467,14 @@ export default function DocumentsPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="btn-secondary"
                   disabled={uploading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={uploading}
                 >
                   {uploading ? (

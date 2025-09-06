@@ -206,33 +206,19 @@ export default function ProjectsPage() {
   })
 
   return (
-    <div className="p-6">
-      {/* New Project Button */}
-      <div className="absolute top-2 right-6">
-        <button 
-          type="button"
-          onClick={() => {
-            console.log('Button clicked - opening modal')
-            setShowNewProjectModal(true)
-          }}
-          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors"
-        >
-          New Project
-        </button>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
       {/* Page Header */}
       <PageTitle title="Project Queue" />
 
       {/* Filters and Search */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 mb-6">
+      <div className="card-modern hover-lift p-4 mb-4">
         <div className="flex flex-col lg:flex-row gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search by project name, number, city, or permit..."
-              className="w-full pl-9 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 hover:border-gray-400 dark:hover:border-gray-500 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:ring-sky-500 focus:border-sky-500"
+              className="input-modern"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -240,7 +226,7 @@ export default function ProjectsPage() {
           
           <div className="flex flex-wrap gap-2">
             <select
-              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="input-modern"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -253,7 +239,7 @@ export default function ProjectsPage() {
             </select>
 
             <select
-              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="input-modern"
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
             >
@@ -278,14 +264,14 @@ export default function ProjectsPage() {
       </div>
 
       {/* Projects Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="card-modern hover-lift overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+          <table className="table-modern">
+            <thead>
               <tr>
                 <th className="px-6 py-3 text-left">
                   <button
-                    className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider hover:text-gray-900 dark:hover:text-gray-100"
+                    className="flex items-center gap-1 text-xs font-bold text-yellow-400 uppercase tracking-wider hover:text-yellow-300"
                     onClick={() => {
                       if (sortField === 'project_name') {
                         setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
@@ -299,7 +285,7 @@ export default function ProjectsPage() {
                     <ArrowUpDown className="h-4 w-4" />
                   </button>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider">
                   City
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
@@ -319,13 +305,13 @@ export default function ProjectsPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-700/30">
               {sortedProjects.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-24 text-center">
-                    <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No projects found</p>
-                    <p className="text-gray-500 dark:text-gray-500 text-sm mb-4">Get started by creating your first project</p>
+                    <FileText className="h-16 w-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-300 text-lg mb-2">No projects found</p>
+                    <p className="text-gray-400 text-sm mb-4">Get started by creating your first project</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -342,26 +328,26 @@ export default function ProjectsPage() {
                 sortedProjects.map((project) => (
                   <tr 
                     key={project.id} 
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                    className="hover:bg-gray-800/30 transition-colors cursor-pointer"
                     onClick={() => router.push(`/projects/${project.id}`)}
                   >
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{project.project_name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{project.permit_number}</div>
+                        <div className="text-sm font-medium text-gray-100">{project.project_name}</div>
+                        <div className="text-xs text-gray-400">{project.permit_number}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1 text-sm text-gray-900 dark:text-gray-100">
-                        <MapPin className="h-3 w-3 text-gray-400" />
+                      <div className="flex items-center gap-1 text-sm text-gray-100">
+                        <MapPin className="h-3 w-3 text-yellow-400" />
                         {project.city || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.applicant || '-'}</div>
+                      <div className="text-sm text-gray-100">{project.applicant || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.permit_number || '-'}</div>
+                      <div className="text-sm text-gray-100">{project.permit_number || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>
@@ -370,7 +356,7 @@ export default function ProjectsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{project.project_type || 'N/A'}</div>
+                      <div className="text-sm text-gray-100">{project.project_type || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
@@ -379,19 +365,19 @@ export default function ProjectsPage() {
                             e.stopPropagation()
                             router.push(`/projects/${project.id}`)
                           }}
-                          className="text-sky-600 hover:text-sky-900 dark:hover:text-sky-300 transition-colors"
+                          className="text-yellow-400 hover:text-yellow-300 transition-colors"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={(e) => e.stopPropagation()}
-                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                          className="text-gray-400 hover:text-gray-200 transition-colors"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={(e) => e.stopPropagation()}
-                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                          className="text-gray-400 hover:text-gray-200 transition-colors"
                         >
                           <MoreVertical className="h-4 w-4" />
                         </button>
@@ -407,16 +393,16 @@ export default function ProjectsPage() {
 
       {/* New Project Modal */}
       {showNewProjectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
+          <div className="modal-modern max-w-md w-full">
+            <div className="p-6 border-b border-gray-700/50">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">New Project</h3>
+                <h3 className="text-lg font-semibold text-yellow-400">New Project</h3>
                 <button
                   onClick={() => setShowNewProjectModal(false)}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="p-1 hover:bg-gray-700/50 rounded transition-colors"
                 >
-                  <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  <X className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
             </div>
@@ -424,10 +410,10 @@ export default function ProjectsPage() {
             <form onSubmit={handleCreateProject} className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Name *</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">Project Name *</label>
                   <input
                     type="text"
-                    className="input-modern text-gray-900 dark:text-gray-100"
+                    className="input-modern"
                     value={newProject.project_name}
                     onChange={(e) => setNewProject({ ...newProject, project_name: e.target.value })}
                     required
@@ -435,12 +421,12 @@ export default function ProjectsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City *</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">City *</label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       type="text"
-                      className="input-modern pl-10 text-gray-900 dark:text-gray-100"
+                      className="input-modern pl-10"
                       value={newProject.city}
                       onChange={(e) => setNewProject({ ...newProject, city: e.target.value })}
                       placeholder="e.g., Miami"
@@ -450,10 +436,10 @@ export default function ProjectsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Submittal Number</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">Submittal Number</label>
                   <input
                     type="text"
-                    className="input-modern text-gray-900 dark:text-gray-100"
+                    className="input-modern"
                     value={newProject.applicant}
                     onChange={(e) => setNewProject({ ...newProject, applicant: e.target.value })}
                     placeholder="e.g., 2024-0804-001"
@@ -461,10 +447,10 @@ export default function ProjectsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Permit Number</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">Permit Number</label>
                   <input
                     type="text"
-                    className="input-modern text-gray-900 dark:text-gray-100"
+                    className="input-modern"
                     value={newProject.permit_number}
                     onChange={(e) => setNewProject({ ...newProject, permit_number: e.target.value })}
                     placeholder="e.g., PER-2024-0123"
@@ -557,7 +543,7 @@ export default function ProjectsPage() {
                 <button
                   type="button"
                   onClick={() => setShowNewProjectModal(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>

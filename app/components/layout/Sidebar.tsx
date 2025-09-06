@@ -72,6 +72,13 @@ const navigation = [
     icon: Settings,
     description: 'App Settings'
   },
+  { 
+    name: 'Sign Out', 
+    href: '#', 
+    icon: LogOut,
+    description: 'Logout',
+    action: 'logout'
+  },
 ]
 
 export default function Sidebar() {
@@ -99,7 +106,7 @@ export default function Sidebar() {
   
   // Always show Architecture for now to test
   const navItems = [
-    ...navigation.slice(0, -1), // All items except settings
+    ...navigation.slice(0, -2), // All items except settings and sign out
     { 
       name: 'Architecture', 
       href: '/architecture-analysis', 
@@ -112,83 +119,213 @@ export default function Sidebar() {
       icon: Shield,
       description: 'Security Center'
     }] : []),
-    navigation[navigation.length - 1] // Settings at the end
+    navigation[navigation.length - 2], // Settings
+    navigation[navigation.length - 1] // Sign Out at the end
   ]
 
   return (
     <div
       className={clsx(
-        'fixed left-0 top-0 h-full bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40',
+        'fixed left-0 top-0 h-full transition-all duration-300 z-40',
+        'bg-gradient-to-b from-gray-900/95 via-gray-800/90 to-gray-900/95',
+        'backdrop-filter backdrop-blur-xl border-r border-yellow-400/20',
+        'shadow-2xl shadow-yellow-400/10',
         {
           'w-64': !isCollapsed,
           'w-16': isCollapsed,
         }
       )}
+      style={{
+        background: 'linear-gradient(135deg, rgba(15, 20, 25, 0.95) 0%, rgba(31, 41, 55, 0.90) 50%, rgba(15, 20, 25, 0.95) 100%)',
+        backdropFilter: 'blur(16px)',
+        borderRight: '1px solid rgba(251, 191, 36, 0.2)',
+        boxShadow: '0 0 50px rgba(251, 191, 36, 0.1), inset 0 1px 2px rgba(251, 191, 36, 0.05)'
+      }}
     >
       {/* Header */}
-      <div className="h-16 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4">
+      <div 
+        className="h-16 flex items-center justify-between px-4 relative"
+        style={{
+          borderBottom: '1px solid rgba(251, 191, 36, 0.2)',
+          background: 'rgba(251, 191, 36, 0.05)'
+        }}
+      >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--accent-500), var(--accent-600))' }}>
-            <Zap className="h-5 w-5 text-white" />
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center relative overflow-hidden shadow-lg"
+            style={{ 
+              background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+              boxShadow: '0 0 20px rgba(251, 191, 36, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.2)'
+            }}
+          >
+            <Zap className="h-6 w-6 text-gray-900 drop-shadow-sm" />
+            <div 
+              className="absolute inset-0 rounded-xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent, rgba(217, 119, 6, 0.2))',
+                opacity: 0.6
+              }}
+            />
           </div>
           {!isCollapsed && (
             <div>
-              <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">IPC</h1>
-              <p className="text-[10px] leading-tight text-gray-500 dark:text-gray-400">Inspection & Permit Control</p>
+              <h1 className="text-xl font-bold text-yellow-400 tracking-wide drop-shadow-sm">IPC</h1>
+              <p className="text-[10px] leading-tight text-yellow-300/80 font-medium">Inspection & Permit Control</p>
             </div>
           )}
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="p-2 rounded-lg transition-all duration-200 hover:bg-yellow-400/10 hover:shadow-lg group"
+          style={{
+            border: '1px solid rgba(251, 191, 36, 0.2)'
+          }}
         >
           {isCollapsed ? (
-            <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <ChevronRight className="h-4 w-4 text-yellow-400 group-hover:text-yellow-300 transition-colors" />
           ) : (
-            <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            <ChevronLeft className="h-4 w-4 text-yellow-400 group-hover:text-yellow-300 transition-colors" />
           )}
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="px-2 py-4">
-        <div className="space-y-1">
+      <nav className="px-3 py-6 flex-1 overflow-y-auto">
+        <div className="space-y-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href || 
               (item.href !== '/' && pathname.startsWith(item.href))
+            
+            // Handle Sign Out action
+            if (item.action === 'logout') {
+              return (
+                <button
+                  key={item.name}
+                  onClick={handleLogout}
+                  className={clsx(
+                    'w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden',
+                    'border border-transparent backdrop-blur-sm hover:shadow-lg'
+                  )}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    backdropFilter: 'blur(8px)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                    e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+                    e.currentTarget.style.transform = 'translateX(6px) scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(239, 68, 68, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                    e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.2)';
+                    e.currentTarget.style.transform = 'translateX(0) scale(1)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div className="relative">
+                    <item.icon className="h-6 w-6 flex-shrink-0 text-red-400 group-hover:text-red-300 transition-colors" />
+                  </div>
+                  {!isCollapsed && (
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold text-red-400 group-hover:text-red-300 transition-colors">
+                        {item.name}
+                      </p>
+                      <p className="text-xs font-medium text-red-400/70 group-hover:text-red-300/70 transition-colors">
+                        {item.description}
+                      </p>
+                    </div>
+                  )}
+                </button>
+              )
+            }
             
             return (
               <Link
                 key={item.name}
                 href={item.href}
                 className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden border-2',
+                  'flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden',
+                  'border border-transparent backdrop-blur-sm',
                   {
-                    'text-white shadow-lg border-transparent': isActive,
-                    'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-transparent hover:border-[var(--accent-400)]': !isActive,
+                    'shadow-xl': isActive,
+                    'hover:shadow-lg': !isActive,
                   }
                 )}
-                style={isActive ? { background: 'linear-gradient(to right, var(--accent-500), var(--accent-600))' } : {}}
+                style={
+                  isActive 
+                    ? { 
+                        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 100%)',
+                        border: '1px solid rgba(251, 191, 36, 0.4)',
+                        boxShadow: '0 8px 32px rgba(251, 191, 36, 0.3), inset 0 1px 2px rgba(251, 191, 36, 0.1)',
+                        backdropFilter: 'blur(16px)'
+                      }
+                    : { 
+                        background: 'rgba(31, 41, 55, 0.3)',
+                        border: '1px solid rgba(251, 191, 36, 0.1)',
+                        backdropFilter: 'blur(8px)'
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'rgba(251, 191, 36, 0.08)';
+                    e.currentTarget.style.border = '1px solid rgba(251, 191, 36, 0.3)';
+                    e.currentTarget.style.transform = 'translateX(6px) scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(251, 191, 36, 0.2)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'rgba(31, 41, 55, 0.3)';
+                    e.currentTarget.style.border = '1px solid rgba(251, 191, 36, 0.1)';
+                    e.currentTarget.style.transform = 'translateX(0) scale(1)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
+                }}
               >
-                <item.icon className={clsx('h-5 w-5 flex-shrink-0', {
-                  'text-white': isActive,
-                  'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200': !isActive,
-                })} />
+                <div className="relative">
+                  <item.icon 
+                    className={clsx('h-6 w-6 flex-shrink-0 transition-all duration-300', {
+                      'text-yellow-400 drop-shadow-lg': isActive,
+                      'text-gray-400 group-hover:text-yellow-400': !isActive,
+                    })} 
+                  />
+                  {isActive && (
+                    <div 
+                      className="absolute -inset-2 rounded-full animate-pulse"
+                      style={{
+                        background: 'radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, transparent 70%)',
+                        filter: 'blur(4px)'
+                      }}
+                    />
+                  )}
+                </div>
                 {!isCollapsed && (
                   <div className="flex-1">
-                    <p className={clsx('text-sm font-medium', {
-                      'text-white': isActive,
-                      'text-gray-900 dark:text-gray-100': !isActive,
+                    <p className={clsx('text-sm font-semibold transition-colors duration-300', {
+                      'text-yellow-300 drop-shadow-sm': isActive,
+                      'text-gray-200 group-hover:text-yellow-300': !isActive,
                     })}>
                       {item.name}
                     </p>
-                    <p className={clsx('text-xs', {
-                      'text-sky-100': isActive,
-                      'text-gray-500 dark:text-gray-400': !isActive,
+                    <p className={clsx('text-xs font-medium transition-colors duration-300', {
+                      'text-yellow-400/70': isActive,
+                      'text-gray-400 group-hover:text-yellow-400/70': !isActive,
                     })}>
                       {item.description}
                     </p>
                   </div>
+                )}
+                {/* Glow effect for active item */}
+                {isActive && !isCollapsed && (
+                  <div 
+                    className="absolute right-3 w-2 h-8 rounded-full"
+                    style={{
+                      background: 'linear-gradient(to bottom, transparent, #fbbf24, transparent)',
+                      boxShadow: '0 0 10px rgba(251, 191, 36, 0.8)'
+                    }}
+                  />
                 )}
               </Link>
             )
@@ -196,41 +333,42 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* User Profile & Logout */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
+      {/* User Profile */}
+      <div 
+        className="p-4"
+        style={{
+          borderTop: '1px solid rgba(251, 191, 36, 0.2)',
+          background: 'rgba(251, 191, 36, 0.05)'
+        }}
+      >
         {!isCollapsed && profile.name && (
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 p-3 rounded-xl backdrop-blur-sm"
+            style={{
+              background: 'rgba(31, 41, 55, 0.4)',
+              border: '1px solid rgba(251, 191, 36, 0.2)'
+            }}
+          >
             <div 
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
-              style={{ background: `linear-gradient(to right, var(--accent-500), var(--accent-600))` }}
+              className="w-12 h-12 rounded-full flex items-center justify-center text-gray-900 font-bold text-base shadow-lg relative overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}
             >
-              <span className="text-sm">
+              <span>
                 {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
               </span>
+              <div 
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent)',
+                  opacity: 0.6
+                }}
+              />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{profile.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{profile.title || 'User'}</p>
+              <p className="text-sm font-semibold text-yellow-300 drop-shadow-sm">{profile.name}</p>
+              <p className="text-xs text-yellow-400/70 font-medium">{profile.title || 'User'}</p>
             </div>
           </div>
         )}
-        
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          className={clsx(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 border-2 border-transparent hover:border-red-200 dark:hover:border-red-800',
-            {
-              'justify-center': isCollapsed,
-              'justify-start': !isCollapsed
-            }
-          )}
-        >
-          <LogOut className="h-5 w-5 flex-shrink-0" />
-          {!isCollapsed && (
-            <span className="text-sm font-medium">Logout</span>
-          )}
-        </button>
       </div>
     </div>
   )

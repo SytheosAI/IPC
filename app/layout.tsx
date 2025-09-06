@@ -5,6 +5,7 @@ import { UserProvider } from './contexts/UserContext'
 import { ThemeInitializer } from './components/ThemeInitializer'
 import ClientLayout from './components/layout/ClientLayout'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import QueryProvider from './providers/QueryProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,14 +24,31 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+                });
+              }
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <ErrorBoundary>
-          <UserProvider>
-            <ThemeInitializer />
-            <ClientLayout>
-              {children}
-            </ClientLayout>
-          </UserProvider>
+          <QueryProvider>
+            <UserProvider>
+              <ThemeInitializer />
+              <ClientLayout>
+                {children}
+              </ClientLayout>
+            </UserProvider>
+          </QueryProvider>
         </ErrorBoundary>
       </body>
     </html>

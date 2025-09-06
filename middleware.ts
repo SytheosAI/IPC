@@ -11,6 +11,8 @@ export async function middleware(request: NextRequest) {
     '/auth/callback',
     '/reset-password',
     '/api/auth',
+    '/api/system-metrics',
+    '/api/security-events',
     '/_next',
     '/favicon.ico',
     '/manifest.json',

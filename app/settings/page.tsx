@@ -696,10 +696,10 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
       <PageTitle title="Settings" />
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
         <div className="lg:w-48">
           <nav className="space-y-1">
@@ -709,10 +709,10 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                     activeTab === tab.id
-                      ? 'bg-gradient-to-r from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 text-sky-600 dark:text-sky-400 border-l-4 border-sky-600 shadow-sm'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      ? 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 text-yellow-400 border-l-4 border-yellow-500 shadow-glow backdrop-blur-sm'
+                      : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/30 backdrop-blur-sm'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -728,11 +728,11 @@ export default function SettingsPage() {
 
         {/* Content */}
         <div className="flex-1">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="card-modern hover-lift backdrop-blur-lg">
             {/* Profile Tab */}
             {activeTab === 'profile' && (
               <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Profile Information</h2>
+                <h2 className="text-lg font-semibold text-yellow-400 mb-6">Profile Information</h2>
                 
                 <div className="space-y-6">
                   {/* Avatar Selection */}
@@ -1062,7 +1062,7 @@ export default function SettingsPage() {
                               value={size}
                               checked={theme.fontSize === size}
                               onChange={(e) => setTheme({ ...theme, fontSize: e.target.value as ThemeSettings['fontSize'] })}
-                              className="text-sky-600 focus:ring-sky-500"
+                              className="text-yellow-500 focus:ring-yellow-500"
                             />
                           </label>
                         ))}
@@ -1081,7 +1081,7 @@ export default function SettingsPage() {
                               value={radius}
                               checked={theme.borderRadius === radius}
                               onChange={(e) => setTheme({ ...theme, borderRadius: e.target.value as ThemeSettings['borderRadius'] })}
-                              className="text-sky-600 focus:ring-sky-500"
+                              className="text-yellow-500 focus:ring-yellow-500"
                             />
                           </label>
                         ))}

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Populate VBA Data</title>
+</head>
+<body>
+    <h1>Click the button to populate VBA projects in localStorage</h1>
+    <button onclick="populateData()" style="padding: 20px; font-size: 20px; background: #4CAF50; color: white; border: none; cursor: pointer;">
+        Populate VBA Projects
+    </button>
+    <div id="status"></div>
+
+    <script>
+        function populateData() {
+            // Create sample VBA projects matching your existing project IDs
+            const projects = [
+                {
+                    id: "cc209da0-0141-450c-9de4-8b670f4a9b67",
+                    projectName: "Commercial Building Inspection",
+                    jobNumber: "2024-001",
+                    address: "123 Main Street, City, State",
+                    owner: "Property Owner LLC",
+                    contractor: "General Contractor Inc",
+                    projectType: "Commercial",
+                    startDate: "2024-01-15",
+                    status: "active",
+                    selectedInspections: [
+                        "Foundation Inspection",
+                        "Framing Inspection",
+                        "Electrical Rough-In",
+                        "Plumbing Rough-In",
+                        "Insulation Inspection",
+                        "Drywall Inspection",
+                        "Final Electrical",
+                        "Final Plumbing",
+                        "Final Building"
+                    ]
+                },
+                {
+                    id: "860e36e3-082f-46e2-8e94-b2bf17c38dad",
+                    projectName: "Residential Home Construction",
+                    jobNumber: "2024-002",
+                    address: "456 Oak Avenue, City, State",
+                    owner: "John Smith",
+                    contractor: "Home Builders Co",
+                    projectType: "Residential",
+                    startDate: "2024-02-01",
+                    status: "active",
+                    selectedInspections: [
+                        "Site Survey",
+                        "Foundation Inspection",
+                        "Framing Inspection",
+                        "Electrical Rough-In",
+                        "Plumbing Rough-In",
+                        "HVAC Rough-In",
+                        "Insulation Inspection",
+                        "Final Inspection"
+                    ]
+                },
+                {
+                    id: "2a3655db-a646-4adb-97cb-18f23f5494e8",
+                    projectName: "Office Building Renovation",
+                    jobNumber: "2024-003",
+                    address: "789 Business Blvd, City, State",
+                    owner: "Corporate Properties",
+                    contractor: "Renovation Experts",
+                    projectType: "Commercial Renovation",
+                    startDate: "2024-03-01",
+                    status: "active",
+                    selectedInspections: [
+                        "Demolition Inspection",
+                        "Structural Inspection",
+                        "Electrical Systems",
+                        "Plumbing Systems",
+                        "Fire Safety Systems",
+                        "HVAC Systems",
+                        "Final Inspection"
+                    ]
+                }
+            ];
+
+            // Save to localStorage
+            localStorage.setItem('vba-projects', JSON.stringify(projects));
+
+            // Create some sample events for each project
+            projects.forEach(project => {
+                const events = [
+                    {
+                        id: Date.now().toString(),
+                        title: project.selectedInspections[0],
+                        date: new Date(),
+                        type: 'inspection',
+                        status: 'completed'
+                    },
+                    {
+                        id: (Date.now() + 1).toString(),
+                        title: project.selectedInspections[1],
+                        date: new Date(Date.now() + 86400000),
+                        type: 'inspection',
+                        status: 'scheduled'
+                    }
+                ];
+                localStorage.setItem(`vba-events-${project.id}`, JSON.stringify(events));
+                
+                // Create empty photo storage
+                localStorage.setItem(`vba-inspection-photos-${project.id}`, JSON.stringify({}));
+            });
+
+            document.getElementById('status').innerHTML = `
+                <h2 style="color: green;">✓ Data populated successfully!</h2>
+                <p>Created ${projects.length} projects in localStorage</p>
+                <p>You can now go back to your app at <a href="http://localhost:3010/vba">http://localhost:3010/vba</a></p>
+                <h3>Project IDs created:</h3>
+                <ul>
+                    ${projects.map(p => `<li>${p.projectName} - ID: ${p.id}</li>`).join('')}
+                </ul>
+            `;
+        }
+    </script>
+</body>
+</html>

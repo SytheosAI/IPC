@@ -50,15 +50,33 @@ BEGIN
 END $$;
 
 -- 3. Enable RLS on all required tables
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE vba_projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE field_reports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inspections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notification_emails ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  -- Enable RLS only if table exists
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'profiles') THEN
+    ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+  END IF;
+  
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'projects') THEN
+    ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+  END IF;
+  
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'vba_projects') THEN
+    ALTER TABLE vba_projects ENABLE ROW LEVEL SECURITY;
+  END IF;
+  
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'field_reports') THEN
+    ALTER TABLE field_reports ENABLE ROW LEVEL SECURITY;
+  END IF;
+  
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'documents') THEN
+    ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+  END IF;
+  
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'activity_logs') THEN
+    ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
 -- 4. Create basic RLS policies for development
 -- Allow all authenticated users to read data
@@ -117,13 +135,7 @@ BEGIN
     CREATE POLICY "Enable all access for all users" ON vba_projects FOR ALL USING (true);
   END IF;
 
-  -- Inspections policies
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'inspections' 
-    AND policyname = 'Enable all access for all users'
-  ) THEN
-    CREATE POLICY "Enable all access for all users" ON inspections FOR ALL USING (true);
-  END IF;
+  -- Skip inspections table policies - table may not exist
 
   -- Profiles policies
   IF NOT EXISTS (
@@ -133,16 +145,7 @@ BEGIN
     CREATE POLICY "Enable all access for all users" ON profiles FOR ALL USING (true);
   END IF;
 
-  -- Detail tables policies
-  CREATE POLICY IF NOT EXISTS "Enable all access" ON field_report_work_completed FOR ALL USING (true);
-  CREATE POLICY IF NOT EXISTS "Enable all access" ON field_report_issues FOR ALL USING (true);
-  CREATE POLICY IF NOT EXISTS "Enable all access" ON field_report_safety_observations FOR ALL USING (true);
-  CREATE POLICY IF NOT EXISTS "Enable all access" ON field_report_personnel FOR ALL USING (true);
-  CREATE POLICY IF NOT EXISTS "Enable all access" ON field_report_photos FOR ALL USING (true);
-  CREATE POLICY IF NOT EXISTS "Enable all access" ON inspection_photos FOR ALL USING (true);
-  CREATE POLICY IF NOT EXISTS "Enable all access" ON notification_emails FOR ALL USING (true);
-  CREATE POLICY IF NOT EXISTS "Enable all access" ON activity_logs FOR ALL USING (true);
-  CREATE POLICY IF NOT EXISTS "Enable all access" ON user_settings FOR ALL USING (true);
+  -- Skip detailed table policies - tables may not exist in current schema
 END $$;
 
 -- 5. Ensure updated_at triggers exist
@@ -182,15 +185,7 @@ BEGIN
       FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
   END IF;
   
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_inspections_updated_at') THEN
-    CREATE TRIGGER update_inspections_updated_at BEFORE UPDATE ON inspections
-      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-  END IF;
-  
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_user_settings_updated_at') THEN
-    CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings
-      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-  END IF;
+  -- Skip triggers for tables that may not exist
 END $$;
 
 -- 6. Grant permissions

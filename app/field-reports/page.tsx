@@ -397,26 +397,15 @@ export default function FieldReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
-      {/* New Report Button */}
-      <div className="absolute top-2 right-6 z-10">
-        <button
-          onClick={() => setShowNewReportModal(true)}
-          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors flex items-center"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          New Report
-        </button>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative">
       {/* Header */}
-      <div className="p-6">
+      <div className="p-4">
         <PageTitle title="Field Reports" />
       </div>
 
       {/* Filters and Search */}
-      <div className="p-6">
-        <div className="glass-morphism rounded-xl p-4 mb-6 border-animated">
+      <div className="p-4">
+        <div className="card-modern hover-lift p-4 mb-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
@@ -434,7 +423,7 @@ export default function FieldReportsPage() {
 
             {/* Type Filter */}
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="input-modern"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
             >
@@ -476,19 +465,19 @@ export default function FieldReportsPage() {
           {/* Date Range Filter */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Start Date</label>
               <input
                 type="date"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="input-modern"
                 value={dateRange.start}
                 onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">End Date</label>
               <input
                 type="date"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="input-modern"
                 value={dateRange.end}
                 onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
               />
@@ -499,20 +488,20 @@ export default function FieldReportsPage() {
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center h-64">
-            <RefreshCw className="h-8 w-8 animate-spin text-sky-500" />
-            <span className="ml-2 text-gray-600">Loading field reports...</span>
+            <div className="spinner-modern"></div>
+            <span className="ml-2 text-yellow-400">Loading field reports...</span>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="card-modern bg-gradient-to-r from-red-900/20 to-red-800/20 border-red-500/30 p-4 mb-6">
             <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-              <span className="text-red-800">{error}</span>
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+              <span className="text-red-300">{error}</span>
               <button 
                 onClick={loadFieldReports}
-                className="ml-auto text-red-600 hover:text-red-800"
+                className="ml-auto text-red-400 hover:text-red-300 transition-colors"
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -524,20 +513,30 @@ export default function FieldReportsPage() {
         {!loading && (
           <div className="grid gap-4">
             {filteredReports.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Field Reports Found</h3>
-                <p className="text-gray-500 mb-4">
+              <div className="card-modern p-12 text-center">
+                <FileText className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-yellow-400 mb-2">No Field Reports Found</h3>
+                <p className="text-gray-400 mb-4">
                   {searchQuery || filterType !== 'all' || filterStatus !== 'all' || filterPriority !== 'all'
                     ? 'Try adjusting your filters or search query'
                     : 'Get started by creating your first field report'}
                 </p>
+                {!searchQuery && filterType === 'all' && filterStatus === 'all' && filterPriority === 'all' && (
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => setShowNewReportModal(true)}
+                      className="btn-primary"
+                    >
+                      New Report
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               filteredReports.map((report) => (
                 <div
                   key={report.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                  className="card-modern hover-lift p-6"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -551,8 +550,8 @@ export default function FieldReportsPage() {
                         {getPriorityIcon(report.priority)}
                       </div>
                       
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{report.project_name}</h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                      <h3 className="text-lg font-semibold text-gray-100 mb-1">{report.project_name}</h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
                         <span className="flex items-center">
                           <MapPin className="h-4 w-4 mr-1" />
                           {report.project_address}
@@ -570,7 +569,7 @@ export default function FieldReportsPage() {
                       {/* Quick Stats */}
                       <div className="flex items-center gap-6 text-sm">
                         {report.weather_conditions && (
-                          <span className="text-gray-600">
+                          <span className="text-gray-400">
                             Weather: {report.weather_conditions} {report.weather_temperature}°F
                           </span>
                         )}
@@ -581,7 +580,7 @@ export default function FieldReportsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => router.push(`/field-reports/${report.id}`)}
-                        className="p-2 text-gray-600 hover:text-sky-600 transition-colors"
+                        className="p-2 text-gray-400 hover:text-yellow-400 transition-colors"
                         title="View Report"
                       >
                         <Eye className="h-5 w-5" />
@@ -590,14 +589,14 @@ export default function FieldReportsPage() {
                         <>
                           <button
                             onClick={() => router.push(`/field-reports/${report.id}/edit`)}
-                            className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
+                            className="p-2 text-gray-400 hover:text-blue-400 transition-colors"
                             title="Edit Report"
                           >
                             <Edit className="h-5 w-5" />
                           </button>
                           <button
                             onClick={() => handleSubmitReport(report.id)}
-                            className="p-2 text-gray-600 hover:text-green-600 transition-colors"
+                            className="p-2 text-gray-400 hover:text-green-400 transition-colors"
                             title="Submit Report"
                           >
                             <Send className="h-5 w-5" />
@@ -606,7 +605,7 @@ export default function FieldReportsPage() {
                       )}
                       <button
                         onClick={() => handleDeleteReport(report.id)}
-                        className="p-2 text-gray-600 hover:text-red-600 transition-colors"
+                        className="p-2 text-gray-400 hover:text-red-400 transition-colors"
                         title="Delete Report"
                       >
                         <Trash2 className="h-5 w-5" />
@@ -622,9 +621,9 @@ export default function FieldReportsPage() {
 
       {/* Enhanced New Report Modal */}
       {showNewReportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6 my-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Create New Field Report</h2>
+        <div className="modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="modal-modern max-w-4xl w-full p-6 my-8">
+            <h2 className="text-xl font-semibold text-yellow-400 mb-4">Create New Field Report</h2>
             <form
               onSubmit={(e) => {
                 e.preventDefault()
@@ -670,7 +669,7 @@ export default function FieldReportsPage() {
                           // Auto-fill project details
                         }
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="input-modern"
                     >
                       <option value="">-- Select a Project --</option>
                       {projects.map(project => (
@@ -723,7 +722,7 @@ export default function FieldReportsPage() {
                     <select
                       value={selectedReporter}
                       onChange={(e) => setSelectedReporter(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="input-modern"
                     >
                       <option value="">-- Select Team Member --</option>
                       {teamMembers.map(member => (
@@ -933,13 +932,13 @@ export default function FieldReportsPage() {
                     setSelectedReporter('')
                     setUploadedPhotos([])
                   }}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
+                  className="btn-primary"
                 >
                   Create Report
                 </button>

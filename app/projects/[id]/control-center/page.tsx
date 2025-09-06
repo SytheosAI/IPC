@@ -179,17 +179,17 @@ export default function ProjectControlCenter() {
 
   if (!project) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading project...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6 flex items-center justify-center">
+        <div className="card-modern p-8 text-center shadow-glow">
+          <div className="spinner-modern mx-auto mb-4"></div>
+          <p className="text-yellow-400">Loading project...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
       {/* Header */}
       <PageTitle 
         title={`Project Control Center - ${project.project_name}`}
@@ -199,7 +199,7 @@ export default function ProjectControlCenter() {
       <div className="mb-6">
         <button 
           onClick={() => router.push('/projects')}
-          className="text-gray-600 hover:text-gray-900 flex items-center gap-2"
+          className="text-gray-400 hover:text-yellow-400 flex items-center gap-2 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Projects
@@ -207,33 +207,33 @@ export default function ProjectControlCenter() {
       </div>
 
       {/* Project Info Bar */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="card-modern hover-lift p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="flex items-center gap-3">
             <Building className="h-5 w-5 text-gray-400" />
             <div>
-              <p className="text-xs text-gray-500">Project Type</p>
-              <p className="text-sm font-medium capitalize">{project.project_type}</p>
+              <p className="text-xs text-gray-400">Project Type</p>
+              <p className="text-sm font-medium capitalize text-gray-100">{project.project_type}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <MapPin className="h-5 w-5 text-gray-400" />
             <div>
-              <p className="text-xs text-gray-500">Location</p>
-              <p className="text-sm font-medium">{project.city}</p>
+              <p className="text-xs text-gray-400">Location</p>
+              <p className="text-sm font-medium text-gray-100">{project.city}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Users className="h-5 w-5 text-gray-400" />
             <div>
-              <p className="text-xs text-gray-500">Applicant</p>
-              <p className="text-sm font-medium">{project.applicant}</p>
+              <p className="text-xs text-gray-400">Applicant</p>
+              <p className="text-sm font-medium text-gray-100">{project.applicant}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <AlertCircle className="h-5 w-5 text-gray-400" />
             <div>
-              <p className="text-xs text-gray-500">Status</p>
+              <p className="text-xs text-gray-400">Status</p>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>
                 {project.status.replace('_', ' ')}
               </span>
@@ -248,17 +248,17 @@ export default function ProjectControlCenter() {
           {/* Dashboard Metrics */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Permit Status Metrics */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Shield className="h-5 w-5 text-sky-600" />
+            <div className="card-modern hover-lift p-6">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-yellow-400" />
                 Permit Status Metrics
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 {permitMetrics.map((metric, index) => (
-                  <div key={index} className="border-l-2 border-sky-200 pl-3">
-                    <p className="text-xs text-gray-500 mb-1">{metric.label}</p>
+                  <div key={index} className="border-l-2 border-yellow-400/50 pl-3">
+                    <p className="text-xs text-gray-400 mb-1">{metric.label}</p>
                     <div className="flex items-center gap-2">
-                      <p className="text-lg font-semibold text-gray-900">{metric.value}</p>
+                      <p className="text-lg font-semibold text-gray-100">{metric.value}</p>
                       {metric.trend && getTrendIcon(metric.trend)}
                     </div>
                   </div>
@@ -267,17 +267,17 @@ export default function ProjectControlCenter() {
             </div>
 
             {/* Inspection Metrics */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <HardHat className="h-5 w-5 text-orange-600" />
+            <div className="card-modern hover-lift p-6">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4 flex items-center gap-2">
+                <HardHat className="h-5 w-5 text-orange-400" />
                 Inspection Metrics
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 {inspectionMetrics.map((metric, index) => (
-                  <div key={index} className="border-l-2 border-orange-200 pl-3">
-                    <p className="text-xs text-gray-500 mb-1">{metric.label}</p>
+                  <div key={index} className="border-l-2 border-orange-400/50 pl-3">
+                    <p className="text-xs text-gray-400 mb-1">{metric.label}</p>
                     <div className="flex items-center gap-2">
-                      <p className="text-lg font-semibold text-gray-900">{metric.value}</p>
+                      <p className="text-lg font-semibold text-gray-100">{metric.value}</p>
                       {metric.trend && getTrendIcon(metric.trend)}
                     </div>
                   </div>
@@ -287,25 +287,25 @@ export default function ProjectControlCenter() {
           </div>
 
           {/* Folder Grid */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Documents</h3>
+          <div className="card-modern hover-lift p-6">
+            <h3 className="text-lg font-semibold text-yellow-400 mb-4">Project Documents</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {folders.map((folder) => (
                 <button
                   key={folder.id}
                   onClick={() => loadFolderContents(folder.id)}
-                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-sky-300 transition-all text-left group"
+                  className="p-4 card-glass hover-lift transition-all text-left group"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <folder.icon className="h-8 w-8 text-sky-600 group-hover:text-sky-700" />
+                    <folder.icon className="h-8 w-8 text-yellow-400 group-hover:text-yellow-300" />
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                       {folder.count} items
                     </span>
                   </div>
-                  <h4 className="font-medium text-gray-900 group-hover:text-sky-700">
+                  <h4 className="font-medium text-gray-100 group-hover:text-yellow-400">
                     {folder.name}
                   </h4>
-                  <div className="flex items-center gap-1 mt-2 text-sky-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 mt-2 text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="text-xs">Open folder</span>
                     <ChevronRight className="h-3 w-3" />
                   </div>
@@ -316,25 +316,25 @@ export default function ProjectControlCenter() {
         </>
       ) : (
         /* Folder Contents View */
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-4 border-b border-gray-200">
+        <div className="card-modern hover-lift">
+          <div className="p-4 border-b border-gray-700/50">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setSelectedFolder(null)}
-                  className="text-gray-600 hover:text-gray-900"
+                  className="text-gray-400 hover:text-yellow-400 transition-colors"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-yellow-400">
                   {folders.find(f => f.id === selectedFolder)?.name}
                 </h3>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-400">
                   ({folderContents.length} items)
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <button className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 flex items-center gap-1">
+                <button className="btn-primary flex items-center gap-1">
                   <Upload className="h-4 w-4" />
                   Upload
                 </button>
@@ -347,7 +347,7 @@ export default function ProjectControlCenter() {
               <input
                 type="text"
                 placeholder="Search files..."
-                className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="input-modern"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -355,12 +355,12 @@ export default function ProjectControlCenter() {
           </div>
 
           {/* Files List */}
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-700/30">
             {folderContents.length === 0 ? (
               <div className="p-8 text-center">
                 <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No files in this folder</p>
-                <button className="mt-3 text-sky-600 hover:text-sky-700 text-sm">
+                <p className="text-gray-400">No files in this folder</p>
+                <button className="btn-glass mt-3">
                   Upload first file
                 </button>
               </div>
@@ -368,7 +368,7 @@ export default function ProjectControlCenter() {
               folderContents
                 .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
                 .map((item) => (
-                  <div key={item.id} className="p-4 hover:bg-gray-50 flex items-center justify-between">
+                  <div key={item.id} className="p-4 hover:bg-gray-800/30 transition-colors flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {item.icon ? (
                         <item.icon className="h-5 w-5 text-gray-400" />
@@ -376,20 +376,20 @@ export default function ProjectControlCenter() {
                         <FileText className="h-5 w-5 text-gray-400" />
                       )}
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm font-medium text-gray-100">{item.name}</p>
+                        <p className="text-xs text-gray-400">
                           {item.size ? `${item.size} • ` : ''}{item.modified}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button className="p-1 text-gray-400 hover:text-sky-600">
+                      <button className="p-1 text-gray-400 hover:text-yellow-400 transition-colors">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button className="p-1 text-gray-400 hover:text-sky-600">
+                      <button className="p-1 text-gray-400 hover:text-yellow-400 transition-colors">
                         <Download className="h-4 w-4" />
                       </button>
-                      <button className="p-1 text-gray-400 hover:text-red-600">
+                      <button className="p-1 text-gray-400 hover:text-red-400 transition-colors">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>

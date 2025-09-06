@@ -256,12 +256,14 @@ export default function SecurityCenter() {
     }
   }
 
+
+
   const loadRecentErrors = async () => {
     try {
       const { data, error } = await supabase
         .from('activity_logs')
         .select('*')
-        .eq('metadata->severity', 'error')
+        .eq('action', 'error')
         .gte('created_at', new Date(Date.now() - 3600000).toISOString())
         .order('created_at', { ascending: false })
         .limit(100)
@@ -270,7 +272,7 @@ export default function SecurityCenter() {
       
       return data || []
     } catch (error) {
-      console.error('Error loading recent errors:', error)
+      console.error('Error loading recent errors:', error instanceof Error ? error.message : 'Unknown error occurred')
       return []
     }
   }
@@ -294,25 +296,25 @@ export default function SecurityCenter() {
 
   const loadSecurityEvents = async (): Promise<SecurityEvent[]> => {
     try {
-      const { data, error } = await supabase
-        .from('activity_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100)
+      // Get real security events from live system monitoring
+      const response = await fetch('/api/security-events');
+      if (!response.ok) {
+        throw new Error('Failed to fetch security events');
+      }
       
-      if (error) throw error
+      const data = await response.json();
       
-      // Transform activity logs into security events
-      return (data || []).map(log => ({
-        id: log.id,
-        timestamp: log.created_at,
-        type: determineEventType(log.action),
-        severity: determineEventSeverity(log),
-        user: log.user_id,
-        ip: log.ip_address,
-        location: log.metadata?.location,
-        description: log.action,
-        resolved: log.metadata?.resolved || false
+      // Transform API data into security events
+      return (data.events || []).map((event: any) => ({
+        id: event.id,
+        timestamp: event.timestamp,
+        type: event.event_type,
+        severity: event.severity,
+        user: 'system',
+        ip: event.source_ip,
+        location: event.source_ip,
+        description: event.description,
+        resolved: false
       }))
     } catch (error) {
       console.error('Error loading security events:', error)
@@ -505,43 +507,42 @@ export default function SecurityCenter() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <PageTitle 
           title="Security Center"
           subtitle="Real-time security monitoring and management"
         />
-        <div className="flex items-center justify-end -mt-12">
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleBackup}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Backup
-            </button>
-            
-            <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 cursor-pointer">
-              <Upload className="h-4 w-4" />
-              Restore
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleRestore}
-                className="hidden"
-              />
-            </label>
-            
-            <button
-              onClick={loadSecurityData}
-              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-            >
-              <RefreshCw className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="flex items-center justify-end gap-3 mb-6">
+        <button
+          onClick={handleBackup}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Backup
+        </button>
+        
+        <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 cursor-pointer">
+          <Upload className="h-4 w-4" />
+          Restore
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleRestore}
+            className="hidden"
+          />
+        </label>
+        
+        <button
+          onClick={loadSecurityData}
+          className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+        >
+          <RefreshCw className="h-5 w-5" />
+        </button>
       </div>
 
       {/* System Health Status */}

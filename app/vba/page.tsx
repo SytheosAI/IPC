@@ -37,7 +37,8 @@ import {
   Sun,
   CloudRain,
   CloudSnow,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase-client'
@@ -375,7 +376,8 @@ export default function VBAPage() {
 
       // Process forecast data to get daily highs/lows
       const dailyForecasts: any = {}
-      forecastData.list.forEach((item: any) => {
+      if (forecastData.list && Array.isArray(forecastData.list)) {
+        forecastData.list.forEach((item: any) => {
         const date = new Date(item.dt * 1000)
         const dayKey = date.toLocaleDateString('en-US', { weekday: 'short' })
         
@@ -390,6 +392,9 @@ export default function VBAPage() {
           dailyForecasts[dayKey].low = Math.min(dailyForecasts[dayKey].low, item.main.temp_min)
         }
       })
+      } else {
+        console.error('Weather forecast data is not available or invalid format:', forecastData)
+      }
 
       const forecastArray = Object.entries(dailyForecasts).slice(0, 3).map(([day, data]: [string, any], index) => ({
         day: index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : day,
@@ -456,6 +461,33 @@ export default function VBAPage() {
     }
   }
 
+  const handleDeleteProject = async (projectId: string) => {
+    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('vba_projects')
+        .delete()
+        .eq('id', projectId)
+
+      if (error) {
+        console.error('Error deleting project:', error)
+        alert('Failed to delete project. Please try again.')
+        return
+      }
+
+      // Remove from local state
+      setProjects(projects.filter(p => p.id !== projectId))
+      console.log('Project deleted successfully')
+      
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      alert('An error occurred while deleting the project.')
+    }
+  }
+
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.address.toLowerCase().includes(searchQuery.toLowerCase())
@@ -516,14 +548,14 @@ export default function VBAPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
       {/* Header */}
-      <div className="mb-6 relative">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">Virtual Building Authority</h1>
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sky-500 to-transparent opacity-50"></div>
+      <div className="mb-4 relative">
+        <h1 className="text-3xl font-bold text-center bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">Virtual Building Authority</h1>
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-50 shadow-glow"></div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Weather Widget */}
         <div 
           className="relative rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-300 bg-gray-800"
@@ -717,56 +749,56 @@ export default function VBAPage() {
         </div>
 
         {/* This Week Stats */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow" style={{ minHeight: '400px' }}>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+        <div className="card-modern hover-lift p-6" style={{ minHeight: '400px' }}>
+          <h3 className="text-lg font-semibold text-yellow-400 mb-4 flex items-center justify-between">
             This Week
-            <TrendingUp className="h-5 w-5 text-gray-400" />
+            <TrendingUp className="h-5 w-5 text-yellow-400" />
           </h3>
           
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Inspections Completed</span>
-                <span className="text-lg font-semibold text-gray-900">{weeklyMetrics.completed}</span>
+                <span className="text-sm text-gray-300">Inspections Completed</span>
+                <span className="text-lg font-semibold text-gray-100">{weeklyMetrics.completed}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-sky-500 h-2 rounded-full" style={{ width: `${Math.min(weeklyMetrics.completed * 10, 100)}%` }}></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Scheduled This Week</span>
-                <span className="text-lg font-semibold text-gray-900">{weeklyMetrics.scheduled}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min(weeklyMetrics.scheduled * 10, 100)}%` }}></div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-2 rounded-full shadow-glow" style={{ width: `${Math.min(weeklyMetrics.completed * 10, 100)}%` }}></div>
               </div>
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Compliance Average</span>
-                <span className="text-lg font-semibold text-gray-900">{weeklyMetrics.complianceAvg}%</span>
+                <span className="text-sm text-gray-300">Scheduled This Week</span>
+                <span className="text-lg font-semibold text-gray-100">{weeklyMetrics.scheduled}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${weeklyMetrics.complianceAvg}%` }}></div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div className="bg-gradient-to-r from-blue-400 to-blue-600 h-2 rounded-full shadow-glow" style={{ width: `${Math.min(weeklyMetrics.scheduled * 10, 100)}%` }}></div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-300">Compliance Average</span>
+                <span className="text-lg font-semibold text-gray-100">{weeklyMetrics.complianceAvg}%</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div className="bg-gradient-to-r from-purple-400 to-purple-600 h-2 rounded-full shadow-glow" style={{ width: `${weeklyMetrics.complianceAvg}%` }}></div>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <h4 className="text-sm font-semibold text-gray-900 mb-3">Quick Links</h4>
+          <div className="mt-6 pt-4 border-t border-gray-600">
+            <h4 className="text-sm font-semibold text-yellow-400 mb-3">Quick Links</h4>
             <div className="space-y-2">
-              <Link href="/vba/inspection-guidelines" className="flex items-center gap-2 text-sm text-gray-600 hover:text-sky-600">
+              <Link href="/vba/inspection-guidelines" className="flex items-center gap-2 text-sm text-gray-300 hover:text-yellow-400 transition-colors">
                 <FileText className="h-4 w-4" />
                 Inspection Guidelines
               </Link>
-              <Link href="/vba/compliance-standards" className="flex items-center gap-2 text-sm text-gray-600 hover:text-sky-600">
+              <Link href="/vba/compliance-standards" className="flex items-center gap-2 text-sm text-gray-300 hover:text-yellow-400 transition-colors">
                 <Shield className="h-4 w-4" />
                 Compliance Standards
               </Link>
-              <Link href="/vba/inspector-directory" className="flex items-center gap-2 text-sm text-gray-600 hover:text-sky-600">
+              <Link href="/vba/inspector-directory" className="flex items-center gap-2 text-sm text-gray-300 hover:text-yellow-400 transition-colors">
                 <Users className="h-4 w-4" />
                 Inspector Directory
               </Link>
@@ -775,49 +807,49 @@ export default function VBAPage() {
         </div>
 
         {/* Construction News */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 card-modern" style={{ minHeight: '400px', maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+        <div className="card-modern hover-lift p-6" style={{ minHeight: '400px', maxHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+          <h3 className="text-lg font-semibold text-yellow-400 mb-4 flex items-center justify-between">
             Construction AI & Industry News
-            <Newspaper className="h-5 w-5 text-gray-400" />
+            <Newspaper className="h-5 w-5 text-yellow-400" />
           </h3>
 
           <div className="flex gap-2 mb-4">
             <button 
               onClick={() => setSelectedNewsCategory('all')}
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
                 selectedNewsCategory === 'all' 
-                  ? 'bg-sky-100 text-sky-700' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-yellow-400 text-gray-900 shadow-glow' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
               }`}
             >
               All
             </button>
             <button 
               onClick={() => setSelectedNewsCategory('ai')}
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
                 selectedNewsCategory === 'ai' 
-                  ? 'bg-sky-100 text-sky-700' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-yellow-400 text-gray-900 shadow-glow' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
               }`}
             >
               AI & Tech
             </button>
             <button 
               onClick={() => setSelectedNewsCategory('general')}
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
                 selectedNewsCategory === 'general' 
-                  ? 'bg-sky-100 text-sky-700' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-yellow-400 text-gray-900 shadow-glow' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
               }`}
             >
               General
             </button>
             <button 
               onClick={() => setSelectedNewsCategory('updates')}
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
                 selectedNewsCategory === 'updates' 
-                  ? 'bg-sky-100 text-sky-700' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-yellow-400 text-gray-900 shadow-glow' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
               }`}
             >
               Updates
@@ -840,13 +872,13 @@ export default function VBAPage() {
                 .map((news) => (
                   <div key={news.id} className="pb-3 last:pb-0">
                     <h4 
-                      className="text-sm font-medium text-gray-900 mb-1 hover:text-sky-600 cursor-pointer line-clamp-1"
+                      className="text-sm font-medium text-gray-100 mb-1 hover:text-yellow-400 cursor-pointer line-clamp-1 transition-colors"
                       onClick={() => news.url && window.open(news.url, '_blank')}
                     >
                       {news.title}
                     </h4>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="bg-gray-100 px-2 py-0.5 rounded">ai</span>
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <span className="bg-yellow-400 text-gray-900 px-2 py-0.5 rounded">ai</span>
                       <span className="truncate">{news.source}</span>
                       <span>•</span>
                       <span>{news.date}</span>
@@ -857,7 +889,10 @@ export default function VBAPage() {
             </div>
           </div>
 
-          <Link href="/vba/news" className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-center gap-2 text-sm text-sky-600 hover:text-sky-700">
+          <Link 
+            href="/vba/news" 
+            className="mt-3 pt-3 border-t border-gray-600 flex items-center justify-center gap-2 text-sm text-yellow-400 hover:text-yellow-300 transition-colors"
+          >
             View More Construction AI News
             <ArrowUp className="h-4 w-4 rotate-90" />
           </Link>
@@ -865,20 +900,20 @@ export default function VBAPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex gap-3 mb-6 bg-white rounded-lg shadow-sm border border-gray-200 py-2 px-3">
+      <div className="flex gap-3 mb-4 card-modern py-4 px-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search inspections..."
-            className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+            className="input-modern text-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
         <select
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-transparent bg-white"
+          className="input-modern text-sm"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >
@@ -902,10 +937,10 @@ export default function VBAPage() {
       </div>
 
       {/* Inspection Projects Section */}
-      <div className="bg-white rounded-lg shadow-sm border-gradient relative overflow-hidden">
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+      <div className="card-modern relative overflow-hidden border-glow">
+        <div className="p-6 border-b border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Inspection Projects</h2>
+            <h2 className="text-xl font-semibold text-yellow-400">Inspection Projects</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowNewProjectModal(true)}
@@ -920,42 +955,42 @@ export default function VBAPage() {
         
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-800 border-b border-gray-600">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-yellow-400 uppercase tracking-wider">
                   Job #
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-yellow-400 uppercase tracking-wider">
                   Project Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-yellow-400 uppercase tracking-wider">
                   Date Added
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-gray-800 divide-y divide-gray-700">
               {isLoading ? (
                 <tr>
                   <td colSpan={3} className="px-6 py-12 text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading inspections...</p>
+                    <div className="spinner-modern mx-auto"></div>
+                    <p className="mt-4 text-gray-300">Loading inspections...</p>
                   </td>
                 </tr>
               ) : filteredProjects.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="px-6 py-24 text-center">
-                    <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600 text-lg">No inspections found</p>
+                    <Building2 className="h-16 w-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400 text-lg">No inspections found</p>
                   </td>
                 </tr>
               ) : (
                 filteredProjects.map((project) => (
                   <tr 
                     key={project.id} 
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-700 hover:scale-[1.01] transition-all duration-200"
                   >
                     <td 
-                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 cursor-pointer"
+                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-100 cursor-pointer"
                       onClick={() => {
                         console.log('Navigating to:', `/vba/project/${project.id}`)
                         router.push(`/vba/project/${project.id}`)
@@ -970,12 +1005,12 @@ export default function VBAPage() {
                         router.push(`/vba/project/${project.id}`)
                       }}
                     >
-                      <div className="text-sm font-medium text-gray-900 hover:text-sky-600">
+                      <div className="text-sm font-medium text-gray-100 hover:text-yellow-400 transition-colors">
                         {project.project_name}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">{project.address}</div>
+                      <div className="text-xs text-gray-400 mt-1">{project.address}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       <div className="flex items-center justify-between">
                         <span>{project.start_date ? new Date(project.start_date).toLocaleDateString() : 'Not set'}</span>
                         <button
@@ -984,10 +1019,20 @@ export default function VBAPage() {
                             setSelectedProjectForSchedule(project)
                             setShowScheduleModal(true)
                           }}
-                          className="ml-4 p-1 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded"
+                          className="ml-4 p-1 text-yellow-400 hover:text-yellow-300 hover:bg-gray-700 rounded transition-colors"
                           title="Schedule Inspection"
                         >
                           <Calendar className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteProject(project.id)
+                          }}
+                          className="ml-2 p-1 text-red-400 hover:text-red-300 hover:bg-gray-700 rounded transition-colors"
+                          title="Delete Project"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
@@ -1000,18 +1045,18 @@ export default function VBAPage() {
       </div>
 
       {/* AI-Powered Inspections */}
-      <div className="mt-8 bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
+      <div className="mt-6 glass-morphism rounded-2xl p-6 text-white shadow-glow hover-lift">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 glass-morphism rounded-lg">
-              <Brain className="h-8 w-8 text-white" />
+            <div className="p-3 bg-yellow-400/20 backdrop-blur rounded-lg border border-yellow-400/30">
+              <Brain className="h-8 w-8 text-yellow-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">AI-Powered Inspections</h3>
-              <p className="text-white/90">Use computer vision to automatically detect compliance issues</p>
+              <h3 className="text-lg font-semibold text-yellow-400">AI-Powered Inspections</h3>
+              <p className="text-gray-200">Use computer vision to automatically detect compliance issues</p>
             </div>
           </div>
-          <button className="glass-morphism px-6 py-2 rounded-lg hover:scale-105 font-medium transition-all text-white">
+          <button className="btn-glass hover:scale-105 font-medium transition-all">
             Learn More
           </button>
         </div>
@@ -1203,10 +1248,23 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
   const [projectData, setProjectData] = useState({
     projectName: '',
     address: '',
+    city: 'Fort Myers',
+    state: 'FL',
+    zipCode: '',
     jobNumber: '',
     owner: '',
+    ownerPhone: '',
+    ownerEmail: '',
     contractor: '',
-    projectType: 'Commercial'
+    contractorPhone: '',
+    contractorEmail: '',
+    projectType: 'Commercial',
+    constructionType: 'New Construction',
+    projectValue: '',
+    squareFootage: '',
+    stories: '1',
+    permitNumber: '',
+    description: ''
   })
   const [selectedInspections, setSelectedInspections] = useState<string[]>([])
 
@@ -1241,19 +1299,19 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">New VBA Inspection Project</h3>
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center p-4 z-50">
+      <div className="modal-modern max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-600">
+          <h3 className="text-lg font-semibold text-yellow-400">New VBA Inspection Project</h3>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Job Number</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="input-modern"
                 value={projectData.jobNumber}
                 onChange={(e) => setProjectData({ ...projectData, jobNumber: e.target.value })}
                 required
@@ -1261,10 +1319,10 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Project Name</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="input-modern"
                 value={projectData.projectName}
                 onChange={(e) => setProjectData({ ...projectData, projectName: e.target.value })}
                 required
@@ -1299,6 +1357,140 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 value={projectData.contractor}
                 onChange={(e) => setProjectData({ ...projectData, contractor: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">City</label>
+              <input
+                type="text"
+                className="input-modern"
+                value={projectData.city}
+                onChange={(e) => setProjectData({ ...projectData, city: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">ZIP Code</label>
+              <input
+                type="text"
+                className="input-modern"
+                value={projectData.zipCode}
+                onChange={(e) => setProjectData({ ...projectData, zipCode: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Owner Phone</label>
+              <input
+                type="tel"
+                className="input-modern"
+                value={projectData.ownerPhone}
+                onChange={(e) => setProjectData({ ...projectData, ownerPhone: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Owner Email</label>
+              <input
+                type="email"
+                className="input-modern"
+                value={projectData.ownerEmail}
+                onChange={(e) => setProjectData({ ...projectData, ownerEmail: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Contractor Phone</label>
+              <input
+                type="tel"
+                className="input-modern"
+                value={projectData.contractorPhone}
+                onChange={(e) => setProjectData({ ...projectData, contractorPhone: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Contractor Email</label>
+              <input
+                type="email"
+                className="input-modern"
+                value={projectData.contractorEmail}
+                onChange={(e) => setProjectData({ ...projectData, contractorEmail: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Construction Type</label>
+              <select
+                className="input-modern"
+                value={projectData.constructionType}
+                onChange={(e) => setProjectData({ ...projectData, constructionType: e.target.value })}
+              >
+                <option value="New Construction">New Construction</option>
+                <option value="Addition">Addition</option>
+                <option value="Alteration">Alteration</option>
+                <option value="Renovation">Renovation</option>
+                <option value="Repair">Repair</option>
+                <option value="Demolition">Demolition</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Project Value ($)</label>
+              <input
+                type="number"
+                className="input-modern"
+                value={projectData.projectValue}
+                onChange={(e) => setProjectData({ ...projectData, projectValue: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Square Footage</label>
+              <input
+                type="number"
+                className="input-modern"
+                value={projectData.squareFootage}
+                onChange={(e) => setProjectData({ ...projectData, squareFootage: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Number of Stories</label>
+              <select
+                className="input-modern"
+                value={projectData.stories}
+                onChange={(e) => setProjectData({ ...projectData, stories: e.target.value })}
+              >
+                <option value="1">1 Story</option>
+                <option value="2">2 Stories</option>
+                <option value="3">3 Stories</option>
+                <option value="4">4+ Stories</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Permit Number</label>
+              <input
+                type="text"
+                className="input-modern"
+                value={projectData.permitNumber}
+                onChange={(e) => setProjectData({ ...projectData, permitNumber: e.target.value })}
+              />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Project Description</label>
+              <textarea
+                className="input-modern"
+                rows={3}
+                value={projectData.description}
+                onChange={(e) => setProjectData({ ...projectData, description: e.target.value })}
+                placeholder="Brief description of the project..."
               />
             </div>
           </div>

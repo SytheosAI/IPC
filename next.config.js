@@ -1,77 +1,76 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  swcMinify: true, // Use SWC for minification (faster than Terser)
   
-  // Webpack configuration for debugging
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Don't modify devtool as Next.js manages it automatically
-    
-    // Add webpack plugins for better debugging
-    config.plugins.push(
-      new webpack.DefinePlugin({
-        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-      })
-    )
-    
-    // Disable minimization in development for better debugging
-    if (dev) {
-      config.optimization.minimize = false
-    }
-    
-    // Add module resolution for better debugging
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': require('path').resolve(__dirname),
-    }
-    
-    // Better error overlay in development
-    if (dev && !isServer) {
-      config.module.rules.push({
-        test: /\.(js|jsx|ts|tsx)$/,
-        use: [
-          {
-            loader: 'source-map-loader',
-            options: {
-              filterSourceMappingUrl: (url, resourcePath) => {
-                // Filter out warnings from node_modules
-                if (resourcePath.includes('node_modules')) {
-                  return false
-                }
-                return true
-              },
-            },
-          },
-        ],
-        enforce: 'pre',
-      })
-    }
-    
-    return config
-  },
-  
-  // Enable experimental features for better development experience
+  // Aggressive performance optimizations
   experimental: {
-    // Enable turbopack for faster builds (optional)
-    // turbo: dev,
-    
-    // Better error handling
     serverActions: {
       bodySizeLimit: '2mb',
     },
+    optimizePackageImports: ['lucide-react', '@supabase/supabase-js'],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
   },
-  
-  // Ignore TypeScript errors during build (for development)
-  typescript: {
-    ignoreBuildErrors: false,
+
+  // Webpack optimizations for speed
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Production optimizations
+    if (!dev) {
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: 'deterministic',
+        chunkIds: 'deterministic',
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+              priority: 10,
+            },
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 5,
+            },
+          },
+        },
+      };
+    }
+
+    // Speed up builds
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname),
+    };
+
+    // Reduce bundle size
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+
+    return config;
   },
+
+  // Compression and caching
+  compress: true,
+  poweredByHeader: false,
   
-  // Ignore ESLint errors during build (for development)
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
-  
-  // Image optimization
+  // Asset optimization
   images: {
+    formats: ['image/webp', 'image/avif'],
     domains: ['localhost', 'via.placeholder.com'],
     remotePatterns: [
       {
@@ -79,7 +78,40 @@ const nextConfig = {
         hostname: '**.supabase.co',
       },
     ],
+    minimumCacheTTL: 31536000, // 1 year
   },
-}
 
-module.exports = nextConfig
+  // Headers for performance
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=30, stale-while-revalidate=60' },
+        ],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+        ],
+      },
+    ];
+  },
+
+  // TypeScript and ESLint for production
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+};
+
+module.exports = nextConfig;

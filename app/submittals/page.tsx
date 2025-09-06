@@ -269,30 +269,19 @@ export default function SubmittalsPage() {
   }
 
   return (
-    <div className="p-6">
-      {/* New Submittal Button */}
-      <div className="absolute top-2 right-6">
-        <button
-          onClick={() => setShowNewSubmittalModal(true)}
-          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 transition-colors flex items-center"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          New Submittal
-        </button>
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-4 pb-4">
       {/* Page Header */}
       <PageTitle title="Permit Submittals" />
 
       {/* Filters and Search */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 mb-6">
+      <div className="card-modern hover-lift p-4 mb-4">
         <div className="flex flex-col lg:flex-row gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search by project name, number, or address..."
-              className="w-full pl-9 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 hover:border-gray-400 dark:hover:border-gray-500 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:ring-sky-500 focus:border-sky-500"
+              className="input-modern"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -300,7 +289,7 @@ export default function SubmittalsPage() {
           
           <div className="flex flex-wrap gap-2">
             <select
-              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="input-modern"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -338,14 +327,14 @@ export default function SubmittalsPage() {
       </div>
 
       {/* Submittals Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="card-modern hover-lift overflow-hidden w-full">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+          <table className="table-modern w-full">
+            <thead>
               <tr>
                 <th className="px-6 py-3 text-left">
                   <button
-                    className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider hover:text-gray-900"
+                    className="flex items-center gap-1 text-xs font-bold text-yellow-400 uppercase tracking-wider hover:text-yellow-300"
                     onClick={() => toggleSort('dateSubmitted')}
                   >
                     Submittal #
@@ -354,33 +343,24 @@ export default function SubmittalsPage() {
                 </th>
                 <th className="px-6 py-3 text-left">
                   <button
-                    className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider hover:text-gray-900"
+                    className="flex items-center gap-1 text-xs font-bold text-yellow-400 uppercase tracking-wider hover:text-yellow-300"
                     onClick={() => toggleSort('projectName')}
                   >
                     Project
                     <ArrowUpDown className="h-4 w-4" />
                   </button>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider">
                   Category
                 </th>
                 <th className="px-6 py-3 text-left">
                   <button
-                    className="flex items-center gap-1 text-xs font-medium text-gray-600 uppercase tracking-wider hover:text-gray-900"
+                    className="flex items-center gap-1 text-xs font-bold text-yellow-400 uppercase tracking-wider hover:text-yellow-300"
                     onClick={() => toggleSort('status')}
                   >
                     Status
                     <ArrowUpDown className="h-4 w-4" />
                   </button>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Completeness
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Documents
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                  Submitted
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                   Reviewer
@@ -390,34 +370,35 @@ export default function SubmittalsPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-700/30">
               {sortedSubmittals.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-24 text-center">
-                    <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No submittals found</p>
-                    <p className="text-gray-500 dark:text-gray-500 text-sm mb-4">Get started by creating your first permit submittal</p>
-                    <button
-                      onClick={() => setShowNewSubmittalModal(true)}
-                      className="btn-primary"
-                    >
-                      <Plus className="h-5 w-5 mr-2" />
-                      Create New Submittal
-                    </button>
+                  <td colSpan={6} className="py-24">
+                    <div className="flex flex-col items-center justify-center w-full text-center">
+                      <FileText className="h-16 w-16 text-gray-500 mb-4" />
+                      <p className="text-gray-300 text-lg mb-2">No submittals found</p>
+                      <p className="text-gray-400 text-sm mb-4">Get started by creating your first permit submittal</p>
+                      <button
+                        onClick={() => setShowNewSubmittalModal(true)}
+                        className="btn-primary"
+                      >
+                        Create New Submittal
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 sortedSubmittals.map((submittal) => (
                   <tr 
                     key={submittal.id} 
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                    className="hover:bg-gray-800/30 transition-colors cursor-pointer"
                     onClick={() => window.location.href = `/submittals/${submittal.id}`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{submittal.submittalNumber}</div>
+                      <div className="text-sm font-medium text-gray-100">{submittal.submittalNumber}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{submittal.projectName}</div>
+                      <div className="text-sm font-medium text-gray-100">{submittal.projectName}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getCategoryColor(submittal.category)}`}>
@@ -430,49 +411,21 @@ export default function SubmittalsPage() {
                         {submittal.status.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2 mr-2">
-                          <div 
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              submittal.completeness === 100 ? 'bg-green-500' : 
-                              submittal.completeness >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${submittal.completeness}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{submittal.completeness}%</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-900 dark:text-gray-100">{submittal.documents}</span>
-                        {submittal.comments > 0 && (
-                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                            {submittal.comments} comments
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(submittal.dateSubmitted).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                       {submittal.jurisdiction || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/submittals/${submittal.id}`}
-                          className="text-sky-600 hover:text-sky-900 dark:hover:text-sky-300 transition-colors"
+                          className="text-yellow-400 hover:text-yellow-300 transition-colors"
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+                        <button className="text-gray-400 hover:text-gray-200 transition-colors">
                           <Edit2 className="h-4 w-4" />
                         </button>
-                        <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors">
+                        <button className="text-gray-400 hover:text-gray-200 transition-colors">
                           <MoreVertical className="h-4 w-4" />
                         </button>
                       </div>
@@ -487,16 +440,16 @@ export default function SubmittalsPage() {
 
       {/* New Submittal Modal */}
       {showNewSubmittalModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50">
+          <div className="modal-modern max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-700/50">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">New Permit Submittal</h3>
+                <h3 className="text-lg font-semibold text-yellow-400">New Permit Submittal</h3>
                 <button
                   onClick={() => setShowNewSubmittalModal(false)}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="p-1 hover:bg-gray-700/50 rounded transition-colors"
                 >
-                  <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  <X className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
             </div>
@@ -504,10 +457,10 @@ export default function SubmittalsPage() {
             <form onSubmit={handleCreateSubmittal} className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Name *</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">Project Name *</label>
                   <input
                     type="text"
-                    className="input-modern text-gray-900 dark:text-gray-100"
+                    className="input-modern"
                     value={newSubmittal.projectName}
                     onChange={(e) => setNewSubmittal({ ...newSubmittal, projectName: e.target.value })}
                     required
@@ -515,9 +468,9 @@ export default function SubmittalsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jurisdiction *</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">Jurisdiction *</label>
                   <select
-                    className="input-modern text-gray-900 dark:text-gray-100"
+                    className="input-modern"
                     value={newSubmittal.jurisdiction}
                     onChange={(e) => setNewSubmittal({ ...newSubmittal, jurisdiction: e.target.value })}
                     required
@@ -532,12 +485,12 @@ export default function SubmittalsPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Address *</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">Project Address *</label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       type="text"
-                      className="input-modern pl-10 text-gray-900 dark:text-gray-100"
+                      className="input-modern pl-10"
                       value={newSubmittal.projectAddress}
                       onChange={(e) => setNewSubmittal({ ...newSubmittal, projectAddress: e.target.value })}
                       required
@@ -551,7 +504,7 @@ export default function SubmittalsPage() {
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       type="text"
-                      className="input-modern pl-10 text-gray-900 dark:text-gray-100"
+                      className="input-modern pl-10"
                       value={newSubmittal.applicant}
                       onChange={(e) => setNewSubmittal({ ...newSubmittal, applicant: e.target.value })}
                       required
@@ -565,7 +518,7 @@ export default function SubmittalsPage() {
                     <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       type="text"
-                      className="input-modern pl-10 text-gray-900 dark:text-gray-100"
+                      className="input-modern pl-10"
                       value={newSubmittal.contractor}
                       onChange={(e) => setNewSubmittal({ ...newSubmittal, contractor: e.target.value })}
                     />
@@ -575,7 +528,7 @@ export default function SubmittalsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Type *</label>
                   <select
-                    className="input-modern text-gray-900 dark:text-gray-100"
+                    className="input-modern"
                     value={newSubmittal.type}
                     onChange={(e) => setNewSubmittal({ ...newSubmittal, type: e.target.value })}
                     required
@@ -594,7 +547,7 @@ export default function SubmittalsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category *</label>
                   <select
-                    className="input-modern text-gray-900 dark:text-gray-100"
+                    className="input-modern"
                     value={newSubmittal.category}
                     onChange={(e) => setNewSubmittal({ ...newSubmittal, category: e.target.value as any })}
                     required
@@ -646,7 +599,7 @@ export default function SubmittalsPage() {
                 <button
                   type="button"
                   onClick={() => setShowNewSubmittalModal(false)}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>

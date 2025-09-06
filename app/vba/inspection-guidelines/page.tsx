@@ -21,7 +21,7 @@ export default function InspectionGuidelinesPage() {
   const [activeSection, setActiveSection] = useState('general')
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Header */}
       <PageTitle title="General Inspection Guidelines" subtitle="Standards and best practices for all inspections" />
       <div className="mb-6">
@@ -37,153 +37,153 @@ export default function InspectionGuidelinesPage() {
       <div className="p-6 max-w-7xl mx-auto">
         {/* General Guidelines */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">General Guidelines</h2>
+          <h2 className="text-2xl font-bold text-yellow-400 mb-6">General Guidelines</h2>
           
           {/* Pre-Inspection Requirements */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="card-modern hover-lift p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <FileText className="h-5 w-5 text-blue-600" />
               <h3 className="text-lg font-semibold text-gray-900">Pre-Inspection Requirements</h3>
             </div>
-            <ul className="space-y-2 text-gray-700">
+            <ul className="space-y-2 text-gray-300">
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Verify all required permits are obtained and posted on-site</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Ensure approved plans are available and match current construction</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Confirm site accessibility and safety measures are in place</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Review previous inspection reports and any outstanding violations</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Verify inspector credentials and jurisdiction authority</span>
               </li>
             </ul>
           </div>
 
           {/* Safety Protocols */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="card-modern hover-lift p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <Shield className="h-5 w-5 text-green-600" />
               <h3 className="text-lg font-semibold text-gray-900">Safety Protocols</h3>
             </div>
-            <ul className="space-y-2 text-gray-700">
+            <ul className="space-y-2 text-gray-300">
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Wear appropriate PPE including hard hat, safety vest, and steel-toed boots</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Never enter unsafe structures or areas without proper assessment</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Maintain awareness of active construction hazards</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Follow all OSHA safety guidelines and site-specific safety rules</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Report any immediate safety hazards to site supervisor</span>
               </li>
             </ul>
           </div>
 
           {/* Documentation Standards */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="card-modern hover-lift p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <ClipboardList className="h-5 w-5 text-purple-600" />
               <h3 className="text-lg font-semibold text-gray-900">Documentation Standards</h3>
             </div>
-            <ul className="space-y-2 text-gray-700">
+            <ul className="space-y-2 text-gray-300">
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Take clear, well-lit photographs of all inspected areas</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Document all violations with specific code references</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Record accurate measurements and locations of deficiencies</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Complete inspection reports within 24 hours of site visit</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Maintain chain of custody for all inspection documentation</span>
               </li>
             </ul>
           </div>
 
           {/* Common Violations */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="card-modern hover-lift p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className="h-5 w-5 text-red-600" />
               <h3 className="text-lg font-semibold text-gray-900">Common Violations</h3>
             </div>
-            <ul className="space-y-2 text-gray-700">
+            <ul className="space-y-2 text-gray-300">
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Missing or improper fire blocking in walls and ceilings</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Inadequate electrical grounding and bonding</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Improper plumbing venting or slope</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Missing hurricane straps or structural connectors</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Non-compliant egress windows or emergency exits</span>
               </li>
             </ul>
           </div>
 
           {/* Best Practices */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="card-modern hover-lift p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <CheckCircle className="h-5 w-5 text-indigo-600" />
               <h3 className="text-lg font-semibold text-gray-900">Best Practices</h3>
             </div>
-            <ul className="space-y-2 text-gray-700">
+            <ul className="space-y-2 text-gray-300">
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Arrive on time and check in with site supervisor</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Conduct systematic inspections following a consistent pattern</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Communicate findings clearly and professionally</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Provide educational guidance to contractors when appropriate</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-gray-400 mt-1">•</span>
+                <span className="text-yellow-400 mt-1">•</span>
                 <span>Follow up on corrections within established timeframes</span>
               </li>
             </ul>
@@ -192,13 +192,13 @@ export default function InspectionGuidelinesPage() {
 
         {/* Inspection-Specific Requirements */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Inspection-Specific Requirements</h2>
+          <h2 className="text-2xl font-bold text-yellow-400 mb-6">Inspection-Specific Requirements</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Foundation Inspections */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Foundation Inspections</h3>
-              <ul className="space-y-2 text-gray-700">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4">Foundation Inspections</h3>
+              <ul className="space-y-2 text-gray-300">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
                   <span>Verify footing dimensions match approved plans</span>
@@ -224,8 +224,8 @@ export default function InspectionGuidelinesPage() {
 
             {/* Framing Inspections */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Framing Inspections</h3>
-              <ul className="space-y-2 text-gray-700">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4">Framing Inspections</h3>
+              <ul className="space-y-2 text-gray-300">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
                   <span>Check lumber grade stamps and moisture content</span>
@@ -251,8 +251,8 @@ export default function InspectionGuidelinesPage() {
 
             {/* Electrical Inspections */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Electrical Inspections</h3>
-              <ul className="space-y-2 text-gray-700">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4">Electrical Inspections</h3>
+              <ul className="space-y-2 text-gray-300">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
                   <span>Verify proper wire sizing for circuit loads</span>
@@ -278,8 +278,8 @@ export default function InspectionGuidelinesPage() {
 
             {/* Plumbing Inspections */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Plumbing Inspections</h3>
-              <ul className="space-y-2 text-gray-700">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4">Plumbing Inspections</h3>
+              <ul className="space-y-2 text-gray-300">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
                   <span>Perform pressure tests on supply lines</span>
@@ -306,8 +306,8 @@ export default function InspectionGuidelinesPage() {
 
           {/* Final Inspections */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Final Inspections</h3>
-            <ul className="space-y-2 text-gray-700">
+            <h3 className="text-lg font-semibold text-yellow-400 mb-4">Final Inspections</h3>
+            <ul className="space-y-2 text-gray-300">
               <li className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
                 <span>Test all life safety systems (smoke/CO detectors)</span>
@@ -334,48 +334,48 @@ export default function InspectionGuidelinesPage() {
 
         {/* Important Code References */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Important Code References</h2>
+          <h2 className="text-2xl font-bold text-yellow-400 mb-6">Important Code References</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Building Codes:</h3>
-              <ul className="space-y-2 text-gray-700">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4">Building Codes:</h3>
+              <ul className="space-y-2 text-gray-300">
                 <li className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-1">•</span>
+                  <span className="text-yellow-400 mt-1">•</span>
                   <span>Florida Building Code (FBC) - Latest Edition</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-1">•</span>
+                  <span className="text-yellow-400 mt-1">•</span>
                   <span>International Building Code (IBC)</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-1">•</span>
+                  <span className="text-yellow-400 mt-1">•</span>
                   <span>National Electrical Code (NEC)</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-1">•</span>
+                  <span className="text-yellow-400 mt-1">•</span>
                   <span>International Plumbing Code (IPC)</span>
                 </li>
               </ul>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Standards:</h3>
-              <ul className="space-y-2 text-gray-700">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4">Additional Standards:</h3>
+              <ul className="space-y-2 text-gray-300">
                 <li className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-1">•</span>
+                  <span className="text-yellow-400 mt-1">•</span>
                   <span>ASCE 7 - Wind Load Requirements</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-1">•</span>
+                  <span className="text-yellow-400 mt-1">•</span>
                   <span>ADA Standards for Accessible Design</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-1">•</span>
+                  <span className="text-yellow-400 mt-1">•</span>
                   <span>NFPA Fire Protection Standards</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-1">•</span>
+                  <span className="text-yellow-400 mt-1">•</span>
                   <span>Energy Conservation Code</span>
                 </li>
               </ul>

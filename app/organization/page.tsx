@@ -179,17 +179,17 @@ export default function OrganizationPage() {
   ]
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
       <PageTitle title="Organization" subtitle="Manage company information and settings" />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div key={index} className="card-modern hover-lift backdrop-blur-sm p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                <p className="text-sm text-gray-400">{stat.label}</p>
+                <p className="text-2xl font-bold text-yellow-400 mt-1">{stat.value}</p>
               </div>
               <stat.icon className={`h-8 w-8 ${stat.color}`} />
             </div>
@@ -198,15 +198,15 @@ export default function OrganizationPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 mb-4 bg-gray-800/30 backdrop-blur-sm p-1 rounded-xl w-fit">
         {['details', 'team', 'billing', 'compliance'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
               activeTab === tab
-                ? 'bg-white text-sky-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-yellow-500/20 text-yellow-400 shadow-glow'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -216,15 +216,15 @@ export default function OrganizationPage() {
 
       {/* Tab Content */}
       {activeTab === 'details' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="card-modern hover-lift backdrop-blur-lg p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Company Details</h3>
+            <h3 className="text-lg font-semibold text-yellow-400">Company Details</h3>
             <button
               onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+              className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 hover:scale-105 shadow-glow font-semibold ${
                 isEditing 
-                  ? 'bg-green-600 text-white hover:bg-green-700' 
-                  : 'bg-sky-600 text-white hover:bg-sky-700'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-400 hover:to-green-500' 
+                  : 'bg-gradient-to-r from-yellow-500 to-orange-600 text-gray-900 hover:from-yellow-400 hover:to-orange-500'
               }`}
             >
               {isEditing ? (
@@ -244,50 +244,50 @@ export default function OrganizationPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Company Information */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
-                <Building className="h-4 w-4" />
+              <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
+                <Building className="h-4 w-4 text-yellow-400" />
                 Company Information
               </h4>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Company Name</label>
+                  <label className="block text-sm text-gray-400 mb-1">Company Name</label>
                   <input
                     type="text"
                     value={organizationData.companyName}
                     onChange={(e) => handleInputChange('companyName', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-200 placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Legal Name</label>
+                  <label className="block text-sm text-gray-400 mb-1">Legal Name</label>
                   <input
                     type="text"
                     value={organizationData.legalName}
                     onChange={(e) => handleInputChange('legalName', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-200 placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Tax ID</label>
+                    <label className="block text-sm text-gray-400 mb-1">Tax ID</label>
                     <input
                       type="text"
                       value={organizationData.taxId}
                       onChange={(e) => handleInputChange('taxId', e.target.value)}
                       disabled={!isEditing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-200 placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">License #</label>
+                    <label className="block text-sm text-gray-400 mb-1">License #</label>
                     <input
                       type="text"
                       value={organizationData.licenseNumber}
                       onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
                       disabled={!isEditing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-200 placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     />
                   </div>
                 </div>
@@ -296,8 +296,8 @@ export default function OrganizationPage() {
 
             {/* Contact Information */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
-                <Phone className="h-4 w-4" />
+              <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
+                <Phone className="h-4 w-4 text-yellow-400" />
                 Contact Information
               </h4>
               <div className="space-y-4">

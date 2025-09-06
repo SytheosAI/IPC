@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Sample VBA Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .button {
+            background-color: #4F46E5;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .button:hover {
+            background-color: #3730A3;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+        .info {
+            background-color: #EFF6FF;
+            color: #1E40AF;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Sample VBA Data for IPC App</h1>
+    <p>This page will create sample VBA projects in localStorage that the IPC app can use for testing.</p>
+    
+    <button class="button" onclick="createSampleData()">Create Sample VBA Projects</button>
+    <button class="button" onclick="clearAllData()">Clear All VBA Data</button>
+    <button class="button" onclick="showCurrentData()">Show Current Data</button>
+    
+    <div id="status"></div>
+    <div id="dataDisplay"></div>
+
+    <script>
+        function createSampleData() {
+            const sampleProjects = [
+                {
+                    id: "1757072313912",
+                    jobNumber: "VBA-001",
+                    projectName: "SWFL Terminal Expansion Phase 2",
+                    address: "368 Ashbury Way, Fort Myers, FL 33901",
+                    inspectionType: "Footings, Framing, Roofing Final",
+                    status: "in_progress",
+                    scheduledDate: new Date().toISOString(),
+                    inspector: "John Smith",
+                    completionRate: 65,
+                    complianceScore: 92,
+                    lastUpdated: new Date().toISOString(),
+                    virtualInspectorEnabled: true,
+                    photoCount: 12,
+                    violations: 2,
+                    aiConfidence: 95,
+                    selectedInspections: [
+                        "Footings",
+                        "Framing", 
+                        "Rough Electrical",
+                        "Rough Plumbing",
+                        "Roofing Final",
+                        "Final Building"
+                    ]
+                },
+                {
+                    id: "1757072313913",
+                    jobNumber: "VBA-002",
+                    projectName: "Downtown Office Complex",
+                    address: "1200 Main Street, Fort Myers, FL 33901",
+                    inspectionType: "Slab, Electrical, HVAC",
+                    status: "scheduled",
+                    scheduledDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+                    inspector: "Sarah Johnson",
+                    completionRate: 0,
+                    complianceScore: 0,
+                    lastUpdated: new Date().toISOString(),
+                    virtualInspectorEnabled: false,
+                    photoCount: 0,
+                    violations: 0,
+                    selectedInspections: [
+                        "Slab",
+                        "Rough Electrical", 
+                        "Rough HVAC",
+                        "Final Electrical",
+                        "Final HVAC"
+                    ]
+                },
+                {
+                    id: "1757072313914",
+                    jobNumber: "VBA-003",
+                    projectName: "Residential Development Phase 1",
+                    address: "555 Oak Avenue, Cape Coral, FL 33904",
+                    inspectionType: "Multiple Inspections",
+                    status: "completed",
+                    scheduledDate: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+                    inspector: "Mike Davis",
+                    completionRate: 100,
+                    complianceScore: 98,
+                    lastUpdated: new Date().toISOString(),
+                    virtualInspectorEnabled: true,
+                    photoCount: 28,
+                    violations: 0,
+                    selectedInspections: [
+                        "Pre Construction",
+                        "Footings",
+                        "Slab",
+                        "Framing",
+                        "Roofing Final",
+                        "Rough Electrical",
+                        "Rough Plumbing",
+                        "Final Building"
+                    ]
+                }
+            ];
+
+            // Save to localStorage
+            localStorage.setItem('vba-projects', JSON.stringify(sampleProjects));
+            
+            // Create some sample inspection events for the first project
+            const sampleEvents = [
+                {
+                    id: "event_1",
+                    title: "Footings",
+                    date: new Date(),
+                    type: "Footings",
+                    status: "completed"
+                },
+                {
+                    id: "event_2", 
+                    title: "Framing",
+                    date: new Date(Date.now() + 86400000),
+                    type: "Framing",
+                    status: "scheduled"
+                }
+            ];
+            
+            localStorage.setItem('vba-events-1757072313912', JSON.stringify(sampleEvents));
+            
+            // Create some sample photos for inspections
+            const samplePhotos = {
+                "Footings": [
+                    {
+                        id: "photo_1",
+                        name: "footings_north_wall.jpg",
+                        type: "file",
+                        size: "245.6 KB",
+                        uploadDate: new Date().toISOString(),
+                        uploadedBy: "John Smith"
+                    },
+                    {
+                        id: "photo_2", 
+                        name: "footings_south_wall.jpg",
+                        type: "file",
+                        size: "198.3 KB",
+                        uploadDate: new Date().toISOString(),
+                        uploadedBy: "John Smith"
+                    }
+                ],
+                "Framing": [
+                    {
+                        id: "photo_3",
+                        name: "framing_overview.jpg", 
+                        type: "file",
+                        size: "312.1 KB",
+                        uploadDate: new Date().toISOString(),
+                        uploadedBy: "John Smith"
+                    }
+                ]
+            };
+            
+            localStorage.setItem('vba-inspection-photos-1757072313912', JSON.stringify(samplePhotos));
+            
+            document.getElementById('status').innerHTML = '<div class="status success">✅ Sample VBA projects created successfully! You can now test the IPC app with real data.</div>';
+        }
+
+        function clearAllData() {
+            // Clear all VBA related data
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('vba-')) {
+                    keysToRemove.push(key);
+                }
+            }
+            
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            
+            document.getElementById('status').innerHTML = '<div class="status info">🗑️ All VBA data cleared from localStorage.</div>';
+            document.getElementById('dataDisplay').innerHTML = '';
+        }
+
+        function showCurrentData() {
+            const vbaProjects = localStorage.getItem('vba-projects');
+            const dataDisplay = document.getElementById('dataDisplay');
+            
+            if (vbaProjects) {
+                const projects = JSON.parse(vbaProjects);
+                let html = '<h3>Current VBA Projects in localStorage:</h3>';
+                html += '<pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">';
+                html += JSON.stringify(projects, null, 2);
+                html += '</pre>';
+                
+                // Show other VBA data
+                const otherKeys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('vba-') && key !== 'vba-projects') {
+                        otherKeys.push(key);
+                    }
+                }
+                
+                if (otherKeys.length > 0) {
+                    html += '<h4>Other VBA Data:</h4>';
+                    html += '<ul>';
+                    otherKeys.forEach(key => {
+                        html += `<li><strong>${key}</strong>: ${localStorage.getItem(key)?.substring(0, 100)}...</li>`;
+                    });
+                    html += '</ul>';
+                }
+                
+                dataDisplay.innerHTML = html;
+            } else {
+                dataDisplay.innerHTML = '<div class="status info">No VBA projects found in localStorage.</div>';
+            }
+        }
+
+        // Show current data on page load
+        window.onload = showCurrentData;
+    </script>
+</body>
+</html>

@@ -78,7 +78,7 @@ export default function DashboardPage() {
         projects = await db.projects.getAll()
       } catch (dbError) {
         console.warn('Failed to load projects from database:', dbError)
-        projects = [] // Use empty array as fallback
+        projects = [] // No fallback data
       }
       setRecentProjects(projects.slice(0, 10)) // Show only recent 10
 
@@ -181,43 +181,45 @@ export default function DashboardPage() {
   )
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-6 pb-6">
       {/* Header */}
-      <PageTitle 
-        title="Intelligent Plan Check Dashboard"
-      />
-      <div className="mb-4">
-        <div className="flex items-center justify-end mb-4">
-          <button 
-            onClick={loadDashboardData}
-            className="p-2 text-gray-600 hover:text-sky-600 transition-colors"
-            title="Refresh data"
-          >
-            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-        <div className="flex items-center bg-gradient-to-r from-sky-50 to-blue-50 border border-sky-200 rounded-lg p-3">
-          <Sparkles className="h-5 w-5 text-sky-600 mr-2" />
-          <span className="text-sm text-sky-800">
-            <strong>AI-Powered Analysis:</strong> Automatically reviewing plans for compliance and generating smart recommendations
-          </span>
+      <div className="mb-2 flex justify-center items-center relative">
+        <PageTitle 
+          title="Intelligent Plan Check Dashboard"
+        />
+        <button 
+          onClick={loadDashboardData}
+          className="absolute right-0 p-2 text-gray-600 hover:text-sky-600 transition-colors"
+          title="Refresh data"
+        >
+          <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+      <div className="mb-6">
+        <div className="card-modern hover-lift p-4">
+          <div className="flex items-center">
+            <Sparkles className="h-5 w-5 text-yellow-400 mr-2 shadow-glow" />
+            <span className="text-sm text-yellow-200">
+              <strong className="text-yellow-400">AI-Powered Analysis:</strong> Automatically reviewing plans for compliance and generating smart recommendations
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center h-64">
-          <RefreshCw className="h-8 w-8 animate-spin text-sky-500" />
-          <span className="ml-2 text-gray-600">Loading dashboard data...</span>
+          <div className="spinner-modern"></div>
+          <span className="ml-2 text-yellow-400">Loading dashboard data...</span>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div className="card-modern bg-gradient-to-r from-red-900/20 to-red-800/20 border-red-500/30 p-4 mb-6">
           <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-            <span className="text-red-800">{error}</span>
+            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <span className="text-red-300">{error}</span>
           </div>
         </div>
       )}
@@ -225,7 +227,7 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       {!loading && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {stats.map((stat, index) => {
               const Icon = stat.icon
               const colorClasses = getStatColorClasses(stat.color)
@@ -233,7 +235,7 @@ export default function DashboardPage() {
               return (
                 <div 
                   key={index} 
-                  className={`relative overflow-hidden bg-white rounded-xl shadow-lg border-2 ${colorClasses} p-6 card-hover`}
+                  className="card-modern hover-lift p-6 shadow-glow"
                 >
                   {/* Modern Gradient Background */}
                   <div className="absolute inset-0">
@@ -250,7 +252,7 @@ export default function DashboardPage() {
                   
                   <div className="relative z-10 flex items-start justify-between">
                     <div className="flex-shrink-0">
-                      <Icon className="h-10 w-10 opacity-80" />
+                      <Icon className="h-10 w-10 text-yellow-400" />
                       {stat.trend && (
                         <div className="mt-2 flex items-center text-xs">
                           {stat.trend === 'up' && <TrendingUp className="h-3 w-3 text-green-500 mr-1" />}
@@ -262,10 +264,10 @@ export default function DashboardPage() {
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                      <p className="text-3xl font-bold mt-1 text-gray-900">{stat.value}</p>
+                      <p className="text-sm font-medium text-yellow-400">{stat.label}</p>
+                      <p className="text-3xl font-bold mt-1 text-gray-100">{stat.value}</p>
                       {stat.description && (
-                        <p className="text-xs text-gray-500 mt-2">{stat.description}</p>
+                        <p className="text-xs text-gray-400 mt-2">{stat.description}</p>
                       )}
                     </div>
                   </div>
@@ -275,16 +277,16 @@ export default function DashboardPage() {
           </div>
 
           {/* Recent Applications Table */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
+          <div className="card-modern hover-lift overflow-hidden">
+            <div className="p-6 border-b border-gray-700/50">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Recent Applications</h2>
+                <h2 className="text-lg font-semibold text-yellow-400">Recent Applications</h2>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search applications..."
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    className="input-modern"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -293,10 +295,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="table-modern">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider">
                       Permit Number
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -313,25 +315,25 @@ export default function DashboardPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-700/30">
                   {filteredProjects.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
                         {searchQuery ? 'No projects found matching your search' : 'No projects yet. Create your first project to get started.'}
                       </td>
                     </tr>
                   ) : (
                     filteredProjects.map((project) => (
-                      <tr key={project.id} className="hover:bg-gray-50 cursor-pointer">
+                      <tr key={project.id} className="hover:bg-gray-800/30 cursor-pointer transition-all duration-200">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{project.permit_number}</div>
+                          <div className="text-sm font-medium text-gray-100">{project.permit_number}</div>
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{project.project_name}</div>
-                            <div className="text-sm text-gray-500">{project.address}</div>
+                            <div className="text-sm font-medium text-gray-100">{project.project_name}</div>
+                            <div className="text-sm text-gray-400">{project.address}</div>
                             {project.applicant && (
-                              <div className="text-xs text-gray-400 mt-1">{project.applicant}</div>
+                              <div className="text-xs text-gray-500 mt-1">{project.applicant}</div>
                             )}
                           </div>
                         </td>
@@ -342,14 +344,14 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex gap-3 text-sm">
-                            <span className="text-red-600 font-medium">{project.total_issues || 0}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="text-yellow-600 font-medium">{project.total_conditions || 0}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="text-blue-600 font-medium">{project.total_notes || 0}</span>
+                            <span className="text-red-400 font-medium">{project.total_issues || 0}</span>
+                            <span className="text-gray-600">/</span>
+                            <span className="text-yellow-400 font-medium">{project.total_conditions || 0}</span>
+                            <span className="text-gray-600">/</span>
+                            <span className="text-blue-400 font-medium">{project.total_notes || 0}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                           {project.submitted_date ? new Date(project.submitted_date).toLocaleDateString() : 'N/A'}
                         </td>
                       </tr>
@@ -361,26 +363,26 @@ export default function DashboardPage() {
           </div>
 
           {/* Additional Info Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             {/* Active Permits Summary */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Permits</h3>
+            <div className="card-modern hover-lift p-6">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4">Active Permits</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Commercial</span>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm text-gray-400">Commercial</span>
+                  <span className="text-sm font-semibold text-gray-100">
                     {recentProjects.filter(p => p.project_name.toLowerCase().includes('commercial')).length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Residential</span>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm text-gray-400">Residential</span>
+                  <span className="text-sm font-semibold text-gray-100">
                     {recentProjects.filter(p => p.project_name.toLowerCase().includes('residential')).length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Industrial</span>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm text-gray-400">Industrial</span>
+                  <span className="text-sm font-semibold text-gray-100">
                     {recentProjects.filter(p => p.project_name.toLowerCase().includes('industrial')).length}
                   </span>
                 </div>
@@ -388,44 +390,44 @@ export default function DashboardPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 card-hover">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <div className="card-modern hover-lift p-6">
+              <h3 className="text-lg font-semibold text-yellow-400 mb-4">Quick Actions</h3>
               <div className="space-y-2">
-                <button className="w-full text-left px-4 py-2 text-sm bg-sky-50 text-sky-700 rounded-lg hover:bg-sky-100 transition-colors">
+                <button className="btn-glass w-full justify-start mb-2">
                   Create New Application
                 </button>
-                <button className="w-full text-left px-4 py-2 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
+                <button className="btn-glass w-full justify-start mb-2">
                   Review Pending
                 </button>
-                <button className="w-full text-left px-4 py-2 text-sm bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">
+                <button className="btn-glass w-full justify-start">
                   Generate Reports
                 </button>
               </div>
             </div>
 
             {/* AI Analysis Insights */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg border border-purple-200 p-6 card-hover">
+            <div className="card-modern hover-lift p-6 bg-gradient-to-br from-yellow-400/10 via-yellow-500/5 to-yellow-600/10">
               <div className="flex items-center mb-4">
-                <Brain className="h-6 w-6 text-purple-600 mr-2" />
-                <h3 className="text-lg font-semibold text-gray-900">AI Insights</h3>
+                <Brain className="h-6 w-6 text-yellow-400 mr-2 shadow-glow" />
+                <h3 className="text-lg font-semibold text-yellow-400">AI Insights</h3>
               </div>
               <div className="space-y-3">
                 <div className="flex items-start">
                   <Zap className="h-4 w-4 text-yellow-500 mr-2 mt-1 flex-shrink-0" />
-                  <p className="text-sm text-gray-700">
-                    <strong>90%</strong> of applications processed within compliance timeframe
+                  <p className="text-sm text-gray-300">
+                    <strong className="text-yellow-400">90%</strong> of applications processed within compliance timeframe
                   </p>
                 </div>
                 <div className="flex items-start">
                   <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
-                  <p className="text-sm text-gray-700">
-                    Most common issue: <strong>Missing structural calculations</strong>
+                  <p className="text-sm text-gray-300">
+                    Most common issue: <strong className="text-yellow-400">Missing structural calculations</strong>
                   </p>
                 </div>
                 <div className="flex items-start">
                   <AlertCircle className="h-4 w-4 text-blue-500 mr-2 mt-1 flex-shrink-0" />
-                  <p className="text-sm text-gray-700">
-                    Recommendation: <strong>Automate preliminary reviews</strong>
+                  <p className="text-sm text-gray-300">
+                    Recommendation: <strong className="text-yellow-400">Automate preliminary reviews</strong>
                   </p>
                 </div>
               </div>

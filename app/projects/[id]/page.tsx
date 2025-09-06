@@ -14,10 +14,10 @@ export default function ProjectPage() {
   }, [projectId, router])
 
   return (
-    <div className="p-6 flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Redirecting to Project Control Center...</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6 flex items-center justify-center">
+      <div className="card-modern p-8 text-center shadow-glow">
+        <div className="spinner-modern mx-auto mb-4"></div>
+        <p className="text-yellow-400">Redirecting to Project Control Center...</p>
       </div>
     </div>
   )

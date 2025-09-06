@@ -206,7 +206,7 @@ export default function InspectorDirectoryPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Header */}
       <PageTitle title="Inspector Directory" subtitle="Manage and view inspector information" />
       <div className="mb-6 flex items-center justify-between">
@@ -218,7 +218,7 @@ export default function InspectorDirectoryPage() {
         </button>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+          className="btn-primary"
         >
           <UserPlus className="h-4 w-4" />
           Add Inspector
@@ -227,7 +227,7 @@ export default function InspectorDirectoryPage() {
 
       {/* Search and Filters */}
       <div className="p-6 max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="card-modern hover-lift p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -235,14 +235,14 @@ export default function InspectorDirectoryPage() {
                 <input
                   type="text"
                   placeholder="Search by name, email, license, or specialization..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="input-modern"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="input-modern text-sm"
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
             >
@@ -253,7 +253,7 @@ export default function InspectorDirectoryPage() {
               <option value="Junior Inspector">Junior Inspector</option>
             </select>
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="input-modern text-sm"
               value={filterAvailability}
               onChange={(e) => setFilterAvailability(e.target.value)}
             >
@@ -268,17 +268,17 @@ export default function InspectorDirectoryPage() {
         {/* Inspector Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredInspectors.map(inspector => (
-            <div key={inspector.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div key={inspector.id} className="card-modern hover-lift p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <span className="text-indigo-600 font-semibold text-lg">
+                  <div className="w-12 h-12 bg-yellow-400/20 rounded-full flex items-center justify-center">
+                    <span className="text-yellow-400 font-semibold text-lg">
                       {inspector.name.split(' ').map(n => n[0]).join('')}
                     </span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{inspector.name}</h3>
-                    <p className="text-sm text-gray-600">{inspector.role}</p>
+                    <h3 className="font-semibold text-yellow-400">{inspector.name}</h3>
+                    <p className="text-sm text-gray-300">{inspector.role}</p>
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -288,13 +288,13 @@ export default function InspectorDirectoryPage() {
                       setFormData(inspector)
                       setShowAddModal(true)
                     }}
-                    className="p-1 text-gray-400 hover:text-gray-600"
+                    className="p-1 text-gray-400 hover:text-yellow-400"
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteInspector(inspector.id)}
-                    className="p-1 text-gray-400 hover:text-red-600"
+                    className="p-1 text-gray-400 hover:text-red-400"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -302,19 +302,19 @@ export default function InspectorDirectoryPage() {
               </div>
 
               <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-300">
                   <Award className="h-4 w-4" />
                   <span>{inspector.licenseNumber}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-300">
                   <Mail className="h-4 w-4" />
                   <span>{inspector.email}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-300">
                   <Phone className="h-4 w-4" />
                   <span>{inspector.phone}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-300">
                   <MapPin className="h-4 w-4" />
                   <span>{inspector.location}</span>
                 </div>
@@ -325,10 +325,10 @@ export default function InspectorDirectoryPage() {
                   <Star className="h-4 w-4 text-yellow-500 fill-current" />
                   <span className="font-medium">{inspector.rating}</span>
                 </div>
-                <div className="text-gray-600">
+                <div className="text-gray-300">
                   {inspector.completedInspections} inspections
                 </div>
-                <div className="text-gray-600">
+                <div className="text-gray-300">
                   {inspector.yearsExperience} years
                 </div>
               </div>
@@ -336,7 +336,7 @@ export default function InspectorDirectoryPage() {
               <div className="mb-4">
                 <div className="flex flex-wrap gap-1">
                   {inspector.specializations.map((spec, index) => (
-                    <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                    <span key={index} className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
                       {spec}
                     </span>
                   ))}
@@ -354,7 +354,7 @@ export default function InspectorDirectoryPage() {
                   {inspector.availability === 'available' ? 'Available' : 
                    inspector.availability === 'busy' ? 'Busy' : 'Unavailable'}
                 </span>
-                <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                <button className="text-yellow-400 hover:text-yellow-300 text-sm font-medium transition-colors">
                   View Profile
                 </button>
               </div>
@@ -363,21 +363,21 @@ export default function InspectorDirectoryPage() {
         </div>
 
         {filteredInspectors.length === 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No inspectors found</h3>
-            <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+          <div className="card-modern p-12 text-center">
+            <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-yellow-400 mb-2">No inspectors found</h3>
+            <p className="text-gray-400">Try adjusting your search or filter criteria</p>
           </div>
         )}
       </div>
 
       {/* Add/Edit Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50">
+          <div className="modal-modern w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-600">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-yellow-400">
                   {editingInspector ? 'Edit Inspector' : 'Add New Inspector'}
                 </h2>
                 <button
@@ -399,7 +399,7 @@ export default function InspectorDirectoryPage() {
                       certifications: []
                     })
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-yellow-400"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -409,10 +409,10 @@ export default function InspectorDirectoryPage() {
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label className="block text-sm font-medium text-yellow-400 mb-1">Name</label>
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    className="input-modern"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
@@ -527,13 +527,13 @@ export default function InspectorDirectoryPage() {
                   setShowAddModal(false)
                   setEditingInspector(null)
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                className="btn-secondary"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveInspector}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
+                className="btn-primary"
               >
                 <Save className="h-4 w-4" />
                 {editingInspector ? 'Update' : 'Add'} Inspector

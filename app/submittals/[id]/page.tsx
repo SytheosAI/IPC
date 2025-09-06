@@ -133,23 +133,23 @@ export default function SubmittalDetailPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
       {/* Header */}
       <div className="mb-6">
         <Link 
           href="/submittals" 
-          className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-4"
+          className="inline-flex items-center text-gray-400 hover:text-yellow-400 transition-colors mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Submittals
         </Link>
         
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="card-modern hover-lift p-6">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">{submittal.projectName}</h1>
+              <h1 className="text-2xl font-bold text-gray-100 mb-2">{submittal.projectName}</h1>
               <div className="space-y-2">
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-sm text-gray-400">
                   <span className="flex items-center gap-1">
                     <FileText className="h-4 w-4" />
                     {submittal.permitNumber}
@@ -159,7 +159,7 @@ export default function SubmittalDetailPage() {
                     {submittal.projectAddress}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-sm text-gray-400">
                   <span className="flex items-center gap-1">
                     <Building className="h-4 w-4" />
                     {submittal.applicant}
@@ -192,15 +192,15 @@ export default function SubmittalDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
-        <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="card-modern hover-lift mb-6">
+        <div className="border-b border-gray-700/50">
           <nav className="flex">
             <button
               onClick={() => setActiveTab('checklist')}
               className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'checklist'
-                  ? 'border-sky-500 text-sky-600 dark:text-sky-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'border-yellow-500 text-yellow-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -212,8 +212,8 @@ export default function SubmittalDetailPage() {
               onClick={() => setActiveTab('plans')}
               className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'plans'
-                  ? 'border-sky-500 text-sky-600 dark:text-sky-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'border-yellow-500 text-yellow-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -225,8 +225,8 @@ export default function SubmittalDetailPage() {
               onClick={() => setActiveTab('documents')}
               className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'documents'
-                  ? 'border-sky-500 text-sky-600 dark:text-sky-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'border-yellow-500 text-yellow-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -244,10 +244,10 @@ export default function SubmittalDetailPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  <h3 className="text-lg font-semibold text-yellow-400">
                     {submittal.jurisdiction} Permit Requirements
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-gray-400 mt-1">
                     Review and track all required items for permit approval
                   </p>
                 </div>
@@ -263,20 +263,20 @@ export default function SubmittalDetailPage() {
                 const progress = getCategoryProgress(category)
                 
                 return (
-                  <div key={category} className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div key={category} className="card-glass rounded-lg">
                     <button
                       onClick={() => toggleCategory(category)}
-                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-800/30 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <ChevronRight className={`h-5 w-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{category}</h4>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                        <h4 className="font-medium text-gray-100">{category}</h4>
+                        <span className="text-sm text-gray-400">
                           ({categoryItems.filter(i => i.status === 'approved').length}/{categoryItems.length})
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="w-32 bg-gray-700 rounded-full h-2">
                           <div 
                             className={`h-2 rounded-full transition-all duration-300 ${
                               progress === 100 ? 'bg-green-500' : 
@@ -285,39 +285,39 @@ export default function SubmittalDetailPage() {
                             style={{ width: `${progress}%` }}
                           />
                         </div>
-                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{progress}%</span>
+                        <span className="text-sm font-medium text-gray-400">{progress}%</span>
                       </div>
                     </button>
                     
                     {isExpanded && (
-                      <div className="border-t border-gray-200 dark:border-gray-700">
+                      <div className="border-t border-gray-700/50">
                         {categoryItems.map(item => (
-                          <div key={item.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800 border-t border-gray-200 dark:border-gray-700 first:border-t-0">
+                          <div key={item.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-800/30 border-t border-gray-700/50 first:border-t-0 transition-colors">
                             <div className="flex items-center gap-3">
                               {getStatusIcon(item.status)}
                               <div>
-                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                <p className="text-sm font-medium text-gray-100">
                                   {item.item}
-                                  {item.required && <span className="text-red-500 ml-1">*</span>}
+                                  {item.required && <span className="text-red-400 ml-1">*</span>}
                                 </p>
                                 {item.notes && (
-                                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{item.notes}</p>
+                                  <p className="text-xs text-red-400 mt-1">{item.notes}</p>
                                 )}
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
                               {item.reviewer && (
                                 <div className="text-right">
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">Reviewed by</p>
-                                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.reviewer}</p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">{item.reviewDate}</p>
+                                  <p className="text-xs text-gray-500">Reviewed by</p>
+                                  <p className="text-sm font-medium text-gray-300">{item.reviewer}</p>
+                                  <p className="text-xs text-gray-500">{item.reviewDate}</p>
                                 </div>
                               )}
                               <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
                                 {item.status.toUpperCase()}
                               </span>
-                              <button className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-                                <Eye className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                              <button className="p-1 hover:bg-gray-700/50 rounded transition-colors">
+                                <Eye className="h-4 w-4 text-gray-400" />
                               </button>
                             </div>
                           </div>
@@ -334,7 +334,7 @@ export default function SubmittalDetailPage() {
           {activeTab === 'plans' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Project Plans</h3>
+                <h3 className="text-lg font-semibold text-yellow-400">Project Plans</h3>
                 <button className="btn-primary">
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Plan
@@ -343,19 +343,19 @@ export default function SubmittalDetailPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Plan items would be mapped here */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow cursor-pointer">
-                  <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded mb-3 flex items-center justify-center">
-                    <FileImage className="h-16 w-16 text-gray-400" />
+                <div className="card-glass rounded-lg p-4 hover-lift cursor-pointer">
+                  <div className="aspect-square bg-gray-700/50 rounded mb-3 flex items-center justify-center">
+                    <FileImage className="h-16 w-16 text-gray-500" />
                   </div>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">Site Plan v2.pdf</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Uploaded Jan 15, 2024</p>
+                  <h4 className="font-medium text-gray-100 text-sm">Site Plan v2.pdf</h4>
+                  <p className="text-xs text-gray-500 mt-1">Uploaded Jan 15, 2024</p>
                   <div className="flex items-center justify-between mt-3">
-                    <span className="text-xs text-gray-600 dark:text-gray-400">2.3 MB</span>
+                    <span className="text-xs text-gray-400">2.3 MB</span>
                     <div className="flex gap-2">
-                      <button className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300">
+                      <button className="text-yellow-400 hover:text-yellow-300 transition-colors">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300">
+                      <button className="text-yellow-400 hover:text-yellow-300 transition-colors">
                         <Download className="h-4 w-4" />
                       </button>
                     </div>
@@ -369,7 +369,7 @@ export default function SubmittalDetailPage() {
           {activeTab === 'documents' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Supporting Documents</h3>
+                <h3 className="text-lg font-semibold text-yellow-400">Supporting Documents</h3>
                 <button className="btn-primary">
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Document
@@ -378,7 +378,7 @@ export default function SubmittalDetailPage() {
               
               <div className="space-y-3">
                 {/* Document items would be mapped here */}
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between p-4 card-glass rounded-lg hover-lift">
                   <div className="flex items-center gap-3">
                     <FileCheck className="h-10 w-10 text-gray-400" />
                     <div>
@@ -387,11 +387,11 @@ export default function SubmittalDetailPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-                      <Eye className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                    <button className="p-2 hover:bg-gray-700/50 rounded transition-colors">
+                      <Eye className="h-4 w-4 text-gray-400" />
                     </button>
-                    <button className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-                      <Download className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                    <button className="p-2 hover:bg-gray-700/50 rounded transition-colors">
+                      <Download className="h-4 w-4 text-gray-400" />
                     </button>
                   </div>
                 </div>

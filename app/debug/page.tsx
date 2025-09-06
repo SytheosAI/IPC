@@ -92,31 +92,31 @@ export default function DebugPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
         <PageTitle title="Debugging Supabase Connection..." />
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
       </div>
     )
   }
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
       <PageTitle title="Supabase Debug Results" subtitle="Connection and table test results" />
       
       <div className="space-y-6">
         {Object.entries(results).map(([key, value]: [string, any]) => (
-          <div key={key} className="border rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-2 capitalize">{key.replace(/([A-Z])/g, ' $1')}</h2>
-            <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto">
+          <div key={key} className="card-modern hover-lift backdrop-blur-lg p-4">
+            <h2 className="text-lg font-semibold text-yellow-400 mb-2 capitalize">{key.replace(/([A-Z])/g, ' $1')}</h2>
+            <pre className="bg-gray-800/50 backdrop-blur-sm p-3 rounded-xl text-sm overflow-auto text-gray-200 border border-gray-600/50">
               {JSON.stringify(value, null, 2)}
             </pre>
           </div>
         ))}
       </div>
 
-      <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-        <h3 className="font-semibold mb-2">Instructions:</h3>
-        <ul className="list-disc list-inside space-y-1 text-sm">
+      <div className="mt-8 card-modern backdrop-blur-lg p-4 border border-blue-500/30">
+        <h3 className="font-semibold text-yellow-400 mb-2">Instructions:</h3>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-300">
           <li>Check the &quot;Supabase Config&quot; - both URL and key should show &quot;Set&quot;</li>
           <li>Look at each table test - they should show &quot;SUCCESS&quot; status</li>
           <li>If you see &quot;ERROR&quot; status, check the error message</li>
@@ -126,7 +126,7 @@ export default function DebugPage() {
 
       <button 
         onClick={testConnections}
-        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        className="mt-6 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 text-gray-900 rounded-xl hover:from-yellow-400 hover:to-orange-500 transition-all duration-300 hover:scale-105 shadow-glow font-semibold"
       >
         Re-run Tests
       </button>

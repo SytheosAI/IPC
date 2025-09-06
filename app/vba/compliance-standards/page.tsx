@@ -189,7 +189,7 @@ export default function ComplianceStandardsPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Header */}
       <PageTitle title="Compliance Standards" subtitle="Building codes and regulatory requirements" />
       <div className="mb-6">
@@ -203,7 +203,7 @@ export default function ComplianceStandardsPage() {
 
       {/* Search and Filter */}
       <div className="p-6 max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="card-modern hover-lift p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -211,14 +211,14 @@ export default function ComplianceStandardsPage() {
                 <input
                   type="text"
                   placeholder="Search standards by code, title, or description..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="input-modern"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="input-modern text-sm"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
@@ -239,8 +239,8 @@ export default function ComplianceStandardsPage() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`p-3 rounded-lg border transition-all ${
                   selectedCategory === cat.id 
-                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700' 
-                    : 'bg-white border-gray-200 hover:border-gray-300 text-gray-700'
+                    ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400' 
+                    : 'bg-gray-800 border-gray-600 hover:border-gray-500 text-gray-300'
                 }`}
               >
                 <Icon className="h-5 w-5 mx-auto mb-1" />
@@ -257,7 +257,7 @@ export default function ComplianceStandardsPage() {
             const Icon = category?.icon || Shield
             
             return (
-              <div key={standard.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div key={standard.id} className="card-modern hover-lift p-6">
                 <div className="flex items-start gap-4">
                   <div className={`p-2 rounded-lg ${
                     standard.category === 'electrical' ? 'bg-yellow-100' :
@@ -286,24 +286,24 @@ export default function ComplianceStandardsPage() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded mb-2">
+                        <span className="inline-block px-2 py-1 bg-gray-700 text-yellow-400 text-xs font-medium rounded mb-2">
                           {standard.code}
                         </span>
-                        <h3 className="text-lg font-semibold text-gray-900">{standard.title}</h3>
+                        <h3 className="text-lg font-semibold text-yellow-400">{standard.title}</h3>
                       </div>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-400">
                         Updated: {new Date(standard.lastUpdated).toLocaleDateString()}
                       </span>
                     </div>
                     
-                    <p className="text-gray-600 mb-3">{standard.description}</p>
+                    <p className="text-gray-300 mb-3">{standard.description}</p>
                     
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Critical Points:</h4>
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg p-3">
+                      <h4 className="text-sm font-medium text-yellow-400 mb-2">Critical Points:</h4>
                       <ul className="space-y-1">
                         {standard.criticalPoints.map((point, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
+                            <CheckCircle className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
                             <span>{point}</span>
                           </li>
                         ))}
@@ -317,10 +317,10 @@ export default function ComplianceStandardsPage() {
         </div>
 
         {filteredStandards.length === 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No standards found</h3>
-            <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+          <div className="card-modern p-12 text-center">
+            <AlertTriangle className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-yellow-400 mb-2">No standards found</h3>
+            <p className="text-gray-400">Try adjusting your search or filter criteria</p>
           </div>
         )}
       </div>
