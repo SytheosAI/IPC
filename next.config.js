@@ -16,8 +16,13 @@ const nextConfig = {
   // Webpack optimizations for speed
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
 
+    // Exclude Supabase from server-side bundling to prevent SSR issues
+    if (isServer) {
+      config.externals = [...(config.externals || []), '@supabase/supabase-js'];
+    }
+
     // Production optimizations
-    if (!dev) {
+    if (!dev && !isServer) {
       config.optimization = {
         ...config.optimization,
         moduleIds: 'deterministic',
@@ -25,8 +30,15 @@ const nextConfig = {
         splitChunks: {
           chunks: 'all',
           cacheGroups: {
+            supabase: {
+              test: /[\\/]node_modules[\\/]@supabase[\\/]/,
+              name: 'supabase',
+              chunks: 'async',
+              priority: 20,
+              enforce: true,
+            },
             vendor: {
-              test: /[\\/]node_modules[\\/]/,
+              test: /[\\/]node_modules[\\/](?!@supabase)/,
               name: 'vendors',
               chunks: 'all',
               priority: 10,
