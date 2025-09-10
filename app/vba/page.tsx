@@ -1257,8 +1257,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
       virtual_inspector_enabled: false,
       inspection_count: 0,
       compliance_score: 100,
-      selected_inspections: selectedInspections,
-      notes: `Project Type: ${projectData.projectType}\nInspections: ${selectedInspections.join(', ')}`
+      notes: `Project Type: ${projectData.projectType}\nSelected Inspections: ${selectedInspections.join(', ')}`
     }
 
     onSave(newProject)
