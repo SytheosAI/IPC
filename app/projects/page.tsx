@@ -29,7 +29,7 @@ import {
   MoreVertical,
   ArrowUpDown
 } from 'lucide-react'
-import { db } from '@/lib/supabase-client'
+import { useSupabase } from '@/app/hooks/useSupabase'
 import PageTitle from '@/components/PageTitle'
 
 interface Project {
@@ -58,6 +58,7 @@ interface Project {
 
 export default function ProjectsPage() {
   const router = useRouter()
+  const { client, loading: supabaseLoading, execute } = useSupabase()
   const [projects, setProjects] = useState<Project[]>([])
   const [showNewProjectModal, setShowNewProjectModal] = useState(false)
   
@@ -80,16 +81,22 @@ export default function ProjectsPage() {
   
   // Load projects from Supabase on mount
   useEffect(() => {
+    if (!client || supabaseLoading) return
+    
     const loadProjects = async () => {
       try {
-        const data = await db.projects.getAll()
+        const data = await execute(async (supabase) => {
+          const { data, error } = await supabase.from('projects').select('*')
+          if (error) throw error
+          return data || []
+        })
         setProjects(data)
       } catch (error) {
         console.error('Failed to load projects:', error)
       }
     }
     loadProjects()
-  }, [])
+  }, [client, supabaseLoading, execute])
   
   // Generate permit number
   const generatePermitNumber = () => {
@@ -212,64 +219,52 @@ export default function ProjectsPage() {
 
       {/* Filters and Search */}
       <div className="card-modern hover-lift p-4 mb-4">
-        <div className="flex flex-col lg:flex-row gap-3">
+        <div className="flex items-center gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search by project name, number, city, or permit..."
-              className="input-modern"
+              className="input-modern pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
-          <div className="flex flex-wrap gap-2">
-            <select
-              className="input-modern"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="in_queue">In Queue</option>
-              <option value="in_progress">In Progress</option>
-              <option value="on_hold">On Hold</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+          <select
+            className="input-modern w-36"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="in_queue">In Queue</option>
+            <option value="in_progress">In Progress</option>
+            <option value="on_hold">On Hold</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
 
-            <select
-              className="input-modern"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-            >
-              <option value="all">All Categories</option>
-              <option value="residential">Residential</option>
-              <option value="commercial">Commercial</option>
-              <option value="industrial">Industrial</option>
-              <option value="municipal">Municipal</option>
-            </select>
-
-            <button className="btn-secondary flex items-center gap-1 px-3 py-2 text-sm">
-              <Filter className="h-4 w-4" />
-              Filters
-            </button>
-
-            <button className="btn-secondary flex items-center gap-1 px-3 py-2 text-sm">
-              <Download className="h-4 w-4" />
-              Export
-            </button>
-          </div>
+          <select
+            className="input-modern w-40"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+          >
+            <option value="all">All Categories</option>
+            <option value="residential">Residential</option>
+            <option value="commercial">Commercial</option>
+            <option value="industrial">Industrial</option>
+            <option value="municipal">Municipal</option>
+          </select>
         </div>
       </div>
 
       {/* Projects Table */}
-      <div className="card-modern hover-lift overflow-hidden">
+      <div className="card-modern hover-lift">
         <div className="overflow-x-auto">
-          <table className="table-modern">
+          <table className="table-modern w-full min-w-[800px]">
             <thead>
               <tr>
-                <th className="px-6 py-3 text-left">
+                <th className="px-4 py-3 text-left">
                   <button
                     className="flex items-center gap-1 text-xs font-bold text-yellow-400 uppercase tracking-wider hover:text-yellow-300"
                     onClick={() => {
@@ -285,22 +280,22 @@ export default function ProjectsPage() {
                     <ArrowUpDown className="h-4 w-4" />
                   </button>
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider">
                   City
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Applicant
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Permit #
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>

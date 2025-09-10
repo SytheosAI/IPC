@@ -30,7 +30,6 @@ import {
   Loader2
 } from 'lucide-react'
 import PageTitle from '@/components/PageTitle'
-import { supabase } from '@/lib/supabase-client'
 
 interface Member {
   id: string
@@ -82,8 +81,6 @@ export default function MembersPage() {
     folder: 'contractors' as Member['folder']
   })
 
-  // Using imported supabase client
-
   const folders = [
     { 
       id: 'team' as const, 
@@ -123,7 +120,7 @@ export default function MembersPage() {
     }
   ]
 
-  // Load members from Supabase
+  // Load members from API
   useEffect(() => {
     loadMembers()
     loadMessages()
@@ -132,19 +129,12 @@ export default function MembersPage() {
   const loadMembers = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('members')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error loading members:', error.message || 'Unknown error occurred')
-        setMembers([])
-      } else {
-        setMembers(data || [])
-      }
+      const response = await fetch('/api/members')
+      const result = await response.json()
+      setMembers(result.data || [])
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Error loading members:', error)
+      setMembers([])
     } finally {
       setLoading(false)
     }
@@ -152,17 +142,8 @@ export default function MembersPage() {
 
   const loadMessages = async () => {
     try {
-      const { data, error } = await supabase
-        .from('member_messages')
-        .select('*')
-        .order('created_at', { ascending: true })
-
-      if (error) {
-        console.error('Error loading messages:', error.message || 'Unknown error occurred')
-        setMessages([])
-      } else {
-        setMessages(data || [])
-      }
+      // For now, just set empty messages since we don't have a messages API yet
+      setMessages([])
     } catch (error) {
       console.error('Error:', error)
     }
@@ -184,16 +165,20 @@ export default function MembersPage() {
     }
     
     try {
-      const { data, error } = await supabase
-        .from('members')
-        .insert([member])
-        .select()
-        .single()
+      const response = await fetch('/api/members', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(member)
+      })
 
-      if (error) {
-        console.error('Error adding member:', error)
-        alert('Failed to add member')
-      } else if (data) {
+      if (!response.ok) {
+        throw new Error('Failed to add member')
+      }
+
+      const { data } = await response.json()
+      if (data) {
         setMembers([data, ...members])
         setShowAddModal(false)
         setNewMember({
@@ -215,17 +200,15 @@ export default function MembersPage() {
     if (!confirm('Are you sure you want to delete this contact?')) return
 
     try {
-      const { error } = await supabase
-        .from('members')
-        .delete()
-        .eq('id', memberId)
+      const response = await fetch(`/api/members/${memberId}`, {
+        method: 'DELETE'
+      })
 
-      if (error) {
-        console.error('Error deleting member:', error)
-        alert('Failed to delete member')
-      } else {
-        setMembers(members.filter(m => m.id !== memberId))
+      if (!response.ok) {
+        throw new Error('Failed to delete member')
       }
+
+      setMembers(members.filter(m => m.id !== memberId))
     } catch (error) {
       console.error('Error:', error)
       alert('Failed to delete member')
@@ -235,11 +218,9 @@ export default function MembersPage() {
   const handleSendMessage = async () => {
     if (!selectedMember || !newMessage.trim()) return
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
     const message = {
-      sender_id: user.id,
+      id: Date.now().toString(),
+      sender_id: 'current-user',
       sender_name: 'You',
       recipient_id: selectedMember.id,
       content: newMessage,
@@ -248,19 +229,9 @@ export default function MembersPage() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('member_messages')
-        .insert([message])
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error sending message:', error)
-        alert('Failed to send message')
-      } else if (data) {
-        setMessages([...messages, data])
-        setNewMessage('')
-      }
+      // For now, just add to local state since we don't have a messages API
+      setMessages([...messages, message])
+      setNewMessage('')
     } catch (error) {
       console.error('Error:', error)
       alert('Failed to send message')

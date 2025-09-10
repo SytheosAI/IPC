@@ -107,23 +107,26 @@ export default function VBAProjectDetailPage() {
           const result = await response.json()
           if (result.data) {
             // Map database fields to component fields
+            // Parse selected inspections from notes if not in dedicated field
+            let selectedInspections = result.data.selected_inspections || []
+            
+            // If no selected_inspections field, try to parse from notes
+            if ((!selectedInspections || selectedInspections.length === 0) && result.data.notes) {
+              const notesLines = result.data.notes.split('\n')
+              const inspectionsLine = notesLines.find((line: string) => line.startsWith('Inspections:'))
+              if (inspectionsLine) {
+                const inspectionsStr = inspectionsLine.replace('Inspections:', '').trim()
+                selectedInspections = inspectionsStr.split(',').map((i: string) => i.trim()).filter((i: string) => i.length > 0)
+              }
+            }
+            
             const apiProject = {
               ...result.data,
               projectName: result.data.project_name,
               jobNumber: result.data.job_number,
               projectType: result.data.project_type,
               startDate: result.data.start_date,
-              selectedInspections: result.data.selected_inspections || [
-                'Foundation Inspection',
-                'Framing Inspection', 
-                'Electrical Rough-In',
-                'Plumbing Rough-In',
-                'Insulation Inspection',
-                'Drywall Inspection',
-                'Final Electrical',
-                'Final Plumbing',
-                'Final Building'
-              ]
+              selectedInspections: selectedInspections
             }
             setProject(apiProject)
             setEditedProject(apiProject)
@@ -540,7 +543,7 @@ export default function VBAProjectDetailPage() {
                       </div>
                 ) : (
                   // Show the list of inspections
-                  project?.selectedInspections ? (
+                  project?.selectedInspections && project.selectedInspections.length > 0 ? (
                       <div className="space-y-4 mb-6">
                         <h3 className="font-bold text-yellow-400 mb-3">Select an inspection to manage:</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -561,7 +564,12 @@ export default function VBAProjectDetailPage() {
                           ))}
                         </div>
                       </div>
-                  ) : null
+                  ) : (
+                    <div className="card-glass p-8 text-center">
+                      <p className="text-yellow-400 text-lg mb-2">No inspections selected for this project</p>
+                      <p className="text-gray-300 text-sm">Please edit the project to add inspections</p>
+                    </div>
+                  )
                 )}
               </div>
             ) : activeFolder === 'templates' ? (

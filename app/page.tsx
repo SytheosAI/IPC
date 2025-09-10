@@ -48,6 +48,22 @@ interface ProjectSummary {
   total_notes?: number
 }
 
+interface ActivityItem {
+  id: string
+  type: 'application_added' | 'application_status' | 'application_closed' | 
+        'project_added' | 'project_closed' | 'vba_added' | 
+        'inspection_scheduled' | 'inspection_completed' | 
+        'field_report' | 'contact_added' | 'message_received'
+  action: string
+  project?: string
+  jurisdiction?: string
+  timestamp: string
+  user?: string
+  details?: string
+  icon?: string
+  color?: string
+}
+
 export default function DashboardPage() {
   const { client, loading: supabaseLoading, execute } = useSupabase()
   const [searchQuery, setSearchQuery] = useState('')
@@ -55,6 +71,9 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStat[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [filterProject, setFilterProject] = useState('all')
+  const [filterJurisdiction, setFilterJurisdiction] = useState('all')
+  const [activities, setActivities] = useState<ActivityItem[]>([])
 
   useEffect(() => {
     if (!client || supabaseLoading) return
@@ -89,6 +108,9 @@ export default function DashboardPage() {
       })
       
       setRecentProjects(projects)
+      
+      // Load real activity data from database (empty for now since no activity tracking yet)
+      setActivities([])
 
       // Calculate stats based on actual data
       const pendingCount = projects.filter((p: ProjectSummary) => p.status === 'in_review').length
@@ -187,6 +209,14 @@ export default function DashboardPage() {
     project.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (project.applicant && project.applicant.toLowerCase().includes(searchQuery.toLowerCase()))
   )
+  
+  const filteredActivities = activities.filter(activity => {
+    const matchesProject = filterProject === 'all' || 
+      activity.project?.toLowerCase().includes(filterProject.toLowerCase())
+    const matchesJurisdiction = filterJurisdiction === 'all' || 
+      activity.jurisdiction?.toLowerCase().replace(/\s+/g, '_') === filterJurisdiction
+    return matchesProject && matchesJurisdiction
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-6 pb-6">
@@ -284,20 +314,33 @@ export default function DashboardPage() {
             })}
           </div>
 
-          {/* Recent Applications Table */}
+          {/* Recent Activity Table */}
           <div className="card-modern hover-lift overflow-hidden">
-            <div className="p-6 border-b border-gray-700/50">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-yellow-400">Recent Applications</h2>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search applications..."
-                    className="input-modern"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+            <div className="px-6 py-3 border-b border-gray-700/50">
+              <div className="flex items-center justify-center relative">
+                <h2 className="text-lg font-semibold text-yellow-400">Recent Activity</h2>
+                <div className="absolute right-0 flex gap-3">
+                  <select
+                    className="input-modern w-32"
+                    value={filterProject}
+                    onChange={(e) => setFilterProject(e.target.value)}
+                  >
+                    <option value="all">Projects</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="residential">Residential</option>
+                    <option value="industrial">Industrial</option>
+                  </select>
+                  <select
+                    className="input-modern w-36"
+                    value={filterJurisdiction}
+                    onChange={(e) => setFilterJurisdiction(e.target.value)}
+                  >
+                    <option value="all">Jurisdictions</option>
+                    <option value="fort_myers">Fort Myers</option>
+                    <option value="cape_coral">Cape Coral</option>
+                    <option value="naples">Naples</option>
+                    <option value="lee_county">Lee County</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -306,61 +349,55 @@ export default function DashboardPage() {
               <table className="table-modern w-full">
                 <thead>
                   <tr className="border-b border-gray-700/50">
-                    <th className="px-4 py-3 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider w-1/6">
-                      Permit Number
+                    <th className="px-4 py-3 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider">
+                      Time
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/6">
-                      Project Details
+                    <th className="px-4 py-3 text-left text-xs font-bold text-yellow-400 uppercase tracking-wider">
+                      Activity
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                      Status
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Project
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                      Issues/Conditions/Notes
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Jurisdiction
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                      Submitted
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Details
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700/30">
-                  {filteredProjects.length === 0 ? (
+                  {filteredActivities.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-12 text-center text-gray-400">
-                        {searchQuery ? 'No projects found matching your search' : 'No projects yet. Create your first project to get started.'}
+                      <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                        No recent activity
                       </td>
                     </tr>
                   ) : (
-                    filteredProjects.map((project) => (
-                      <tr key={project.id} className="hover:bg-gray-800/30 cursor-pointer transition-all duration-200">
-                        <td className="px-4 py-3 whitespace-nowrap w-1/6">
-                          <div className="text-sm font-medium text-gray-100 truncate">{project.permit_number}</div>
+                    filteredActivities.map((activity) => (
+                      <tr key={activity.id} className="hover:bg-gray-800/30 transition-all duration-200">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-400">
+                          {new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </td>
-                        <td className="px-4 py-3 w-2/6">
-                          <div>
-                            <div className="text-sm font-medium text-gray-100 line-clamp-1">{project.project_name}</div>
-                            <div className="text-sm text-gray-400 line-clamp-1">{project.address}</div>
-                            {project.applicant && (
-                              <div className="text-xs text-gray-500 mt-1 line-clamp-1">{project.applicant}</div>
-                            )}
+                        <td className="px-4 py-3">
+                          <div className={`text-sm font-medium ${activity.color || 'text-gray-300'}`}>
+                            {activity.action}
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap w-1/6">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(project.status)}`}>
-                            {project.status.replace('_', ' ').toUpperCase()}
-                          </span>
+                        <td className="px-4 py-3 text-sm text-gray-100">
+                          {activity.project || '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap w-1/6">
-                          <div className="flex gap-1 text-sm justify-center">
-                            <span className="text-red-400 font-medium">{project.total_issues || 0}</span>
-                            <span className="text-gray-600">/</span>
-                            <span className="text-yellow-400 font-medium">{project.total_conditions || 0}</span>
-                            <span className="text-gray-600">/</span>
-                            <span className="text-blue-400 font-medium">{project.total_notes || 0}</span>
-                          </div>
+                        <td className="px-4 py-3 text-sm text-gray-300">
+                          {activity.jurisdiction?.replace(/_/g, ' ') || '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-400 w-1/6">
-                          {project.submitted_date ? new Date(project.submitted_date).toLocaleDateString() : 'N/A'}
+                        <td className="px-4 py-3 text-sm text-gray-300">
+                          {activity.user || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-400">
+                          {activity.details || '-'}
                         </td>
                       </tr>
                     ))

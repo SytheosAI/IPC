@@ -467,13 +467,12 @@ export default function VBAPage() {
     }
 
     try {
-      const { error } = await supabase
-        .from('vba_projects')
-        .delete()
-        .eq('id', projectId)
+      const response = await fetch(`/api/vba-projects/${projectId}`, {
+        method: 'DELETE'
+      })
 
-      if (error) {
-        console.error('Error deleting project:', error)
+      if (!response.ok) {
+        console.error('Error deleting project')
         alert('Failed to delete project. Please try again.')
         return
       }
@@ -491,8 +490,7 @@ export default function VBAPage() {
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          project.address.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || project.status === filterStatus
-    return matchesSearch && matchesStatus
+    return matchesSearch
   })
 
   const getStatusIcon = (status: string) => {
@@ -758,7 +756,7 @@ export default function VBAPage() {
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-300">Inspections Completed</span>
+                <span className="text-sm text-yellow-400">Inspections Completed</span>
                 <span className="text-lg font-semibold text-gray-100">{weeklyMetrics.completed}</span>
               </div>
               <div className="w-full bg-gray-700 rounded-full h-2">
@@ -900,56 +898,30 @@ export default function VBAPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex gap-3 mb-4 card-modern py-2 px-4">
-        <div className="flex-1 relative">
+      <div className="mb-4">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search inspections..."
-            className="input-modern text-sm py-2"
+            placeholder="Search projects..."
+            className="input-modern w-full"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
-        <select
-          className="input-modern text-sm py-2"
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-        >
-          <option value="all">All</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-          <option value="failed">Failed</option>
-          <option value="passed">Passed</option>
-        </select>
-        
-        <button className="btn-secondary">
-          <Filter className="h-5 w-5" />
-          More Filters
-        </button>
-        
-        <button className="btn-secondary">
-          <Download className="h-5 w-5" />
-          Export
-        </button>
       </div>
 
       {/* Inspection Projects Section */}
       <div className="card-modern relative overflow-hidden border-glow">
-        <div className="p-6 border-b border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700">
-          <div className="flex items-center justify-between">
+        <div className="px-6 py-3 border-b border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700">
+          <div className="flex items-center justify-center relative">
             <h2 className="text-xl font-semibold text-yellow-400">Inspection Projects</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowNewProjectModal(true)}
-                className="btn-primary"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                New Project
-              </button>
-            </div>
+            <button
+              onClick={() => setShowNewProjectModal(true)}
+              className="absolute right-0 px-3 py-1 text-sm bg-yellow-400 text-gray-900 rounded hover:bg-yellow-500 transition-colors"
+            >
+              New Project
+            </button>
           </div>
         </div>
         
@@ -1199,6 +1171,7 @@ const INSPECTION_TYPES = [
   'Roofing Dry-In',
   'Roofing Nailer',
   'Roofing Final',
+  'Drip Edge',
   'Stucco Lathe',
   'Rough Electrical',
   'Rough Plumbing',
@@ -1284,6 +1257,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
       virtual_inspector_enabled: false,
       inspection_count: 0,
       compliance_score: 100,
+      selected_inspections: selectedInspections,
       notes: `Project Type: ${projectData.projectType}\nInspections: ${selectedInspections.join(', ')}`
     }
 
@@ -1330,10 +1304,10 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
             </div>
 
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Address</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="input-modern"
                 value={projectData.address}
                 onChange={(e) => setProjectData({ ...projectData, address: e.target.value })}
                 required
@@ -1341,20 +1315,20 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Owner</label>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Owner</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="input-modern"
                 value={projectData.owner}
                 onChange={(e) => setProjectData({ ...projectData, owner: e.target.value })}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contractor</label>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Contractor</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="input-modern"
                 value={projectData.contractor}
                 onChange={(e) => setProjectData({ ...projectData, contractor: e.target.value })}
               />
@@ -1496,8 +1470,8 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">Select Applicable Inspections</label>
-            <div className="border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+            <label className="block text-sm font-medium text-yellow-400 mb-3">Select Applicable Inspections</label>
+            <div className="border border-yellow-400 rounded-lg p-4 max-h-60 overflow-y-auto bg-gray-800">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {INSPECTION_TYPES.map((inspection) => (
                   <label key={inspection} className="flex items-center space-x-2 cursor-pointer">
@@ -1507,12 +1481,12 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
                       checked={selectedInspections.includes(inspection)}
                       onChange={() => toggleInspection(inspection)}
                     />
-                    <span className="text-sm text-gray-700">{inspection}</span>
+                    <span className="text-sm text-yellow-400">{inspection}</span>
                   </label>
                 ))}
               </div>
             </div>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-yellow-400">
               Selected: {selectedInspections.length} inspection{selectedInspections.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -1595,7 +1569,7 @@ function ScheduleInspectionModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Schedule Inspection</h3>
+          <h3 className="text-lg font-semibold text-yellow-400">Schedule Inspection</h3>
           <p className="text-sm text-gray-600 mt-1">
             Project: {project.project_name} - {project.address}
           </p>
@@ -1604,7 +1578,7 @@ function ScheduleInspectionModal({
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-yellow-400 mb-1">
                 Inspection Type
               </label>
               <select

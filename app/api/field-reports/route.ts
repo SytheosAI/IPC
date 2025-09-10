@@ -2,21 +2,9 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-    
-    // TEMPORARILY BYPASS AUTH CHECK FOR TESTING
-    // if (!accessToken) {
-    //   return NextResponse.json(
-    //     { error: 'Not authenticated' },
-    //     { status: 401 }
-    //   );
-    // }
-    
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    // TEMPORARILY USE SERVICE ROLE KEY TO BYPASS RLS FOR TESTING
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -25,30 +13,21 @@ export async function POST(request: Request) {
       }
     });
     
-    // Get the project data from request
-    const projectData = await request.json();
-    
-    // Ensure organization_id is set
-    if (!projectData.organization_id) {
-      projectData.organization_id = '11111111-1111-1111-1111-111111111111';
-    }
-    
-    // Create the VBA project
+    // Get all field reports
     const { data, error } = await supabase
-      .from('vba_projects')
-      .insert([projectData])
-      .select()
-      .single();
+      .from('field_reports')
+      .select('*')
+      .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('VBA Project creation error:', error);
+      console.error('Field reports fetch error:', error);
       return NextResponse.json(
-        { error: error.message, code: error.code },
+        { error: error.message },
         { status: 400 }
       );
     }
     
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data || [] });
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
@@ -58,13 +37,9 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('sb-access-token')?.value;
-    
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    // TEMPORARILY USE SERVICE ROLE KEY TO BYPASS RLS FOR TESTING
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -73,14 +48,22 @@ export async function GET(request: Request) {
       }
     });
     
-    // Get all VBA projects
+    const reportData = await request.json();
+    
+    // Ensure organization_id is set
+    if (!reportData.organization_id) {
+      reportData.organization_id = '11111111-1111-1111-1111-111111111111';
+    }
+    
+    // Create the field report
     const { data, error } = await supabase
-      .from('vba_projects')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from('field_reports')
+      .insert([reportData])
+      .select()
+      .single();
     
     if (error) {
-      console.error('VBA Projects fetch error:', error);
+      console.error('Field report creation error:', error);
       return NextResponse.json(
         { error: error.message },
         { status: 400 }

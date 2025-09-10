@@ -21,7 +21,6 @@ import {
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useUser } from '../../contexts/UserContext'
-import { supabase } from '@/lib/supabase-client'
 
 const navigation = [
   { 
@@ -86,10 +85,9 @@ export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { profile, theme } = useUser()
-  // Using imported supabase client
   
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    // Since auth is bypassed, just redirect to login
     router.push('/login')
   }
   

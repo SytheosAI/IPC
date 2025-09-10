@@ -121,41 +121,7 @@ export default function OrganizationPage() {
     language: 'English'
   })
   
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: '1',
-      name: 'John Smith',
-      email: 'john.smith@ipcsolutions.com',
-      role: 'CEO',
-      department: 'Executive',
-      phone: '(239) 555-0101',
-      status: 'active',
-      joinedDate: '2020-01-15',
-      lastActive: '2024-01-28'
-    },
-    {
-      id: '2',
-      name: 'Sarah Johnson',
-      email: 'sarah.j@ipcsolutions.com',
-      role: 'CTO',
-      department: 'Technology',
-      phone: '(239) 555-0102',
-      status: 'active',
-      joinedDate: '2020-03-01',
-      lastActive: '2024-01-28'
-    },
-    {
-      id: '3',
-      name: 'Mike Wilson',
-      email: 'mike.w@ipcsolutions.com',
-      role: 'Lead Inspector',
-      department: 'Operations',
-      phone: '(239) 555-0103',
-      status: 'active',
-      joinedDate: '2021-06-15',
-      lastActive: '2024-01-27'
-    }
-  ])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
 
   const handleSave = () => {
     // Save organization data to database
@@ -172,7 +138,7 @@ export default function OrganizationPage() {
   }
 
   const stats = [
-    { label: 'Active Projects', value: '47', icon: Briefcase, color: 'text-sky-600' },
+    { label: 'Active Projects', value: '0', icon: Briefcase, color: 'text-sky-600' },
     { label: 'Team Members', value: teamMembers.length.toString(), icon: Users, color: 'text-green-600' },
     { label: 'Certifications', value: organizationData.certifications.length.toString(), icon: Award, color: 'text-purple-600' },
     { label: 'Years Active', value: (new Date().getFullYear() - parseInt(organizationData.foundedYear)).toString(), icon: Calendar, color: 'text-orange-600' }

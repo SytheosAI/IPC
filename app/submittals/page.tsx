@@ -89,7 +89,7 @@ export default function SubmittalsPage() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [filterCategory, setFilterCategory] = useState('all')
+  const [filterJurisdiction, setFilterJurisdiction] = useState('all')
   const [sortField, setSortField] = useState<'dateSubmitted' | 'projectName' | 'status'>('dateSubmitted')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
@@ -239,8 +239,8 @@ export default function SubmittalsPage() {
                          sub.applicant.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          sub.projectAddress.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = filterStatus === 'all' || sub.status === filterStatus
-    const matchesCategory = filterCategory === 'all' || sub.category === filterCategory
-    return matchesSearch && matchesStatus && matchesCategory
+    const matchesJurisdiction = filterJurisdiction === 'all' || sub.jurisdiction?.toLowerCase().replace(/\s+/g, '_') === filterJurisdiction
+    return matchesSearch && matchesStatus && matchesJurisdiction
   })
 
   const sortedSubmittals = [...filteredSubmittals].sort((a, b) => {
@@ -275,54 +275,45 @@ export default function SubmittalsPage() {
 
       {/* Filters and Search */}
       <div className="card-modern hover-lift p-4 mb-4">
-        <div className="flex flex-col lg:flex-row gap-3">
+        <div className="flex items-center gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search by project name, number, or address..."
-              className="input-modern"
+              className="input-modern pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
-          <div className="flex flex-wrap gap-2">
-            <select
-              className="input-modern"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="submitted">Submitted</option>
-              <option value="under_review">Under Review</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="revisions_required">Revisions Required</option>
-            </select>
+          <select
+            className="input-modern w-32"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="all">Status</option>
+            <option value="draft">Draft</option>
+            <option value="submitted">Submitted</option>
+            <option value="under_review">Under Review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="revisions_required">Revisions Required</option>
+          </select>
 
-            <select
-              className="px-3 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-            >
-              <option value="all">All Categories</option>
-              <option value="commercial">Commercial</option>
-              <option value="residential">Residential</option>
-              <option value="industrial">Industrial</option>
-            </select>
-
-            <button className="btn-secondary flex items-center gap-1 px-3 py-2 text-sm">
-              <Filter className="h-4 w-4" />
-              Filters
-            </button>
-
-            <button className="btn-secondary flex items-center gap-1 px-3 py-2 text-sm">
-              <Download className="h-4 w-4" />
-              Export
-            </button>
-          </div>
+          <select
+            className="input-modern w-36"
+            value={filterJurisdiction}
+            onChange={(e) => setFilterJurisdiction(e.target.value)}
+          >
+            <option value="all">Jurisdictions</option>
+            <option value="fort_myers">Fort Myers</option>
+            <option value="cape_coral">Cape Coral</option>
+            <option value="naples">Naples</option>
+            <option value="bonita_springs">Bonita Springs</option>
+            <option value="lee_county">Lee County</option>
+            <option value="collier_county">Collier County</option>
+          </select>
         </div>
       </div>
 
