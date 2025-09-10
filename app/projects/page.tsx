@@ -124,7 +124,21 @@ export default function ProjectsPage() {
       }
       
       console.log('Creating project with data:', projectData)
-      const project = await db.projects.create(projectData)
+      
+      // Create project via API
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(projectData)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to create project')
+      }
+      
+      const { data: project } = await response.json()
       console.log('Project created successfully:', project)
       
       setProjects([project, ...projects])

@@ -36,7 +36,6 @@ import {
   Shield
 } from 'lucide-react'
 import Link from 'next/link'
-import { db } from '@/lib/supabase-client'
 
 interface Project {
   id: string
@@ -79,7 +78,12 @@ export default function ProjectControlCenter() {
 
   const loadProjectData = async () => {
     try {
-      const projectData = await db.projects.get(projectId)
+      // Fetch project via API
+      const response = await fetch(`/api/projects/${projectId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch project')
+      }
+      const { data: projectData } = await response.json()
       setProject(projectData)
     } catch (error) {
       console.error('Failed to load project:', error)
