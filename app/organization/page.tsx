@@ -375,17 +375,31 @@ export default function OrganizationPage() {
                 <div>
                   <label className="block text-sm text-yellow-400 mb-1 font-medium">Company Logo</label>
                   <div className="flex items-center gap-4">
-                    {organizationData.logoUrl ? (
-                      <img 
-                        src={organizationData.logoUrl} 
-                        alt="Company Logo" 
-                        className="w-20 h-20 object-contain bg-gray-800/50 rounded-lg p-2"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 bg-gray-800/50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-600">
-                        <Upload className="h-6 w-6 text-gray-500" />
-                      </div>
-                    )}
+                    <div className="relative">
+                      {organizationData.logoUrl ? (
+                        <>
+                          <img 
+                            src={organizationData.logoUrl} 
+                            alt="Company Logo" 
+                            className="w-20 h-20 object-contain bg-gray-800/50 rounded-lg p-2"
+                          />
+                          {isEditing && (
+                            <button
+                              type="button"
+                              onClick={() => handleInputChange('logoUrl', '')}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                              title="Remove logo"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <div className="w-20 h-20 bg-gray-800/50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-600">
+                          <Upload className="h-6 w-6 text-gray-500" />
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1 space-y-2">
                       <input
                         type="url"
@@ -400,11 +414,30 @@ export default function OrganizationPage() {
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const file = e.target.files?.[0]
                               if (file) {
-                                // For now, show instructions to use URL instead
-                                alert('Please upload your logo to a service like Imgur or Google Drive and paste the URL above.')
+                                try {
+                                  // Upload the file
+                                  const formData = new FormData()
+                                  formData.append('file', file)
+                                  
+                                  const response = await fetch('/api/upload', {
+                                    method: 'POST',
+                                    body: formData
+                                  })
+                                  
+                                  if (response.ok) {
+                                    const { url } = await response.json()
+                                    handleInputChange('logoUrl', url)
+                                    alert('Logo uploaded successfully!')
+                                  } else {
+                                    alert('Failed to upload logo. Please try again.')
+                                  }
+                                } catch (error) {
+                                  console.error('Upload error:', error)
+                                  alert('Failed to upload logo. Please try again.')
+                                }
                                 e.target.value = '' // Reset file input
                               }
                             }}
