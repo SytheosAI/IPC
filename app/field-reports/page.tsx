@@ -478,12 +478,19 @@ export default function FieldReportsPage() {
     
     // Company info in header
     if (organizationData?.logo_url) {
-      // Add logo placeholder (would need image loading for actual logo)
-      doc.setFillColor(255, 255, 255, 0.2)
-      doc.rect(15, 8, 20, 20, 'F')
-      doc.setFontSize(8)
-      doc.setTextColor(255, 255, 255)
-      doc.text('LOGO', 25, 20, { align: 'center' })
+      try {
+        // Add actual logo image
+        // Since logo_url is a base64 data URL, we can use it directly
+        doc.addImage(organizationData.logo_url, 'PNG', 15, 8, 20, 20)
+      } catch (error) {
+        console.error('Failed to add logo to PDF:', error)
+        // Fallback to placeholder if image fails
+        doc.setFillColor(255, 255, 255, 0.2)
+        doc.rect(15, 8, 20, 20, 'F')
+        doc.setFontSize(8)
+        doc.setTextColor(255, 255, 255)
+        doc.text('LOGO', 25, 20, { align: 'center' })
+      }
     }
     
     // Company name and info
