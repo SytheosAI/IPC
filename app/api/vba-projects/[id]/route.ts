@@ -4,9 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('sb-access-token')?.value;
     
