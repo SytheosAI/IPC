@@ -1072,7 +1072,7 @@ export default function FieldReportsPage() {
                 const selectedRep = teamMembers.find(m => m.id === selectedReporter)
                 
                 handleNewReport({
-                  project_id: selectedProject || null,
+                  project_id: selectedProject || undefined,
                   project_name: selectedProj?.name || (formData.get('project_name') as string),
                   project_address: selectedProj?.address || (formData.get('project_address') as string),
                   report_type: formData.get('report_type') as FieldReport['report_type'],
