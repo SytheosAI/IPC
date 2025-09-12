@@ -24,7 +24,8 @@ import {
   UserPlus,
   Briefcase,
   Award,
-  Trash2
+  Trash2,
+  X
 } from 'lucide-react'
 
 interface OrganizationData {
@@ -35,6 +36,7 @@ interface OrganizationData {
   licenseNumber: string
   foundedYear: string
   companyType: string
+  logoUrl?: string
   
   // Contact Information
   mainPhone: string
@@ -88,46 +90,186 @@ export default function OrganizationPage() {
   const [activeTab, setActiveTab] = useState<'details' | 'team' | 'billing' | 'compliance'>('details')
   const [isEditing, setIsEditing] = useState(false)
   const [organizationData, setOrganizationData] = useState<OrganizationData>({
-    companyName: 'IPC Solutions Inc.',
-    legalName: 'Intelligent Plan Check Solutions, Inc.',
-    taxId: '88-1234567',
-    licenseNumber: 'FL-BC-123456',
-    foundedYear: '2020',
-    companyType: 'Corporation',
-    mainPhone: '(239) 555-0100',
-    mainEmail: 'info@ipcsolutions.com',
-    supportEmail: 'support@ipcsolutions.com',
-    website: 'https://ipcsolutions.com',
-    streetAddress: '123 Innovation Drive',
-    suite: 'Suite 400',
-    city: 'Fort Myers',
-    state: 'FL',
-    zipCode: '33901',
-    country: 'United States',
-    numberOfEmployees: '25-50',
-    annualRevenue: '$5M - $10M',
-    primaryIndustry: 'Construction Technology',
-    secondaryIndustries: ['Building Inspection', 'Permit Management', 'Compliance Software'],
-    certifications: ['ISO 9001:2015', 'SOC 2 Type II', 'OSHA Certified'],
-    billingAddress: '123 Innovation Drive',
-    billingCity: 'Fort Myers',
-    billingState: 'FL',
-    billingZip: '33901',
-    paymentMethod: 'Credit Card',
-    billingEmail: 'billing@ipcsolutions.com',
-    timezone: 'America/New_York',
-    dateFormat: 'MM/DD/YYYY',
-    currency: 'USD',
-    language: 'English'
+    companyName: '',
+    legalName: '',
+    taxId: '',
+    licenseNumber: '',
+    logoUrl: '',
+    foundedYear: '',
+    companyType: '',
+    mainPhone: '',
+    mainEmail: '',
+    supportEmail: '',
+    website: '',
+    streetAddress: '',
+    suite: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    numberOfEmployees: '',
+    annualRevenue: '',
+    primaryIndustry: '',
+    secondaryIndustries: [],
+    certifications: [],
+    billingAddress: '',
+    billingCity: '',
+    billingState: '',
+    billingZip: '',
+    paymentMethod: '',
+    billingEmail: '',
+    timezone: '',
+    dateFormat: '',
+    currency: '',
+    language: ''
   })
   
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
+  const [newMember, setNewMember] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: '',
+    department: ''
+  })
 
-  const handleSave = () => {
-    // Save organization data to database
-    localStorage.setItem('organizationData', JSON.stringify(organizationData))
-    setIsEditing(false)
-    alert('Organization information saved successfully!')
+  // Load organization data and members from database
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load organization data
+        const orgResponse = await fetch('/api/organization')
+        const orgData = await orgResponse.json()
+        
+        if (orgData && Object.keys(orgData).length > 0) {
+          setOrganizationData({
+            companyName: orgData.company_name || '',
+            legalName: orgData.legal_name || '',
+            taxId: orgData.tax_id || '',
+            licenseNumber: orgData.license_number || '',
+            logoUrl: orgData.logo_url || '',
+            foundedYear: orgData.founded_year || '',
+            companyType: orgData.company_type || '',
+            mainPhone: orgData.main_phone || '',
+            mainEmail: orgData.main_email || '',
+            supportEmail: orgData.support_email || '',
+            website: orgData.website || '',
+            streetAddress: orgData.street_address || '',
+            suite: orgData.suite || '',
+            city: orgData.city || '',
+            state: orgData.state || '',
+            zipCode: orgData.zip_code || '',
+            country: orgData.country || '',
+            numberOfEmployees: orgData.number_of_employees || '',
+            annualRevenue: orgData.annual_revenue || '',
+            primaryIndustry: orgData.primary_industry || '',
+            secondaryIndustries: orgData.secondary_industries || [],
+            certifications: orgData.certifications || [],
+            billingAddress: orgData.billing_address || '',
+            billingCity: orgData.billing_city || '',
+            billingState: orgData.billing_state || '',
+            billingZip: orgData.billing_zip || '',
+            paymentMethod: orgData.payment_method || '',
+            billingEmail: orgData.billing_email || '',
+            timezone: orgData.timezone || '',
+            dateFormat: orgData.date_format || '',
+            currency: orgData.currency || '',
+            language: orgData.language || ''
+          })
+        }
+        
+        // Load members data
+        const membersResponse = await fetch('/api/members')
+        const membersData = await membersResponse.json()
+        
+        if (membersData.data && Array.isArray(membersData.data)) {
+          const formattedMembers = membersData.data.map((member: any) => ({
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            role: member.role,
+            department: member.department,
+            phone: member.phone,
+            status: member.status || 'active',
+            joinedDate: member.joined_date || member.created_at,
+            lastActive: member.last_active || member.updated_at
+          }))
+          setTeamMembers(formattedMembers)
+        }
+      } catch (error) {
+        console.error('Error loading data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadData()
+  }, [])
+
+  const handleAddMember = async () => {
+    try {
+      // Call the API to add the member
+      const response = await fetch('/api/members', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newMember)
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to add member')
+      }
+      
+      const { data } = await response.json()
+      
+      // Add to local state
+      const memberData = {
+        ...data,
+        status: data.status || 'active',
+        joinedDate: data.joined_date || data.created_at,
+        lastActive: data.last_active || data.updated_at
+      }
+      setTeamMembers(prev => [...prev, memberData])
+      
+      // Reset form and close modal
+      setNewMember({ name: '', email: '', phone: '', role: '', department: '' })
+      setShowAddMemberModal(false)
+      
+      alert('Team member added successfully!')
+    } catch (error) {
+      console.error('Error adding team member:', error)
+      alert('Failed to add team member. Please try again.')
+    }
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const response = await fetch('/api/organization', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(organizationData)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save organization data')
+      }
+      
+      setIsEditing(false)
+      alert('Organization information saved successfully!')
+    } catch (error) {
+      console.error('Error saving organization data:', error)
+      alert('Failed to save organization data. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleInputChange = (field: keyof OrganizationData, value: string | string[]) => {
@@ -143,6 +285,14 @@ export default function OrganizationPage() {
     { label: 'Certifications', value: organizationData.certifications.length.toString(), icon: Award, color: 'text-purple-600' },
     { label: 'Years Active', value: (new Date().getFullYear() - parseInt(organizationData.foundedYear)).toString(), icon: Calendar, color: 'text-orange-600' }
   ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 flex items-center justify-center">
+        <div className="text-yellow-400 text-xl">Loading organization data...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
@@ -187,13 +337,19 @@ export default function OrganizationPage() {
             <h3 className="text-lg font-semibold text-yellow-400">Company Details</h3>
             <button
               onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+              disabled={saving}
               className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 hover:scale-105 shadow-glow font-semibold ${
                 isEditing 
                   ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-400 hover:to-green-500' 
                   : 'bg-gradient-to-r from-yellow-500 to-orange-600 text-gray-900 hover:from-yellow-400 hover:to-orange-500'
               }`}
             >
-              {isEditing ? (
+              {saving ? (
+                <>
+                  <Clock className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : isEditing ? (
                 <>
                   <Save className="h-4 w-4" />
                   Save Changes
@@ -215,45 +371,97 @@ export default function OrganizationPage() {
                 Company Information
               </h4>
               <div className="space-y-4">
+                {/* Logo Upload */}
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Company Name</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Company Logo</label>
+                  <div className="flex items-center gap-4">
+                    {organizationData.logoUrl ? (
+                      <img 
+                        src={organizationData.logoUrl} 
+                        alt="Company Logo" 
+                        className="w-20 h-20 object-contain bg-gray-800/50 rounded-lg p-2"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-gray-800/50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-600">
+                        <Upload className="h-6 w-6 text-gray-500" />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="url"
+                        value={organizationData.logoUrl || ''}
+                        onChange={(e) => handleInputChange('logoUrl', e.target.value)}
+                        disabled={!isEditing}
+                        placeholder="Enter logo image URL (https://example.com/logo.png)"
+                        className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500 w-full"
+                      />
+                      {isEditing && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                // For now, show instructions to use URL instead
+                                alert('Please upload your logo to a service like Imgur or Google Drive and paste the URL above.')
+                                e.target.value = '' // Reset file input
+                              }
+                            }}
+                            className="hidden"
+                            id="logoFileInput"
+                          />
+                          <label
+                            htmlFor="logoFileInput"
+                            className="cursor-pointer px-3 py-1 bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-400 text-xs hover:bg-yellow-500/30 transition-colors"
+                          >
+                            Choose File
+                          </label>
+                          <span className="text-xs text-gray-500">or paste image URL above</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Company Name</label>
                   <input
                     type="text"
                     value={organizationData.companyName}
                     onChange={(e) => handleInputChange('companyName', e.target.value)}
                     disabled={!isEditing}
-                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-200 placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Legal Name</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Legal Name</label>
                   <input
                     type="text"
                     value={organizationData.legalName}
                     onChange={(e) => handleInputChange('legalName', e.target.value)}
                     disabled={!isEditing}
-                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-200 placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Tax ID</label>
+                    <label className="block text-sm text-yellow-400 mb-1 font-medium">Tax ID</label>
                     <input
                       type="text"
                       value={organizationData.taxId}
                       onChange={(e) => handleInputChange('taxId', e.target.value)}
                       disabled={!isEditing}
-                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-200 placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">License #</label>
+                    <label className="block text-sm text-yellow-400 mb-1 font-medium">License #</label>
                     <input
                       type="text"
                       value={organizationData.licenseNumber}
                       onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
                       disabled={!isEditing}
-                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-gray-200 placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     />
                   </div>
                 </div>
@@ -268,33 +476,33 @@ export default function OrganizationPage() {
               </h4>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Main Phone</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Main Phone</label>
                   <input
                     type="tel"
                     value={organizationData.mainPhone}
                     onChange={(e) => handleInputChange('mainPhone', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Main Email</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Main Email</label>
                   <input
                     type="email"
                     value={organizationData.mainEmail}
                     onChange={(e) => handleInputChange('mainEmail', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Website</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Website</label>
                   <input
                     type="url"
                     value={organizationData.website}
                     onChange={(e) => handleInputChange('website', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
               </div>
@@ -302,40 +510,40 @@ export default function OrganizationPage() {
 
             {/* Address Information */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+              <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-yellow-400" />
                 Address Information
               </h4>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Street Address</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Street Address</label>
                   <input
                     type="text"
                     value={organizationData.streetAddress}
                     onChange={(e) => handleInputChange('streetAddress', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2">
-                    <label className="block text-sm text-gray-600 mb-1">City</label>
+                    <label className="block text-sm text-yellow-400 mb-1 font-medium">City</label>
                     <input
                       type="text"
                       value={organizationData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
                       disabled={!isEditing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">State</label>
+                    <label className="block text-sm text-yellow-400 mb-1 font-medium">State</label>
                     <input
                       type="text"
                       value={organizationData.state}
                       onChange={(e) => handleInputChange('state', e.target.value)}
                       disabled={!isEditing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     />
                   </div>
                 </div>
@@ -344,29 +552,29 @@ export default function OrganizationPage() {
 
             {/* Business Details */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
-                <Briefcase className="h-4 w-4" />
+              <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-yellow-400" />
                 Business Details
               </h4>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Primary Industry</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Primary Industry</label>
                   <input
                     type="text"
                     value={organizationData.primaryIndustry}
                     onChange={(e) => handleInputChange('primaryIndustry', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Employees</label>
+                    <label className="block text-sm text-yellow-400 mb-1 font-medium">Employees</label>
                     <select
                       value={organizationData.numberOfEmployees}
                       onChange={(e) => handleInputChange('numberOfEmployees', e.target.value)}
                       disabled={!isEditing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     >
                       <option value="1-10">1-10</option>
                       <option value="11-25">11-25</option>
@@ -376,12 +584,12 @@ export default function OrganizationPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Annual Revenue</label>
+                    <label className="block text-sm text-yellow-400 mb-1 font-medium">Annual Revenue</label>
                     <select
                       value={organizationData.annualRevenue}
                       onChange={(e) => handleInputChange('annualRevenue', e.target.value)}
                       disabled={!isEditing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     >
                       <option value="< $1M">Less than $1M</option>
                       <option value="$1M - $5M">$1M - $5M</option>
@@ -398,10 +606,13 @@ export default function OrganizationPage() {
       )}
 
       {activeTab === 'team' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="card-modern hover-lift backdrop-blur-lg p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Team Members</h3>
-            <button className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-yellow-400">Team Members</h3>
+            <button 
+              onClick={() => setShowAddMemberModal(true)}
+              className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 text-gray-900 rounded-xl hover:from-yellow-400 hover:to-orange-500 font-semibold flex items-center gap-2 transition-all duration-300 hover:scale-105 shadow-glow"
+            >
               <UserPlus className="h-4 w-4" />
               Add Member
             </button>
@@ -409,28 +620,28 @@ export default function OrganizationPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-800/50 border-b border-gray-600">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Role</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Department</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Contact</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Last Active</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Role</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Department</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Contact</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Last Active</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-700">
                 {teamMembers.map((member) => (
-                  <tr key={member.id} className="hover:bg-gray-50">
+                  <tr key={member.id} className="hover:bg-gray-800/50">
                     <td className="px-4 py-3">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{member.name}</p>
+                        <p className="text-sm font-medium text-gray-200">{member.name}</p>
                         <p className="text-xs text-gray-500">{member.email}</p>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{member.role}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{member.department}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{member.phone}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{member.role}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{member.department}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{member.phone}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                         member.status === 'active' 
@@ -452,22 +663,22 @@ export default function OrganizationPage() {
       )}
 
       {activeTab === 'billing' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Billing Information</h3>
+        <div className="card-modern hover-lift backdrop-blur-lg p-6">
+          <h3 className="text-lg font-semibold text-yellow-400 mb-6">Billing Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
+              <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-yellow-400" />
                 Payment Method
               </h4>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Payment Type</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Payment Type</label>
                   <select
                     value={organizationData.paymentMethod}
                     onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   >
                     <option value="Credit Card">Credit Card</option>
                     <option value="Bank Transfer">Bank Transfer</option>
@@ -475,53 +686,53 @@ export default function OrganizationPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Billing Email</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Billing Email</label>
                   <input
                     type="email"
                     value={organizationData.billingEmail}
                     onChange={(e) => handleInputChange('billingEmail', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+              <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-yellow-400" />
                 Billing Address
               </h4>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Street Address</label>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Street Address</label>
                   <input
                     type="text"
                     value={organizationData.billingAddress}
                     onChange={(e) => handleInputChange('billingAddress', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2">
-                    <label className="block text-sm text-gray-600 mb-1">City</label>
+                    <label className="block text-sm text-yellow-400 mb-1 font-medium">City</label>
                     <input
                       type="text"
                       value={organizationData.billingCity}
                       onChange={(e) => handleInputChange('billingCity', e.target.value)}
                       disabled={!isEditing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">ZIP</label>
+                    <label className="block text-sm text-yellow-400 mb-1 font-medium">ZIP</label>
                     <input
                       type="text"
                       value={organizationData.billingZip}
                       onChange={(e) => handleInputChange('billingZip', e.target.value)}
                       disabled={!isEditing}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-50"
+                      className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 disabled:bg-gray-700/30 disabled:text-gray-500"
                     />
                   </div>
                 </div>
@@ -532,20 +743,20 @@ export default function OrganizationPage() {
       )}
 
       {activeTab === 'compliance' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Compliance & Certifications</h3>
+        <div className="card-modern hover-lift backdrop-blur-lg p-6">
+          <h3 className="text-lg font-semibold text-yellow-400 mb-6">Compliance & Certifications</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
-                <Award className="h-4 w-4" />
+              <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
+                <Award className="h-4 w-4 text-yellow-400" />
                 Active Certifications
               </h4>
               <div className="space-y-3">
                 {organizationData.certifications.map((cert, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 border border-gray-600 bg-gray-800/30 rounded-lg">
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500" />
-                      <span className="text-sm font-medium text-gray-900">{cert}</span>
+                      <span className="text-sm font-medium text-gray-200">{cert}</span>
                     </div>
                     {isEditing && (
                       <button className="text-red-500 hover:text-red-700">
@@ -555,7 +766,7 @@ export default function OrganizationPage() {
                   </div>
                 ))}
                 {isEditing && (
-                  <button className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-sky-500 hover:text-sky-600">
+                  <button className="w-full py-2 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-yellow-500 hover:text-yellow-400">
                     + Add Certification
                   </button>
                 )}
@@ -563,25 +774,134 @@ export default function OrganizationPage() {
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
-                <Shield className="h-4 w-4" />
+              <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center gap-2">
+                <Shield className="h-4 w-4 text-yellow-400" />
                 Compliance Status
               </h4>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <span className="text-sm font-medium text-green-900">Insurance</span>
-                  <span className="text-xs text-green-700">Valid until 12/31/2024</span>
+                <div className="flex items-center justify-between p-3 bg-green-900/20 border border-green-600/50 rounded-lg">
+                  <span className="text-sm font-medium text-green-400">Insurance</span>
+                  <span className="text-xs text-green-500">Valid until 12/31/2024</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <span className="text-sm font-medium text-green-900">License</span>
-                  <span className="text-xs text-green-700">Valid until 06/30/2024</span>
+                <div className="flex items-center justify-between p-3 bg-green-900/20 border border-green-600/50 rounded-lg">
+                  <span className="text-sm font-medium text-green-400">License</span>
+                  <span className="text-xs text-green-500">Valid until 06/30/2024</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <span className="text-sm font-medium text-yellow-900">Bonding</span>
-                  <span className="text-xs text-yellow-700">Renewal needed in 30 days</span>
+                <div className="flex items-center justify-between p-3 bg-yellow-900/20 border border-yellow-600/50 rounded-lg">
+                  <span className="text-sm font-medium text-yellow-400">Bonding</span>
+                  <span className="text-xs text-yellow-500">Renewal needed in 30 days</span>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="card-modern max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-yellow-400">Add Team Member</h3>
+              <button
+                onClick={() => {
+                  setShowAddMemberModal(false)
+                  setNewMember({ name: "", email: "", phone: "", role: "", department: "" })
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleAddMember(); }} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Full Name</label>
+                  <input
+                    type="text"
+                    value={newMember.name}
+                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                    required
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 w-full"
+                    placeholder="Enter full name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Role</label>
+                  <select
+                    value={newMember.role}
+                    onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
+                    required
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white w-full"
+                  >
+                    <option value="">Select role</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Inspector">Inspector</option>
+                    <option value="Administrator">Administrator</option>
+                    <option value="Field Worker">Field Worker</option>
+                    <option value="Contractor">Contractor</option>
+                    <option value="Consultant">Consultant</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Email</label>
+                  <input
+                    type="email"
+                    value={newMember.email}
+                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                    required
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 w-full"
+                    placeholder="Enter email address"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={newMember.phone}
+                    onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                    required
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 w-full"
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-yellow-400 mb-1 font-medium">Department</label>
+                <input
+                  type="text"
+                  value={newMember.department}
+                  onChange={(e) => setNewMember({ ...newMember, department: e.target.value })}
+                  required
+                  className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 w-full"
+                  placeholder="Enter department"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMemberModal(false)
+                    setNewMember({ name: "", email: "", phone: "", role: "", department: "" })
+                  }}
+                  className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-gray-900 rounded-lg hover:from-yellow-400 hover:to-orange-500 font-semibold transition-all"
+                >
+                  Add Member
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

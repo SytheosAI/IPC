@@ -50,6 +50,8 @@ export async function POST(request: Request) {
     
     const reportData = await request.json();
     
+    console.log('Received field report data:', reportData);
+    
     // Ensure organization_id is set
     if (!reportData.organization_id) {
       reportData.organization_id = '11111111-1111-1111-1111-111111111111';
@@ -64,8 +66,11 @@ export async function POST(request: Request) {
     
     if (error) {
       console.error('Field report creation error:', error);
+      console.error('Error details:', error.details);
+      console.error('Error hint:', error.hint);
+      console.error('Error code:', error.code);
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message, details: error.details, hint: error.hint },
         { status: 400 }
       );
     }

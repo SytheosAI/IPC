@@ -31,6 +31,10 @@ import {
   Activity,
   RefreshCw,
   AlertCircle,
+  Cloud,
+  Hammer,
+  Package,
+  Users,
   X
 } from 'lucide-react'
 import { db } from '@/lib/supabase-client'
@@ -106,6 +110,8 @@ export default function FieldReportsPage() {
   const [filterPriority, setFilterPriority] = useState<string>('all')
   const [selectedReport, setSelectedReport] = useState<FieldReport | null>(null)
   const [showNewReportModal, setShowNewReportModal] = useState(false)
+  const [showViewReportModal, setShowViewReportModal] = useState(false)
+  const [viewingReport, setViewingReport] = useState<FieldReport | null>(null)
   const [editingReport, setEditingReport] = useState<FieldReport | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [notificationEmails, setNotificationEmails] = useState<NotificationEmail[]>([])
@@ -117,12 +123,16 @@ export default function FieldReportsPage() {
   const [selectedReporter, setSelectedReporter] = useState<string>('')
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([])
   const [weatherData, setWeatherData] = useState<{ conditions: string; temperature: number } | null>(null)
+  const [organizationData, setOrganizationData] = useState<any>(null)
+  const [showPDFPreview, setShowPDFPreview] = useState(false)
+  const [nextReportNumber, setNextReportNumber] = useState(101)
 
   useEffect(() => {
     loadFieldReports()
     loadNotificationEmails()
     loadProjects()
     loadTeamMembers()
+    loadOrganizationData()
     
     // Subscribe to real-time updates
     // Enterprise: No legacy subscription - real-time updates handled elsewhere
@@ -147,6 +157,19 @@ export default function FieldReportsPage() {
       if (response.ok) {
         const { data } = await response.json()
         setReports(data || [])
+        
+        // Calculate next report number
+        if (data && data.length > 0) {
+          const reportNumbers = data
+            .map((r: FieldReport) => {
+              const match = r.report_number?.match(/FR-(\d+)/)
+              return match ? parseInt(match[1]) : 0
+            })
+            .filter((n: number) => n > 0)
+          
+          const maxNumber = reportNumbers.length > 0 ? Math.max(...reportNumbers) : 100
+          setNextReportNumber(maxNumber + 1)
+        }
       } else {
         console.error('Failed to load field reports')
         setReports([])
@@ -175,46 +198,31 @@ export default function FieldReportsPage() {
 
   const loadProjects = async () => {
     try {
-      // Load projects from both regular projects table and VBA projects table
-      const allProjects: Project[] = []
+      // Load all projects from the main projects table (includes synced VBA projects)
+      const projectMap = new Map<string, Project>()
       
-      // Fetch from regular projects table
+      // Fetch from regular projects table only (VBA projects are synced here now)
       const projectsResponse = await fetch('/api/projects')
       if (projectsResponse.ok) {
-        const { data: regularProjects } = await projectsResponse.json()
-        if (regularProjects) {
-          regularProjects.forEach((p: any) => {
-            allProjects.push({
-              id: p.id,
-              projectNumber: p.permit_number || p.id,
-              name: p.project_name || 'Unnamed Project',
-              address: p.address || '',
-              city: p.city || '',
-              state: p.state || ''
-            })
+        const { data: projects } = await projectsResponse.json()
+        if (projects) {
+          projects.forEach((p: any) => {
+            // Use Map to automatically deduplicate by ID
+            if (!projectMap.has(p.id)) {
+              projectMap.set(p.id, {
+                id: p.id,
+                projectNumber: p.project_number || p.permit_number || p.id,
+                name: p.project_name || 'Unnamed Project',
+                address: p.address || '',
+                city: p.city || '',
+                state: p.state || ''
+              })
+            }
           })
         }
       }
       
-      // Fetch from VBA projects table
-      const vbaResponse = await fetch('/api/vba-projects')
-      if (vbaResponse.ok) {
-        const { data: vbaProjects } = await vbaResponse.json()
-        if (vbaProjects) {
-          vbaProjects.forEach((p: any) => {
-            allProjects.push({
-              id: p.id,
-              projectNumber: p.permit_number || p.id,
-              name: p.project_name || 'VBA Project',
-              address: p.address || '',
-              city: p.city || '',
-              state: p.state || ''
-            })
-          })
-        }
-      }
-      
-      setProjects(allProjects)
+      setProjects(Array.from(projectMap.values()))
     } catch (err) {
       console.error('Error loading projects:', err)
       setProjects([])
@@ -223,15 +231,36 @@ export default function FieldReportsPage() {
 
   const loadTeamMembers = async () => {
     try {
-      // TODO: Load from contacts table once it's set up
-      // const members = await db.contacts.getAll()
-      // setTeamMembers(members)
-      
-      // For now, set empty array until database is configured
-      setTeamMembers([])
+      const response = await fetch('/api/members')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.data && Array.isArray(result.data)) {
+          const formattedMembers = result.data.map((member: any) => ({
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            role: member.role || 'Team Member',
+            phone: member.phone || '',
+            department: member.department || ''
+          }))
+          setTeamMembers(formattedMembers)
+        }
+      }
     } catch (err) {
       console.error('Error loading team members:', err)
       setTeamMembers([])
+    }
+  }
+
+  const loadOrganizationData = async () => {
+    try {
+      const response = await fetch('/api/organization')
+      if (response.ok) {
+        const data = await response.json()
+        setOrganizationData(data)
+      }
+    } catch (err) {
+      console.error('Error loading organization data:', err)
     }
   }
 
@@ -352,46 +381,55 @@ export default function FieldReportsPage() {
 
   const handleNewReport = async (reportData: Partial<FieldReport>) => {
     try {
+      const reportPayload = {
+        report_number: `FR-${String(nextReportNumber).padStart(5, '0')}`,
+        project_id: reportData.project_id || null,
+        project_name: reportData.project_name || 'Unnamed Project',
+        project_address: reportData.project_address || 'No Address Specified',
+        report_type: reportData.report_type || 'Daily',
+        report_date: new Date().toISOString().split('T')[0],
+        report_time: new Date().toTimeString().split(' ')[0],
+        reported_by: reportData.reported_by || 'Current User',
+        reporter_id: reportData.reporter_id || null,
+        status: 'draft',
+        priority: reportData.priority || 'medium',
+        work_performed: reportData.work_performed || '',
+        materials_used: reportData.materials_used || '',
+        subcontractors: reportData.subcontractors || '',
+        delays: reportData.delays || '',
+        safety_incidents: reportData.safety_incidents || '',
+        quality_issues: reportData.quality_issues || '',
+        weather_conditions: reportData.weather_conditions || '',
+        weather_temperature: reportData.weather_temperature || null
+      }
+      
+      console.log('Submitting field report:', reportPayload)
+      
       // Save via API
       const response = await fetch('/api/field-reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          report_number: `FR-${Date.now()}`,
-          project_id: reportData.project_id,
-          project_name: reportData.project_name || '',
-          project_address: reportData.project_address || '',
-          report_type: reportData.report_type || 'Daily',
-          report_date: new Date().toISOString().split('T')[0],
-          report_time: new Date().toTimeString().split(' ')[0],
-          reported_by: reportData.reported_by || 'Current User',
-          status: 'draft',
-          priority: reportData.priority || 'medium',
-          work_performed: reportData.work_performed,
-          materials_used: reportData.materials_used,
-          subcontractors: reportData.subcontractors,
-          delays: reportData.delays,
-          safety_incidents: reportData.safety_incidents,
-          quality_issues: reportData.quality_issues,
-          weather_conditions: reportData.weather_conditions,
-          weather_temperature: reportData.weather_temperature
-        })
+        body: JSON.stringify(reportPayload)
       })
       
       if (!response.ok) {
-        throw new Error('Failed to create field report')
+        const errorData = await response.json()
+        console.error('API Error:', errorData)
+        throw new Error(errorData.error || 'Failed to create field report')
       }
       
       await loadFieldReports()
       setShowNewReportModal(false)
       setEditingReport(null)
       
+      setNextReportNumber(prev => prev + 1)
       console.log('Field report created successfully')
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating field report:', err)
-      alert('Failed to create field report. Please check all required fields.')
+      const errorMessage = err?.message || 'Unknown error occurred'
+      alert(`Failed to create field report: ${errorMessage}`)
     }
   }
 
@@ -418,8 +456,9 @@ export default function FieldReportsPage() {
   }
 
   const handleViewReport = (report: FieldReport) => {
-    // Generate and display PDF preview
-    generatePDFPreview(report)
+    setViewingReport(report)
+    setShowViewReportModal(true)
+    setShowPDFPreview(false) // Start with company view, not PDF
   }
 
   const handleEditReport = (report: FieldReport) => {
@@ -433,20 +472,56 @@ export default function FieldReportsPage() {
     // Generate styled PDF using jsPDF
     const doc = new jsPDF()
     
-    // Add header background
-    doc.setFillColor(31, 41, 55) // dark gray
-    doc.rect(0, 0, 210, 40, 'F')
+    // Add gradient header background
+    doc.setFillColor(239, 176, 36) // yellow-orange gradient
+    doc.rect(0, 0, 210, 50, 'F')
+    
+    // Company info in header
+    if (organizationData?.logo_url) {
+      // Add logo placeholder (would need image loading for actual logo)
+      doc.setFillColor(255, 255, 255, 0.2)
+      doc.rect(15, 8, 20, 20, 'F')
+      doc.setFontSize(8)
+      doc.setTextColor(255, 255, 255)
+      doc.text('LOGO', 25, 20, { align: 'center' })
+    }
+    
+    // Company name and info
+    doc.setFontSize(20)
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.text(organizationData?.company_name || 'Company Name', 40, 15)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(organizationData?.legal_name || '', 40, 22)
+    if (organizationData?.license_number) {
+      doc.text(`License: ${organizationData.license_number}`, 40, 28)
+    }
+    
+    // Company address on right
+    doc.setFontSize(9)
+    const addressLines = [
+      organizationData?.street_address || '',
+      organizationData?.suite || '',
+      organizationData?.city ? `${organizationData.city}, ${organizationData.state} ${organizationData.zip_code}` : '',
+      organizationData?.main_phone || ''
+    ].filter(line => line.trim())
+    
+    addressLines.forEach((line, index) => {
+      doc.text(line, 200, 15 + (index * 4), { align: 'right' })
+    })
     
     // Title in header
     doc.setFontSize(24)
     doc.setTextColor(255, 255, 255)
     doc.setFont('helvetica', 'bold')
-    doc.text(`FIELD REPORT`, 20, 20)
+    doc.text('FIELD REPORT', 20, 40)
     
     // Report number
     doc.setFontSize(14)
     doc.setFont('helvetica', 'normal')
-    doc.text(`#${report.report_number}`, 20, 30)
+    doc.text(`#${report.report_number}`, 20, 47)
     
     // Report Type Badge
     const typeColors: Record<string, [number, number, number]> = {
@@ -460,19 +535,19 @@ export default function FieldReportsPage() {
     }
     const color = typeColors[report.report_type] || [107, 114, 128]
     doc.setFillColor(color[0], color[1], color[2])
-    doc.roundedRect(150, 15, 40, 10, 2, 2, 'F')
+    doc.roundedRect(150, 35, 40, 10, 2, 2, 'F')
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(10)
-    doc.text(report.report_type.toUpperCase(), 170, 21, { align: 'center' })
+    doc.text(report.report_type.toUpperCase(), 170, 41, { align: 'center' })
     
     // Project Info Section
     doc.setFillColor(249, 250, 251)
-    doc.rect(0, 45, 210, 35, 'F')
+    doc.rect(0, 55, 210, 35, 'F')
     
     doc.setFontSize(14)
     doc.setTextColor(31, 41, 55)
     doc.setFont('helvetica', 'bold')
-    doc.text('PROJECT INFORMATION', 20, 55)
+    doc.text('PROJECT INFORMATION', 20, 65)
     
     doc.setFontSize(11)
     doc.setFont('helvetica', 'normal')
@@ -774,7 +849,15 @@ export default function FieldReportsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative">
       {/* Header */}
       <div className="p-4">
-        <PageTitle title="Field Reports" />
+        <div className="relative">
+          <PageTitle title="Field Reports" />
+          <button
+            onClick={() => setShowNewReportModal(true)}
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 px-3 py-1.5 text-sm font-medium rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black transition-colors"
+          >
+            New Report
+          </button>
+        </div>
       </div>
 
       {/* Filters and Search */}
@@ -892,43 +975,39 @@ export default function FieldReportsPage() {
               filteredReports.map((report) => (
                 <div
                   key={report.id}
-                  className="card-modern hover-lift p-3"
+                  className="card-modern hover-lift p-2"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(report.report_type)}`}>
+                      <div className="flex items-center gap-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getTypeColor(report.report_type)}`}>
                           {getTypeIcon(report.report_type)}
-                          <span className="ml-2">{report.report_type}</span>
+                          <span className="ml-1">{report.report_type}</span>
                         </span>
-                        <span className="text-sm text-gray-500">#{report.report_number}</span>
+                        <span className="text-xs text-gray-500">#{report.report_number}</span>
                         {getStatusIcon(report.status)}
                         {getPriorityIcon(report.priority)}
                       </div>
                       
-                      <h3 className="text-lg font-semibold text-gray-100">{report.project_name}</h3>
-                      <div className="flex items-center gap-3 text-sm text-gray-400 mb-1">
-                        <span className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1" />
+                      <div className="flex items-center gap-4 mt-1">
+                        <h3 className="text-base font-semibold text-gray-100">{report.project_name}</h3>
+                        <span className="text-sm text-gray-400 flex items-center">
+                          <MapPin className="h-3 w-3 mr-1" />
                           {report.project_address}
                         </span>
-                        <span className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {new Date(report.report_date).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center">
-                          <User className="h-4 w-4 mr-1" />
-                          {report.reported_by}
-                        </span>
-                      </div>
-
-                      {/* Quick Stats */}
-                      <div className="flex items-center gap-6 text-sm">
                         {report.weather_conditions && (
-                          <span className="text-gray-400">
-                            Weather: {report.weather_conditions} {report.weather_temperature}°F
+                          <span className="text-sm text-gray-400">
+                            {report.weather_conditions} {report.weather_temperature}°F
                           </span>
                         )}
+                        <span className="text-sm text-gray-400 flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {new Date(report.report_date).toLocaleDateString()}
+                        </span>
+                        <span className="text-sm text-gray-400 flex items-center">
+                          <User className="h-3 w-3 mr-1" />
+                          {report.reported_by}
+                        </span>
                       </div>
                     </div>
 
@@ -993,7 +1072,7 @@ export default function FieldReportsPage() {
                 const selectedRep = teamMembers.find(m => m.id === selectedReporter)
                 
                 handleNewReport({
-                  project_id: selectedProject,
+                  project_id: selectedProject || null,
                   project_name: selectedProj?.name || (formData.get('project_name') as string),
                   project_address: selectedProj?.address || (formData.get('project_address') as string),
                   report_type: formData.get('report_type') as FieldReport['report_type'],
@@ -1002,9 +1081,7 @@ export default function FieldReportsPage() {
                   reporter_id: selectedReporter,
                   work_performed: formData.get('work_performed') as string,
                   materials_used: formData.get('materials_used') as string,
-                  equipment_used: formData.get('equipment_used') as string,
                   subcontractors: formData.get('subcontractors') as string,
-                  visitors: formData.get('visitors') as string,
                   delays: formData.get('delays') as string,
                   safety_incidents: formData.get('safety_incidents') as string,
                   quality_issues: formData.get('quality_issues') as string,
@@ -1142,11 +1219,11 @@ export default function FieldReportsPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-yellow-400 mb-1">Weather</label>
+                      <label className="block text-sm font-medium text-yellow-400 mb-1">Weather Conditions</label>
                       <input
                         type="text"
                         name="weather_conditions"
-                        defaultValue={weatherData?.conditions || ''}
+                        defaultValue={weatherData?.conditions || editingReport?.weather_conditions || ''}
                         placeholder="Auto-filled from weather API"
                         className="input-modern w-full"
                       />
@@ -1156,7 +1233,7 @@ export default function FieldReportsPage() {
                       <input
                         type="number"
                         name="weather_temperature"
-                        defaultValue={weatherData?.temperature || ''}
+                        defaultValue={weatherData?.temperature || editingReport?.weather_temperature || ''}
                         placeholder="Auto-filled"
                         className="input-modern w-full"
                       />
@@ -1232,6 +1309,7 @@ export default function FieldReportsPage() {
                       placeholder="Report any safety incidents..."
                     />
                   </div>
+
                 </div>
               </div>
 
@@ -1296,6 +1374,242 @@ export default function FieldReportsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Report Modal - Modern Dark Theme */}
+      {showViewReportModal && viewingReport && (
+        <div className="modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowViewReportModal(false)}
+          />
+          <div className="modal-modern max-w-5xl w-full max-h-[90vh] overflow-y-auto relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-gray-700 rounded-xl shadow-2xl">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowViewReportModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Report Header with Gradient */}
+            <div className="relative bg-gradient-to-r from-yellow-600 via-yellow-500 to-orange-500 p-8 rounded-t-xl">
+              <div className="absolute inset-0 bg-black/20 rounded-t-xl"></div>
+              <div className="relative">
+                {/* Company Logo and Info */}
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 bg-white/20 rounded-lg backdrop-blur-sm flex items-center justify-center border border-white/30">
+                      {organizationData?.logo_url ? (
+                        <img 
+                          src={organizationData.logo_url} 
+                          alt="Company Logo" 
+                          className="w-16 h-16 object-contain"
+                        />
+                      ) : (
+                        <Building className="h-10 w-10 text-white" />
+                      )}
+                    </div>
+                    <div className="text-white">
+                      <h1 className="text-3xl font-bold">{organizationData?.company_name || 'Company Name'}</h1>
+                      <p className="text-white/90">{organizationData?.legal_name || ''}</p>
+                      {organizationData?.license_number && (
+                        <p className="text-sm text-white/80">License: {organizationData.license_number}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right text-white">
+                    <p className="text-sm">{organizationData?.street_address || ''}</p>
+                    {organizationData?.suite && <p className="text-sm">{organizationData.suite}</p>}
+                    <p className="text-sm">
+                      {organizationData?.city ? `${organizationData.city}, ${organizationData.state} ${organizationData.zip_code}` : ''}
+                    </p>
+                    <p className="text-sm mt-1">{organizationData?.main_phone || ''}</p>
+                  </div>
+                </div>
+
+                {/* Report Title */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-4xl font-bold text-white mb-2">FIELD REPORT</h2>
+                    <p className="text-xl text-white/90">#{viewingReport.report_number}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className={`px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white font-medium`}>
+                      {viewingReport.report_type}
+                    </span>
+                    <span className={`px-4 py-2 rounded-full ${
+                      viewingReport.priority === 'critical' ? 'bg-red-500/30 border-red-400' :
+                      viewingReport.priority === 'high' ? 'bg-orange-500/30 border-orange-400' :
+                      viewingReport.priority === 'medium' ? 'bg-yellow-500/30 border-yellow-400' :
+                      'bg-green-500/30 border-green-400'
+                    } backdrop-blur-sm border text-white font-medium`}>
+                      {viewingReport.priority?.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Report Content */}
+            <div className="p-8 space-y-6">
+              {/* Project Information Card */}
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-yellow-500/30 transition-all">
+                <div className="flex items-center gap-2 mb-4">
+                  <Building className="h-5 w-5 text-yellow-500" />
+                  <h3 className="text-xl font-semibold text-yellow-500">Project Information</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-400 mb-1">Project Name</p>
+                    <p className="text-white font-medium">{viewingReport.project_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400 mb-1">Address</p>
+                    <p className="text-white font-medium">{viewingReport.project_address}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400 mb-1">Report Date</p>
+                    <p className="text-white font-medium">
+                      {new Date(viewingReport.report_date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400 mb-1">Reported By</p>
+                    <p className="text-white font-medium">{viewingReport.reported_by}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Weather Conditions */}
+              {(viewingReport.weather_conditions || viewingReport.weather_temperature) && (
+                <div className="bg-gradient-to-r from-blue-900/30 to-cyan-900/30 backdrop-blur-sm rounded-xl p-6 border border-cyan-700/30">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Cloud className="h-5 w-5 text-cyan-400" />
+                    <h3 className="text-xl font-semibold text-cyan-400">Weather Conditions</h3>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    {viewingReport.weather_conditions && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400">Conditions:</span>
+                        <span className="text-white font-medium">{viewingReport.weather_conditions}</span>
+                      </div>
+                    )}
+                    {viewingReport.weather_temperature && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400">Temperature:</span>
+                        <span className="text-white font-medium">{viewingReport.weather_temperature}°F</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Work Performed */}
+              {viewingReport.work_performed && (
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-green-500/30 transition-all">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Hammer className="h-5 w-5 text-green-500" />
+                    <h3 className="text-xl font-semibold text-green-500">Work Performed</h3>
+                  </div>
+                  <p className="text-white leading-relaxed whitespace-pre-wrap">{viewingReport.work_performed}</p>
+                </div>
+              )}
+
+              {/* Materials Used */}
+              {viewingReport.materials_used && (
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-purple-500/30 transition-all">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Package className="h-5 w-5 text-purple-500" />
+                    <h3 className="text-xl font-semibold text-purple-500">Materials Used</h3>
+                  </div>
+                  <p className="text-white leading-relaxed whitespace-pre-wrap">{viewingReport.materials_used}</p>
+                </div>
+              )}
+
+              {/* Issues Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Delays */}
+                {viewingReport.delays && (
+                  <div className="bg-gradient-to-br from-orange-900/20 to-red-900/20 backdrop-blur-sm rounded-xl p-6 border border-orange-700/30">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Clock className="h-5 w-5 text-orange-500" />
+                      <h3 className="text-lg font-semibold text-orange-500">Delays</h3>
+                    </div>
+                    <p className="text-white leading-relaxed whitespace-pre-wrap">{viewingReport.delays}</p>
+                  </div>
+                )}
+
+                {/* Safety Incidents */}
+                {viewingReport.safety_incidents && (
+                  <div className="bg-gradient-to-br from-red-900/20 to-pink-900/20 backdrop-blur-sm rounded-xl p-6 border border-red-700/30">
+                    <div className="flex items-center gap-2 mb-4">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      <h3 className="text-lg font-semibold text-red-500">Safety Incidents</h3>
+                    </div>
+                    <p className="text-white leading-relaxed whitespace-pre-wrap">{viewingReport.safety_incidents}</p>
+                  </div>
+                )}
+
+                {/* Quality Issues */}
+                {viewingReport.quality_issues && (
+                  <div className="bg-gradient-to-br from-yellow-900/20 to-amber-900/20 backdrop-blur-sm rounded-xl p-6 border border-yellow-700/30">
+                    <div className="flex items-center gap-2 mb-4">
+                      <AlertCircle className="h-5 w-5 text-yellow-500" />
+                      <h3 className="text-lg font-semibold text-yellow-500">Quality Issues</h3>
+                    </div>
+                    <p className="text-white leading-relaxed whitespace-pre-wrap">{viewingReport.quality_issues}</p>
+                  </div>
+                )}
+
+                {/* Subcontractors */}
+                {viewingReport.subcontractors && (
+                  <div className="bg-gradient-to-br from-indigo-900/20 to-blue-900/20 backdrop-blur-sm rounded-xl p-6 border border-indigo-700/30">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Users className="h-5 w-5 text-indigo-500" />
+                      <h3 className="text-lg font-semibold text-indigo-500">Subcontractors</h3>
+                    </div>
+                    <p className="text-white leading-relaxed whitespace-pre-wrap">{viewingReport.subcontractors}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="mt-8 pt-6 border-t border-gray-700">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-400">
+                    <p>Generated on {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p>Report Status: <span className="text-yellow-500 font-medium">{viewingReport.status?.toUpperCase()}</span></p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleDownloadPDF(viewingReport)}
+                      className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download PDF
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowViewReportModal(false)
+                        handleEditReport(viewingReport)
+                      }}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all flex items-center gap-2"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      Edit Report
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

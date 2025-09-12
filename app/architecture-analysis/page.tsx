@@ -2,7 +2,6 @@
 
 import React, { useState, lazy, Suspense } from 'react';
 import { Activity, Shield, Zap, Package, GitBranch, RefreshCw, Download, AlertCircle, CheckCircle, XCircle, Monitor, Cpu, HardDrive, Network } from 'lucide-react';
-import { supabase } from '@/lib/supabase-client';
 // import { useSystemMetrics, useSecurityEvents } from '@/hooks/useSystemMetrics';
 
 // Lazy load performance-heavy components
@@ -65,17 +64,11 @@ export default function SystemAnalysisPage() {
     try {
       await loadSystemData();
       
-      // Store analysis run in database
-      await supabase
-        .from('activity_logs')
-        .insert([{
-          action: 'system_analysis',
-          user_id: 'system',
-          metadata: { 
-            analysis_type: 'full_system',
-            timestamp: new Date().toISOString()
-          }
-        }]);
+      // Log analysis run (removed database logging for now)
+      console.log('System analysis completed:', {
+        timestamp: new Date().toISOString(),
+        type: 'full_system'
+      });
         
     } catch (error) {
       console.error('Analysis failed:', error);

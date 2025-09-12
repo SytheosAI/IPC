@@ -47,6 +47,7 @@ interface VBAProject {
   id: string
   project_id?: string
   project_number?: string
+  permit_number?: string
   project_name: string
   address: string
   city?: string
@@ -1224,7 +1225,8 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
     city: 'Fort Myers',
     state: 'FL',
     zipCode: '',
-    jobNumber: '',
+    projectNumber: '',
+    permitNumber: '',
     owner: '',
     ownerPhone: '',
     ownerEmail: '',
@@ -1245,7 +1247,8 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
     e.preventDefault()
     
     const newProject: Partial<VBAProject> = {
-      project_number: projectData.jobNumber || `VBA-${Date.now()}`,
+      project_number: projectData.projectNumber || `VBA-${Date.now()}`,
+      permit_number: projectData.permitNumber,
       project_name: projectData.projectName,
       address: projectData.address,
       city: 'Fort Myers',
@@ -1281,16 +1284,28 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
         <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-sm font-medium text-yellow-400 mb-1">Job Number</label>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Project Number</label>
               <input
                 type="text"
                 className="input-modern"
-                value={projectData.jobNumber}
-                onChange={(e) => setProjectData({ ...projectData, jobNumber: e.target.value })}
+                value={projectData.projectNumber}
+                onChange={(e) => setProjectData({ ...projectData, projectNumber: e.target.value })}
                 required
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">Permit Number</label>
+              <input
+                type="text"
+                className="input-modern"
+                value={projectData.permitNumber}
+                onChange={(e) => setProjectData({ ...projectData, permitNumber: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-yellow-400 mb-1">Project Name</label>
               <input
@@ -1501,7 +1516,7 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
             <button
               type="submit"
               className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
-              disabled={!projectData.projectName || !projectData.jobNumber || selectedInspections.length === 0}
+              disabled={!projectData.projectName || !projectData.projectNumber || selectedInspections.length === 0}
             >
               Create Project
             </button>

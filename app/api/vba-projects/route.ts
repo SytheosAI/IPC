@@ -34,21 +34,44 @@ export async function POST(request: Request) {
     }
     
     // Create the VBA project
-    const { data, error } = await supabase
+    const { data: vbaProject, error: vbaError } = await supabase
       .from('vba_projects')
       .insert([projectData])
       .select()
       .single();
     
-    if (error) {
-      console.error('VBA Project creation error:', error);
+    if (vbaError) {
+      console.error('VBA Project creation error:', vbaError);
       return NextResponse.json(
-        { error: error.message, code: error.code },
+        { error: vbaError.message, code: vbaError.code },
         { status: 400 }
       );
     }
     
-    return NextResponse.json({ data });
+    // Also create an entry in the main projects table to maintain referential integrity
+    const mainProjectData = {
+      id: vbaProject.id, // Use the same ID
+      project_name: vbaProject.project_name,
+      project_number: vbaProject.project_number,
+      permit_number: vbaProject.permit_number || vbaProject.project_number,
+      address: vbaProject.address,
+      city: vbaProject.city,
+      state: vbaProject.state,
+      status: vbaProject.status === 'scheduled' ? 'active' : vbaProject.status,
+      organization_id: vbaProject.organization_id,
+      created_at: vbaProject.created_at,
+      updated_at: vbaProject.updated_at
+    };
+    
+    const { error: projectError } = await supabase
+      .from('projects')
+      .insert([mainProjectData]);
+    
+    if (projectError && projectError.code !== '23505') { // Ignore if already exists
+      console.error('Main project creation error:', projectError);
+    }
+    
+    return NextResponse.json({ data: vbaProject });
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(

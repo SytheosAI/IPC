@@ -6,7 +6,8 @@ import { ArrowLeft, Folder, FileText, FileCheck, BookOpen, Archive, Plus, Upload
 
 interface VBAProject {
   id: string
-  jobNumber?: string
+  projectNumber?: string
+  permitNumber?: string
   projectName: string
   address: string
   owner?: string
@@ -123,7 +124,8 @@ export default function VBAProjectDetailPage() {
             const apiProject = {
               ...result.data,
               projectName: result.data.project_name,
-              jobNumber: result.data.job_number,
+              projectNumber: result.data.project_number,
+              permitNumber: result.data.permit_number,
               projectType: result.data.project_type,
               startDate: result.data.start_date,
               selectedInspections: selectedInspections
@@ -1004,12 +1006,21 @@ export default function VBAProjectDetailPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-yellow-400 mb-1">Job Number</label>
+              <label className="block text-sm font-bold text-yellow-400 mb-1">Project Number</label>
               <input
                 type="text"
                 className="input-modern"
-                value={editedProject?.jobNumber || ''}
-                onChange={(e) => setEditedProject({ ...editedProject!, jobNumber: e.target.value })}
+                value={editedProject?.projectNumber || ''}
+                onChange={(e) => setEditedProject({ ...editedProject!, projectNumber: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-yellow-400 mb-1">Permit Number</label>
+              <input
+                type="text"
+                className="input-modern"
+                value={editedProject?.permitNumber || ''}
+                onChange={(e) => setEditedProject({ ...editedProject!, permitNumber: e.target.value })}
               />
             </div>
             <div className="md:col-span-2">

@@ -1,0 +1,109 @@
+
+      {/* Add Member Modal */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="card-modern max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-yellow-400">Add Team Member</h3>
+              <button
+                onClick={() => {
+                  setShowAddMemberModal(false)
+                  setNewMember({ name: "", email: "", phone: "", role: "", department: "" })
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleAddMember(); }} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Full Name</label>
+                  <input
+                    type="text"
+                    value={newMember.name}
+                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                    required
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 w-full"
+                    placeholder="Enter full name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Role</label>
+                  <select
+                    value={newMember.role}
+                    onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
+                    required
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white w-full"
+                  >
+                    <option value="">Select role</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Inspector">Inspector</option>
+                    <option value="Administrator">Administrator</option>
+                    <option value="Field Worker">Field Worker</option>
+                    <option value="Contractor">Contractor</option>
+                    <option value="Consultant">Consultant</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Email</label>
+                  <input
+                    type="email"
+                    value={newMember.email}
+                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                    required
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 w-full"
+                    placeholder="Enter email address"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-yellow-400 mb-1 font-medium">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={newMember.phone}
+                    onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                    required
+                    className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 w-full"
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-yellow-400 mb-1 font-medium">Department</label>
+                <input
+                  type="text"
+                  value={newMember.department}
+                  onChange={(e) => setNewMember({ ...newMember, department: e.target.value })}
+                  required
+                  className="input-modern bg-gray-800/50 backdrop-blur-sm border-gray-600/50 text-white placeholder-gray-400 w-full"
+                  placeholder="Enter department"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMemberModal(false)
+                    setNewMember({ name: "", email: "", phone: "", role: "", department: "" })
+                  }}
+                  className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-gray-900 rounded-lg hover:from-yellow-400 hover:to-orange-500 font-semibold transition-all"
+                >
+                  Add Member
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
