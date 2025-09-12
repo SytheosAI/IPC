@@ -1238,7 +1238,6 @@ function NewProjectModal({ onClose, onSave }: { onClose: () => void; onSave: (pr
     projectValue: '',
     squareFootage: '',
     stories: '1',
-    permitNumber: '',
     description: ''
   })
   const [selectedInspections, setSelectedInspections] = useState<string[]>([])
