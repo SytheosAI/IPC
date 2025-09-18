@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VBA Report System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .fail { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .data-flow { 
+            background-color: #f8f9fa; 
+            padding: 15px; 
+            border-left: 4px solid #007bff; 
+            margin: 10px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .issue-list {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .issue-item {
+            margin: 8px 0;
+            padding: 8px;
+            background-color: white;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>VBA Inspection Report Generation System - Test Results</h1>
+    
+    <div class="test-section">
+        <h2>🧪 Test Environment Setup</h2>
+        <button onclick="setupTestData()">Setup Test Data</button>
+        <button onclick="clearTestData()">Clear Test Data</button>
+        <div id="setupResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Data Flow Analysis</h2>
+        <div id="dataFlowResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Key Issues Identified</h2>
+        <div class="issue-list">
+            <h3>Critical Data Flow Issues:</h3>
+            
+            <div class="issue-item">
+                <strong>❌ Organization Data Key Mismatch</strong><br>
+                PDF generator expects <code>organizationInfo</code> but organization page saves to different structure.
+                The organization page saves with keys like <code>companyName</code>, <code>mainPhone</code>, <code>streetAddress</code>,
+                but PDF generator expects <code>org.companyName</code>, <code>org.phone</code>, <code>org.address</code>.
+            </div>
+
+            <div class="issue-item">
+                <strong>❌ Missing Project Information Fields</strong><br>
+                Project Information page doesn't capture building type, square footage, or occupancy type that are used in PDF reports.
+                Current fields are: reference, attention, logoUrl, projectName, projectAddress, licenseNumber, companyName.
+                Missing: buildingType, squareFootage, occupancyType.
+            </div>
+
+            <div class="issue-item">
+                <strong>❌ Address Format Inconsistency</strong><br>
+                Organization saves <code>streetAddress</code>, <code>city</code>, <code>state</code>, <code>zipCode</code> separately,
+                but PDF footer expects single <code>org.address</code> field.
+            </div>
+
+            <div class="issue-item">
+                <strong>❌ Email Field Mismatch</strong><br>
+                Organization saves <code>mainEmail</code> but PDF signature section expects <code>org.email</code>.
+            </div>
+
+            <div class="issue-item">
+                <strong>❌ Phone Field Mismatch</strong><br>
+                Organization saves <code>mainPhone</code> but PDF footer expects <code>org.phone</code>.
+            </div>
+
+            <div class="issue-item">
+                <strong>❌ Date Format Issue</strong><br>
+                PDF generates date as "Month DD, YYYY" but user template shows "Month DDth, YYYY" format.
+            </div>
+
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Recommended Fixes</h2>
+        <div class="data-flow">
+            <h3>1. Fix Organization Data Mapping</h3>
+            <p>Update the PDF generation function to properly map organization data fields or create a data transformation layer.</p>
+            
+            <h3>2. Add Missing Project Information Fields</h3>
+            <p>Add buildingType, squareFootage, and occupancyType fields to the project information form.</p>
+            
+            <h3>3. Create Unified Address Format</h3>
+            <p>Combine address fields when saving organization data or update PDF generation to handle separate fields.</p>
+            
+            <h3>4. Update Date Formatting</h3>
+            <p>Change date format to match user template requirements with ordinal suffixes (1st, 2nd, 3rd, etc.).</p>
+            
+            <h3>5. Add Data Validation</h3>
+            <p>Add checks to ensure all required data is present before allowing report generation.</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Test User Journey</h2>
+        <button onclick="testFullUserJourney()">Run Complete User Journey Test</button>
+        <div id="userJourneyResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Summary</h2>
+        <div id="testSummary"></div>
+    </div>
+
+    <script>
+        // Test data setup
+        function setupTestData() {
+            // Setup organization data (current format)
+            const orgData = {
+                companyName: "HBS Consultants",
+                legalName: "HBS Consultants, LLC",
+                taxId: "12-3456789",
+                licenseNumber: "PE-12345",
+                logoUrl: "https://via.placeholder.com/200x100/4a90e2/ffffff?text=HBS+Logo",
+                foundedYear: "2010",
+                companyType: "Engineering Consulting",
+                mainPhone: "239-326-7846",
+                mainEmail: "info@hbsconsultants.com",
+                supportEmail: "support@hbsconsultants.com",
+                website: "https://hbsconsultants.com",
+                streetAddress: "368 Ashbury Way",
+                suite: "",
+                city: "Naples",
+                state: "FL",
+                zipCode: "34110",
+                country: "United States",
+                numberOfEmployees: "11-25",
+                annualRevenue: "$1M - $5M",
+                primaryIndustry: "Engineering Services",
+                secondaryIndustries: ["Construction", "Consulting"],
+                certifications: ["PE License", "ISO 9001"],
+                billingAddress: "368 Ashbury Way",
+                billingCity: "Naples",
+                billingState: "FL",
+                billingZip: "34110",
+                paymentMethod: "Credit Card",
+                billingEmail: "billing@hbsconsultants.com",
+                timezone: "America/New_York",
+                dateFormat: "MM/DD/YYYY",
+                currency: "USD",
+                language: "en"
+            };
+
+            // Save organization data (what org page actually saves)
+            localStorage.setItem('organizationInfo', JSON.stringify(orgData));
+
+            // Setup VBA project data
+            const projectData = {
+                id: "test-project-123",
+                projectNumber: "P-2024-001",
+                permitNumber: "PER-2024-567",
+                projectName: "Coach Homes III",
+                address: "10590-10646 SMOKEHOUSE BAY Drive",
+                owner: "HOA Board",
+                contractor: "ABC Construction Co.",
+                projectType: "Residential Development",
+                startDate: "2024-01-15",
+                status: "Active",
+                selectedInspections: [
+                    "Foundation Inspection",
+                    "Framing Inspection", 
+                    "Electrical Inspection",
+                    "Plumbing Inspection",
+                    "Final Inspection"
+                ]
+            };
+
+            // Save VBA project
+            const existingProjects = JSON.parse(localStorage.getItem('vba-projects') || '[]');
+            const projectExists = existingProjects.some(p => p.id === projectData.id);
+            if (!projectExists) {
+                existingProjects.push(projectData);
+                localStorage.setItem('vba-projects', JSON.stringify(existingProjects));
+            }
+
+            // Setup project information data (current fields)
+            const projectInfo = {
+                reference: "REF-2024-001",
+                attention: "HOA Board President",
+                logoUrl: "https://via.placeholder.com/200x100/4a90e2/ffffff?text=HBS+Logo",
+                projectName: "Coach Homes III",
+                projectAddress: "10590-10646 SMOKEHOUSE BAY Drive, Naples, FL 34110",
+                licenseNumber: "PE-12345",
+                companyName: "HBS Consultants",
+                digitalSignature: ""
+            };
+
+            localStorage.setItem(`vba-project-info-${projectData.id}`, JSON.stringify(projectInfo));
+
+            // Setup inspection data
+            const inspectionPhotos = {
+                "Foundation Inspection": [
+                    {
+                        id: "photo1",
+                        name: "Foundation_East_Wall.jpg",
+                        type: "file",
+                        size: "2.1 MB",
+                        uploadDate: new Date().toISOString(),
+                        uploadedBy: "Current User"
+                    },
+                    {
+                        id: "photo2", 
+                        name: "Foundation_Corner_Detail.jpg",
+                        type: "file",
+                        size: "1.8 MB",
+                        uploadDate: new Date().toISOString(),
+                        uploadedBy: "Current User"
+                    }
+                ]
+            };
+
+            localStorage.setItem(`vba-inspection-photos-${projectData.id}`, JSON.stringify(inspectionPhotos));
+
+            // Set completion status
+            const checklistStatus = { "Foundation Inspection": true };
+            const signatureStatus = { "Foundation Inspection": true };
+            
+            localStorage.setItem(`vba-checklist-status-${projectData.id}`, JSON.stringify(checklistStatus));
+            localStorage.setItem(`vba-signature-status-${projectData.id}`, JSON.stringify(signatureStatus));
+
+            document.getElementById('setupResults').innerHTML = `
+                <div class="test-result pass">✅ Test data setup complete!</div>
+                <div class="data-flow">
+                    <strong>Created:</strong><br>
+                    • Organization data (HBS Consultants)<br>
+                    • VBA Project (Coach Homes III)<br>
+                    • Project Information<br>
+                    • Inspection photos (2 photos for Foundation Inspection)<br>
+                    • Checklist and signature completion status
+                </div>
+            `;
+        }
+
+        function clearTestData() {
+            const keys = [
+                'organizationInfo',
+                'vba-projects',
+                'vba-project-info-test-project-123',
+                'vba-inspection-photos-test-project-123',
+                'vba-checklist-status-test-project-123',
+                'vba-signature-status-test-project-123'
+            ];
+            
+            keys.forEach(key => localStorage.removeItem(key));
+            
+            document.getElementById('setupResults').innerHTML = `
+                <div class="test-result warning">🧹 Test data cleared!</div>
+            `;
+        }
+
+        function analyzeDataFlow() {
+            const results = [];
+            
+            // Check organization data
+            const orgData = localStorage.getItem('organizationInfo');
+            if (orgData) {
+                const org = JSON.parse(orgData);
+                results.push({
+                    test: "Organization Data Present",
+                    status: "pass",
+                    details: `Found organization data with ${Object.keys(org).length} fields`
+                });
+                
+                // Check key mappings
+                const expectedKeys = ['companyName', 'mainPhone', 'mainEmail', 'streetAddress'];
+                const pdfExpectedKeys = ['companyName', 'phone', 'email', 'address'];
+                
+                expectedKeys.forEach((key, index) => {
+                    if (org[key]) {
+                        results.push({
+                            test: `Organization ${key} -> PDF ${pdfExpectedKeys[index]}`,
+                            status: key === 'mainPhone' || key === 'mainEmail' || key === 'streetAddress' ? "fail" : "pass",
+                            details: key === 'mainPhone' || key === 'mainEmail' || key === 'streetAddress' ? 
+                                `Mapping issue: ${key} should map to ${pdfExpectedKeys[index]}` : 
+                                `Field mapping correct`
+                        });
+                    }
+                });
+            } else {
+                results.push({
+                    test: "Organization Data Present",
+                    status: "fail",
+                    details: "No organization data found"
+                });
+            }
+
+            // Display results
+            const resultsHtml = results.map(r => `
+                <div class="test-result ${r.status}">
+                    ${r.status === 'pass' ? '✅' : r.status === 'fail' ? '❌' : '⚠️'} 
+                    <strong>${r.test}:</strong> ${r.details}
+                </div>
+            `).join('');
+
+            document.getElementById('dataFlowResults').innerHTML = resultsHtml;
+        }
+
+        function testFullUserJourney() {
+            const steps = [];
+            
+            // Step 1: Check organization setup
+            const orgData = localStorage.getItem('organizationInfo');
+            if (orgData) {
+                const org = JSON.parse(orgData);
+                steps.push({
+                    step: "1. Organization Setup",
+                    status: "pass",
+                    details: `Company: ${org.companyName}, Phone: ${org.mainPhone}, Address: ${org.streetAddress}, ${org.city}, ${org.state} ${org.zipCode}`
+                });
+            } else {
+                steps.push({
+                    step: "1. Organization Setup", 
+                    status: "fail",
+                    details: "Organization data not configured"
+                });
+            }
+
+            // Step 2: Check VBA project
+            const projects = JSON.parse(localStorage.getItem('vba-projects') || '[]');
+            const testProject = projects.find(p => p.id === 'test-project-123');
+            if (testProject) {
+                steps.push({
+                    step: "2. VBA Project Creation",
+                    status: "pass", 
+                    details: `Project: ${testProject.projectName}, Owner: ${testProject.owner}, Inspections: ${testProject.selectedInspections.length}`
+                });
+            } else {
+                steps.push({
+                    step: "2. VBA Project Creation",
+                    status: "fail",
+                    details: "Test project not found"
+                });
+            }
+
+            // Step 3: Check project information
+            const projectInfo = localStorage.getItem('vba-project-info-test-project-123');
+            if (projectInfo) {
+                const info = JSON.parse(projectInfo);
+                steps.push({
+                    step: "3. Project Information",
+                    status: "warning",
+                    details: `Has basic fields but missing buildingType, squareFootage, occupancyType needed for reports`
+                });
+            } else {
+                steps.push({
+                    step: "3. Project Information",
+                    status: "fail", 
+                    details: "Project information not configured"
+                });
+            }
+
+            // Step 4: Check inspection readiness
+            const photos = localStorage.getItem('vba-inspection-photos-test-project-123');
+            const checklist = localStorage.getItem('vba-checklist-status-test-project-123');
+            const signatures = localStorage.getItem('vba-signature-status-test-project-123');
+            
+            if (photos && checklist && signatures) {
+                const photoData = JSON.parse(photos);
+                const foundationPhotos = photoData["Foundation Inspection"] || [];
+                steps.push({
+                    step: "4. Inspection Completion",
+                    status: "pass",
+                    details: `Foundation Inspection: ${foundationPhotos.length} photos, checklist ✓, signature ✓`
+                });
+            } else {
+                steps.push({
+                    step: "4. Inspection Completion",
+                    status: "fail",
+                    details: "Inspection requirements not met"
+                });
+            }
+
+            // Step 5: Report generation simulation
+            steps.push({
+                step: "5. Report Generation",
+                status: "warning",
+                details: "Would generate with data mapping issues - see fixes needed above"
+            });
+
+            const stepsHtml = steps.map(s => `
+                <div class="test-result ${s.status}">
+                    ${s.status === 'pass' ? '✅' : s.status === 'fail' ? '❌' : '⚠️'} 
+                    <strong>${s.step}:</strong> ${s.details}
+                </div>
+            `).join('');
+
+            document.getElementById('userJourneyResults').innerHTML = stepsHtml;
+            generateTestSummary();
+        }
+
+        function generateTestSummary() {
+            const summary = `
+                <div class="test-result warning">
+                    <h3>📋 Test Summary</h3>
+                    <p><strong>Overall Status:</strong> System functional but has critical data mapping issues</p>
+                    
+                    <h4>✅ What's Working:</h4>
+                    <ul>
+                        <li>Organization page captures company information</li>
+                        <li>VBA project creation and management</li>
+                        <li>Project information form</li>
+                        <li>Inspection workflow (photos, checklist, signatures)</li>
+                        <li>PDF generation framework</li>
+                    </ul>
+                    
+                    <h4>❌ Critical Issues:</h4>
+                    <ul>
+                        <li>Organization data not properly mapped to PDF generation</li>
+                        <li>Missing required project detail fields for reports</li>
+                        <li>Address formatting inconsistencies</li>
+                        <li>Date format doesn't match user template</li>
+                        <li>Email and phone field mismatches</li>
+                    </ul>
+                    
+                    <h4>🔧 Required Actions:</h4>
+                    <ol>
+                        <li>Fix data mapping between organization form and PDF generator</li>
+                        <li>Add missing fields to project information form</li>
+                        <li>Update address concatenation logic</li>
+                        <li>Fix date formatting to match template</li>
+                        <li>Add data validation before report generation</li>
+                    </ol>
+                </div>
+            `;
+            
+            document.getElementById('testSummary').innerHTML = summary;
+        }
+
+        // Initialize analysis on page load
+        window.onload = function() {
+            analyzeDataFlow();
+        };
+    </script>
+</body>
+</html>

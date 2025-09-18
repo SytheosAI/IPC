@@ -2,11 +2,10 @@ import '@/lib/polyfills'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { UserProvider } from './contexts/UserContext'
+import { AppProviders } from '@/lib/providers/AppProviders'
 import { ThemeInitializer } from './components/ThemeInitializer'
 import ClientLayout from './components/layout/ClientLayout'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-// import QueryProvider from './providers/QueryProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -47,12 +46,12 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ErrorBoundary>
-          <UserProvider>
+          <AppProviders>
             <ThemeInitializer />
             <ClientLayout>
               {children}
             </ClientLayout>
-          </UserProvider>
+          </AppProviders>
         </ErrorBoundary>
       </body>
     </html>

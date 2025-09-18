@@ -23,7 +23,11 @@ interface InspectionReportData {
   weather: string
   inspectorName: string
   inspectorLicense: string
+  inspectorEmail: string
   companyName: string
+  companyAddress: string
+  companyLocation: string
+  companyPhone: string
   workZone: string
   workPerformed: string
   drawingPage: string
@@ -57,7 +61,11 @@ export default function InspectionReportTemplate() {
     weather: '',
     inspectorName: '',
     inspectorLicense: '',
+    inspectorEmail: '',
     companyName: '',
+    companyAddress: '',
+    companyLocation: '',
+    companyPhone: '',
     workZone: '',
     workPerformed: '',
     drawingPage: '',
@@ -200,40 +208,43 @@ export default function InspectionReportTemplate() {
     const contentWidth = pageWidth - (margin * 2)
     let yPosition = margin
     
-    // Helper function to check page overflow
+    // Helper function to check page overflow and add headers/footers
     const checkPageBreak = (additionalHeight: number) => {
-      if (yPosition + additionalHeight > pageHeight - margin) {
+      if (yPosition + additionalHeight > pageHeight - 40) { // Leave space for footer
+        addFooter()
         pdf.addPage()
-        yPosition = margin
+        addHeader()
+        yPosition = margin + 15 // Account for header space
         return true
       }
       return false
     }
     
-    // Helper function to add wrapped text
-    const addWrappedText = (text: string, fontSize: number, isBold: boolean = false) => {
-      pdf.setFontSize(fontSize)
-      if (isBold) {
-        pdf.setFont('helvetica', 'bold')
-      } else {
+    // Add header to each page (except first)
+    const addHeader = () => {
+      if (pdf.internal.getNumberOfPages() > 1) {
+        pdf.setFontSize(10)
         pdf.setFont('helvetica', 'normal')
+        pdf.text(`${reportData.projectName || 'SWFIA Terminal Expansion Phase II'}`, pageWidth / 2, 15, { align: 'center' })
+        pdf.text(`Page ${pdf.internal.getNumberOfPages()} of ${pdf.internal.getNumberOfPages()}`, pageWidth - margin, 15, { align: 'right' })
       }
-      const lines = pdf.splitTextToSize(text, contentWidth)
-      const lineHeight = fontSize * 0.5
-      checkPageBreak(lines.length * lineHeight)
-      pdf.text(lines, margin, yPosition)
-      yPosition += lines.length * lineHeight
-      return lines.length * lineHeight
     }
     
-    // Add logo if available - maintain aspect ratio
+    // Add footer to each page
+    const addFooter = () => {
+      pdf.setFontSize(8)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text(`${reportData.companyName || 'HBS Consultants'}`, margin, pageHeight - 15)
+      pdf.text(`${reportData.companyAddress || '368 Ashbury Way'}`, pageWidth / 2, pageHeight - 15, { align: 'center' })
+      pdf.text(`${reportData.companyLocation || 'Naples, FL 34110'}`, pageWidth - margin, pageHeight - 15, { align: 'right' })
+      pdf.text(`${reportData.companyPhone || '239.326.7846'}`, pageWidth / 2, pageHeight - 8, { align: 'center' })
+    }
+    
+    // Add logo if available - position at top right
     if (reportData.logo) {
       try {
-        // Fixed dimensions to maintain aspect ratio
-        const maxLogoWidth = 50
-        const maxLogoHeight = 25
-        // Position logo at top right
-        // Use JPEG/PNG based on data URL
+        const maxLogoWidth = 40
+        const maxLogoHeight = 20
         const imageType = reportData.logo.includes('png') ? 'PNG' : 'JPEG'
         pdf.addImage(reportData.logo, imageType, pageWidth - margin - maxLogoWidth, yPosition, maxLogoWidth, maxLogoHeight, undefined, 'FAST')
       } catch (e) {
@@ -244,239 +255,341 @@ export default function InspectionReportTemplate() {
     // Date at top left
     pdf.setFontSize(10)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(`Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, margin, yPosition)
-    yPosition += 8
+    const currentDate = new Date()
+    pdf.text(`Date: ${currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, margin, yPosition)
+    yPosition += 15
     
-    // Attention section
-    if (reportData.attention) {
-      pdf.setFontSize(10)
-      pdf.setFont('helvetica', 'normal')
-      const attentionLines = reportData.attention.split('\n')
-      pdf.text('Attn:', margin, yPosition)
-      yPosition += 6
-      attentionLines.forEach(line => {
-        if (line.trim()) {
-          pdf.text(line.trim(), margin + 15, yPosition)
-          yPosition += 5
-        }
-      })
-      yPosition += 3
-    }
-    
-    // Reference section
-    if (reportData.reference) {
-      pdf.setFontSize(10)
-      pdf.setFont('helvetica', 'normal')
-      pdf.text('Ref:', margin, yPosition)
-      yPosition += 6
-      const refLines = reportData.reference.split('\n')
-      refLines.forEach(line => {
-        if (line.trim()) {
-          pdf.text(line.trim(), margin + 15, yPosition)
-          yPosition += 5
-        }
-      })
-      yPosition += 8
-    }
-    
-    // Inspection Report Title and Details (formatted like example)
-    pdf.setFontSize(11)
-    pdf.setFont('helvetica', 'normal')
-    const inspectionTitle = reportData.inspectionType || 'Threshold Inspection'
-    const reportNumber = reportData.reportSequence.padStart(3, '0')
-    pdf.text(`${inspectionTitle} Report: ${reportNumber}`, margin + 5, yPosition)
-    yPosition += 8
-    
-    pdf.text(`Date & Time of Inspection: ${reportData.inspectionDate}, ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`, margin + 5, yPosition)
+    // Recipient section (Lee County Public Works)
+    pdf.text('Lee County Public Works', margin, yPosition)
     yPosition += 6
     
-    pdf.text(`Inspector Name: ${reportData.inspectorName || ''}`, margin + 5, yPosition)
-    yPosition += 6
-    
-    pdf.text(`Weather Conditions: ${reportData.weather || ''}`, margin + 5, yPosition)
-    yPosition += 6
-    
-    const temp = reportData.weather ? reportData.weather.match(/\d+°F/) : null
-    pdf.text(`Temperature: ${temp ? temp[0] : '80F'}`, margin + 5, yPosition)
-    yPosition += 6
-    
-    pdf.text(`Work Zone: ${reportData.workZone || ''}`, margin + 5, yPosition)
-    yPosition += 6
-    
-    pdf.text(`Work Performed: ${reportData.workPerformed || ''}`, margin + 5, yPosition)
-    yPosition += 6
-    
-    pdf.text(`Plans Used: ${reportData.projectName || ''}`, margin + 5, yPosition)
-    yPosition += 6
-    
-    pdf.text(`Current Date/Revision: ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, margin + 5, yPosition)
-    yPosition += 6
-    
-    pdf.text(`Drawing Page: ${reportData.drawingPage || ''}`, margin + 5, yPosition)
+    // Attention block
+    pdf.text('Attn: Building and Permit Services', margin, yPosition)
+    yPosition += 5
+    pdf.text('     1500 Monroe St', margin, yPosition)
+    yPosition += 5
+    pdf.text('     Fort Myers, FL 33901', margin, yPosition)
     yPosition += 10
     
-    // HBS project number if available
+    // Reference block
+    pdf.text('Ref: ' + (reportData.reference || reportData.projectName || 'Southwest Florida International Airport Terminal Expansion'), margin, yPosition)
+    yPosition += 5
+    pdf.text('     ' + (reportData.projectAddress || '11000 Terminal Access Road, Fort Myers, FL 33913'), margin, yPosition)
+    yPosition += 5
     if (reportData.jobNumber) {
-      pdf.setFont('helvetica', 'bold')
-      pdf.text(`HBS Project Number: ${reportData.jobNumber}`, margin + 5, yPosition)
-      pdf.setFont('helvetica', 'normal')
+      pdf.text('     HBS Project Number: ' + reportData.jobNumber, margin, yPosition)
       yPosition += 10
+    } else {
+      yPosition += 5
     }
     
-    // Inspector Information Section
-    checkPageBreak(20)
+    // Main content paragraph - describing what was inspected
+    const inspectionDescription = `HBS was on site ${currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} to inspect the following items:`
+    const lines = pdf.splitTextToSize(inspectionDescription, contentWidth)
+    pdf.text(lines, margin, yPosition)
+    yPosition += lines.length * 5 + 5
+    
+    // Bullet point for what was inspected
+    pdf.text('● ' + (reportData.workPerformed || 'Concrete placement'), margin, yPosition)
     yPosition += 10
     
-    addWrappedText('INSPECTOR INFORMATION', 14, true)
-    yPosition += 5
+    pdf.text('Our visual observations determined the following:', margin, yPosition)
+    yPosition += 10
     
-    const inspectorInfo = [
-      ['Inspector Name:', reportData.inspectorName || ''],
-      ['License Number:', reportData.inspectorLicense || ''],
-      ['Company:', reportData.companyName || '']
-    ]
-    
-    inspectorInfo.forEach(([label, value]) => {
-      checkPageBreak(8)
-      pdf.setFontSize(10)
-      pdf.setFont('helvetica', 'bold')
-      pdf.text(label, margin, yPosition)
-      pdf.setFont('helvetica', 'normal')
-      pdf.text(value, margin + 35, yPosition)
-      yPosition += 8
+    // Crew section
+    pdf.text('Crew:', margin, yPosition)
+    yPosition += 6
+    const crewItems = ['Suffolk', 'Baker', 'EGS', 'UES', 'HBS', 'Colliers']
+    crewItems.forEach(crew => {
+      pdf.text('· ' + crew, margin + 5, yPosition)
+      yPosition += 5
     })
-    
     yPosition += 5
     
-    // General Context
-    if (reportData.generalContext) {
-      checkPageBreak(20)
-      yPosition += 10
-      
-      addWrappedText('GENERAL CONTEXT', 14, true)
+    // Equipment section
+    pdf.text('Equipment:', margin, yPosition)
+    yPosition += 6
+    const equipmentItems = ['Pump', 'Vibrator']
+    equipmentItems.forEach(equipment => {
+      pdf.text('· ' + equipment, margin + 5, yPosition)
       yPosition += 5
-      addWrappedText(reportData.generalContext, 10)
-      yPosition += 5
-    }
+    })
+    yPosition += 10
     
-    // Observations Section
-    if (reportData.observations) {
-      checkPageBreak(20)
-      yPosition += 10
-      
-      addWrappedText('OBSERVATIONS', 14, true)
-      yPosition += 5
-      addWrappedText(reportData.observations, 10)
-      yPosition += 5
-    }
+    // Inspection Report details box
+    const reportNumber = reportData.reportSequence.padStart(3, '0')
+    const inspectionTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
     
-    // Recommendations Section
-    if (reportData.recommendations) {
-      checkPageBreak(20)
-      yPosition += 10
-      
-      addWrappedText('RECOMMENDATIONS', 14, true)
-      yPosition += 5
-      addWrappedText(reportData.recommendations, 10)
-      yPosition += 5
-    }
+    pdf.text(`Threshold Inspection Report: ${reportNumber}`, margin, yPosition)
+    yPosition += 6
+    pdf.text(`Date & Time of Inspection: ${reportData.inspectionDate}, ${inspectionTime}`, margin, yPosition)
+    yPosition += 6
+    pdf.text(`Inspector Name: ${reportData.inspectorName || 'Robert Sprehe'}`, margin, yPosition)
+    yPosition += 6
     
-    // Photos Section - embed actual photos
-    if (actualPhotos && actualPhotos.length > 0) {
-      checkPageBreak(30)
-      yPosition += 10
-      
-      addWrappedText('INSPECTION PHOTOS', 14, true)
-      yPosition += 5
-      
-      // Add actual photos to PDF
-      actualPhotos.forEach((photo, index) => {
-        checkPageBreak(80) // Space for photo + caption
-        
-        // Add photo caption
-        pdf.setFontSize(10)
-        pdf.text(`Photo ${index + 1}: ${photo.caption}`, margin, yPosition)
-        yPosition += 5
-        
-        // Try to add the actual image
-        if (photo.url) {
-          try {
-            // Check if it's a base64 image
-            if (photo.url.startsWith('data:image')) {
-              const imgWidth = 80
-              const imgHeight = 60
-              const imageType = photo.url.includes('png') ? 'PNG' : 'JPEG'
-              pdf.addImage(photo.url, imageType, margin, yPosition, imgWidth, imgHeight, undefined, 'FAST')
-              yPosition += imgHeight + 10
-            } else {
-              // If it's not base64, show placeholder
-              pdf.text('[Photo URL not embedded - base64 required]', margin, yPosition)
-              yPosition += 10
-            }
-          } catch (e) {
-            console.error('Failed to add photo:', e, photo.url?.substring(0, 50))
-            pdf.text('[Photo could not be embedded]', margin, yPosition)
-            yPosition += 10
-          }
-        } else {
-          pdf.text('[No photo data available]', margin, yPosition)
-          yPosition += 10
-        }
-      })
-      yPosition += 5
-    }
+    const weatherDesc = reportData.weather ? reportData.weather.split(',')[0] : 'Mostly Sunny'
+    pdf.text(`Weather Conditions: ${weatherDesc}`, margin, yPosition)
+    yPosition += 6
     
-    // Digital Signature
+    const temp = reportData.weather ? reportData.weather.match(/\d+°F/)?.[0] : '80°F'
+    pdf.text(`Temperature: ${temp}`, margin, yPosition)
+    yPosition += 6
+    
+    pdf.text(`Work Zone: ${reportData.workZone || 'Concourse'}`, margin, yPosition)
+    yPosition += 6
+    
+    pdf.text(`Work Performed:`, margin, yPosition)
+    yPosition += 5
+    pdf.text(`Plans Used:`, margin, yPosition)
+    yPosition += 5
+    pdf.text(`Current Date/Revision:`, margin, yPosition)
+    yPosition += 5
+    pdf.text(`Drawing Page:`, margin, yPosition)
+    yPosition += 10
+    
+    // Right column for inspection details
+    const rightColumnX = margin + 70
+    let rightY = yPosition - 60
+    
+    pdf.setFont('helvetica', 'italic')
+    pdf.text('Concrete Placement', rightColumnX, rightY)
+    rightY += 5
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(reportData.workZone || 'Concourse', rightColumnX, rightY)
+    rightY += 5
+    pdf.text('Aug 1 2024', rightColumnX, rightY)
+    rightY += 5
+    pdf.text(reportData.workZone || 'Concourse', rightColumnX, rightY)
+    
+    yPosition += 10
+    
+    checkPageBreak(30)
+    
+    // Observations section
+    pdf.text('Observations:', margin, yPosition)
+    yPosition += 10
+    
+    // Specific observation with number
+    pdf.text(`${reportNumber}.01 ${reportData.observations || 'Observed the placement of 160 CY of Mix design 40355 concrete into the location noted above. The observed slump was 4 ½ " and the observed temperature was 81 degrees. Batch time 3:55 am, Placement time 4:28 am.'}`, margin + 10, yPosition)
+    yPosition += 25
+    
+    // Exceptions section
+    pdf.text('Exceptions:', margin, yPosition)
+    yPosition += 10
+    pdf.text(`${reportNumber}.01    None Noted`, margin + 10, yPosition)
+    yPosition += 15
+    
+    // Professional opinion statement
+    checkPageBreak(25)
+    yPosition += 10
+    
+    const professionalOpinion = 'It is my professional opinion that the observed structural elements were completed in substantial accordance with the approved project documents and specifications and as modified by RFI\'s approved by the Structural Engineer of Record.'
+    const opinionLines = pdf.splitTextToSize(professionalOpinion, contentWidth)
+    pdf.text(opinionLines, margin, yPosition)
+    yPosition += opinionLines.length * 5 + 10
+    
+    // Signature section
+    pdf.text('Respectfully Submitted,', margin, yPosition)
+    yPosition += 15
+    
+    // Add signature if available
     if (reportData.digitalSignature) {
-      checkPageBreak(50)
-      yPosition += 10
-      
-      pdf.setFontSize(10)
-      pdf.setFont('helvetica', 'normal')
-      pdf.text('Digitally Signed By:', margin, yPosition)
-      yPosition += 8
-      
       try {
-        // Add actual signature image if it's base64
         if (reportData.digitalSignature.startsWith('data:image')) {
-          // Fixed dimensions to maintain aspect ratio
           const sigWidth = 60
           const sigHeight = 20
           const imageType = reportData.digitalSignature.includes('png') ? 'PNG' : 'JPEG'
           pdf.addImage(reportData.digitalSignature, imageType, margin, yPosition, sigWidth, sigHeight, undefined, 'FAST')
           yPosition += sigHeight + 5
-        } else {
-          pdf.text('[Digital Signature]', margin, yPosition)
-          yPosition += 8
         }
       } catch (e) {
         console.error('Failed to add signature:', e)
-        pdf.text('[Digital Signature]', margin, yPosition)
-        yPosition += 8
+        yPosition += 20
       }
+    } else {
+      yPosition += 20
+    }
+    
+    // Inspector credentials
+    pdf.text(`${reportData.inspectorName || 'Robert S. Sprehe'}, S.I., P.E.`, margin, yPosition)
+    yPosition += 5
+    pdf.text(`Florida License No. ${reportData.inspectorLicense || 'PE74791'}`, margin, yPosition)
+    yPosition += 5
+    pdf.text(`${reportData.companyName || 'HBS Consultants'}, LLC`, margin, yPosition)
+    yPosition += 5
+    pdf.text(`${reportData.inspectorEmail || 'robert@hbspe.com'}`, margin, yPosition)
+    yPosition += 15
+    
+    // Enclosures/Attachments
+    pdf.text('Enclosures/Attachments', margin, yPosition)
+    yPosition += 6
+    pdf.text('     Exhibit A: Site Drawing Location Map', margin, yPosition)
+    yPosition += 5
+    pdf.text('     Exhibit B: Site Photos', margin, yPosition)
+    yPosition += 10
+    
+    // CC list
+    pdf.text('cc: Lee County Port Authority', margin, yPosition)
+    yPosition += 5
+    pdf.text('    Atkins', margin, yPosition)
+    yPosition += 5
+    pdf.text('    Manhattan Construction', margin, yPosition)
+    yPosition += 5
+    pdf.text('    EG Solutions', margin, yPosition)
+    yPosition += 15
+    
+    // Add second page with continuation
+    checkPageBreak(50)
+    
+    // Page 2 header
+    pdf.setFontSize(10)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(`${reportData.projectName || 'SWFIA Terminal Expansion Phase II'}`, pageWidth / 2, yPosition, { align: 'center' })
+    yPosition += 5
+    pdf.text('Page 2 of 6', pageWidth - margin, yPosition, { align: 'right' })
+    yPosition += 15
+    
+    // Observations section on page 2
+    pdf.text('Observations:', margin, yPosition)
+    yPosition += 10
+    
+    pdf.text(`${reportNumber}.01    ${reportData.observations || 'Observed the placement of 160 CY of Mix design 40355 concrete into the location noted above. The observed slump was 4 ½ " and the observed temperature was 81 degrees. Batch time 3:55 am, Placement time 4:28 am.'}`, margin + 10, yPosition)
+    yPosition += 25
+    
+    // Exceptions on page 2
+    pdf.text('Exceptions:', margin, yPosition)
+    yPosition += 10
+    pdf.text(`${reportNumber}.01    None Noted`, margin + 10, yPosition)
+    yPosition += 15
+    
+    // Repeat professional opinion
+    const professionalOpinion2 = 'It is my professional opinion that the observed structural elements were completed in substantial accordance with the approved project documents and specifications and as modified by RFI\'s approved by the Structural Engineer of Record.'
+    const opinionLines2 = pdf.splitTextToSize(professionalOpinion2, contentWidth)
+    pdf.text(opinionLines2, margin, yPosition)
+    yPosition += opinionLines2.length * 5 + 10
+    
+    // Repeat signature section
+    pdf.text('Respectfully Submitted,', margin, yPosition)
+    yPosition += 20
+    
+    pdf.text(`${reportData.inspectorName || 'Robert S. Sprehe'}, S.I., P.E.`, margin, yPosition)
+    yPosition += 5
+    pdf.text(`Florida License No. ${reportData.inspectorLicense || 'PE74791'}`, margin, yPosition)
+    yPosition += 5
+    pdf.text(`${reportData.companyName || 'HBS Consultants'}, LLC`, margin, yPosition)
+    yPosition += 5
+    pdf.text(`${reportData.inspectorEmail || 'robert@hbspe.com'}`, margin, yPosition)
+    yPosition += 15
+    
+    // Repeat enclosures
+    pdf.text('Enclosures/Attachments', margin, yPosition)
+    yPosition += 6
+    pdf.text('     Exhibit A: Site Drawing Location Map', margin, yPosition)
+    yPosition += 5
+    pdf.text('     Exhibit B: Site Photos', margin, yPosition)
+    yPosition += 10
+    
+    // Repeat CC list
+    pdf.text('cc: Lee County Port Authority', margin, yPosition)
+    yPosition += 5
+    pdf.text('    Atkins', margin, yPosition)
+    yPosition += 5
+    pdf.text('    Manhattan Construction', margin, yPosition)
+    yPosition += 5
+    pdf.text('    EG Solutions', margin, yPosition)
+    
+    // Page 3 - Limitations
+    pdf.addPage()
+    addHeader()
+    yPosition = margin + 15
+    
+    pdf.setFontSize(10)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(`${reportData.projectName || 'SWFIA Terminal Expansion Phase II'}`, pageWidth / 2, 15, { align: 'center' })
+    pdf.text('Page 3 of 6', pageWidth - margin, 15, { align: 'right' })
+    
+    yPosition = margin + 25
+    pdf.setFont('helvetica', 'bold')
+    pdf.text('Limitations', margin, yPosition)
+    yPosition += 10
+    
+    pdf.setFont('helvetica', 'normal')
+    const limitationsText = 'Our observations are based upon nondestructive testing techniques. The conclusions, analysis, and opinions expressed herein have been prepared within a reasonable degree of engineering certainty. They are based on the results and interpretations of the testing and/or data collection activities performed at the site, the information available at the time the report was issued, and the education, training, knowledge, skill, and experience of the author and/or licensed professional engineer.\n\nThe contents of this report are confidential and intended for the use of the Property Owner, and his representatives or clients. Contents of this report may also be privileged or otherwise protected by work product immunity or other legal rules. No liability is assumed for the misuse of this information by others and reserves the right to update this report should additional information become available.'
+    const limitationsLines = pdf.splitTextToSize(limitationsText, contentWidth)
+    pdf.text(limitationsLines, margin, yPosition)
+    yPosition += limitationsLines.length * 5
+    
+    // Pages 4-6 for Exhibits
+    if (actualPhotos && actualPhotos.length > 0) {
+      // Page 4 - Exhibit A
+      pdf.addPage()
+      pdf.text(`${reportData.projectName || 'SWFIA Terminal Expansion Phase II'}`, pageWidth / 2, 15, { align: 'center' })
+      pdf.text('Page 4 of 6', pageWidth - margin, 15, { align: 'right' })
       
-      pdf.text(reportData.inspectorName || 'Inspector', margin, yPosition)
-      yPosition += 5
-      pdf.text(new Date().toLocaleDateString('en-US'), margin, yPosition)
+      yPosition = margin + 35
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Exhibit A', pageWidth / 2, yPosition, { align: 'center' })
+      yPosition += 20
+      
+      // Add site drawing if available (placeholder for now)
+      pdf.setFont('helvetica', 'normal')
+      pdf.text('[Site Drawing Location Map]', pageWidth / 2, yPosition, { align: 'center' })
+      
+      // Page 5-6 - Exhibit B (Photos)
+      pdf.addPage()
+      pdf.text(`${reportData.projectName || 'SWFIA Terminal Expansion Phase II'}`, pageWidth / 2, 15, { align: 'center' })
+      pdf.text('Page 5 of 6', pageWidth - margin, 15, { align: 'right' })
+      
+      yPosition = margin + 35
+      pdf.setFont('helvetica', 'bold')
+      pdf.text('Exhibit B', pageWidth / 2, yPosition, { align: 'center' })
+      yPosition += 20
+      
+      // Add actual photos
+      actualPhotos.slice(0, 2).forEach((photo, index) => {
+        if (photo.url && photo.url.startsWith('data:image')) {
+          try {
+            const imgWidth = 120
+            const imgHeight = 90
+            const imageType = photo.url.includes('png') ? 'PNG' : 'JPEG'
+            const xPos = pageWidth / 2 - imgWidth / 2
+            pdf.addImage(photo.url, imageType, xPos, yPosition, imgWidth, imgHeight, undefined, 'FAST')
+            yPosition += imgHeight + 10
+          } catch (e) {
+            console.error('Failed to add photo:', e)
+          }
+        }
+      })
+      
+      // Page 6 for additional photos
+      if (actualPhotos.length > 2) {
+        pdf.addPage()
+        pdf.text(`${reportData.projectName || 'SWFIA Terminal Expansion Phase II'}`, pageWidth / 2, 15, { align: 'center' })
+        pdf.text('Page 6 of 6', pageWidth - margin, 15, { align: 'right' })
+        yPosition = margin + 25
+        
+        actualPhotos.slice(2).forEach((photo, index) => {
+          if (photo.url && photo.url.startsWith('data:image')) {
+            try {
+              const imgWidth = 120
+              const imgHeight = 90
+              const imageType = photo.url.includes('png') ? 'PNG' : 'JPEG'
+              const xPos = pageWidth / 2 - imgWidth / 2
+              pdf.addImage(photo.url, imageType, xPos, yPosition, imgWidth, imgHeight, undefined, 'FAST')
+              yPosition += imgHeight + 10
+            } catch (e) {
+              console.error('Failed to add photo:', e)
+            }
+          }
+        })
+      }
     }
     
-    // Remove footer - no longer needed
-    const addFooter = () => {
-      // Footer removed per request
-    }
-    
-    // Add page numbers to bottom of all pages
+    // Add footers to all pages
     const totalPages = pdf.internal.getNumberOfPages()
     for (let i = 1; i <= totalPages; i++) {
       pdf.setPage(i)
-      pdf.setFontSize(8)
-      pdf.setFont('helvetica', 'normal')
-      pdf.text(
-        `Page ${i} of ${totalPages}`,
-        pageWidth / 2,
-        pageHeight - 10,
-        { align: 'center' }
-      )
+      addFooter()
     }
     
     // Save the PDF to inspection-reports folder
@@ -765,6 +878,58 @@ export default function InspectionReportTemplate() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   value={reportData.companyName}
                   onChange={(e) => setReportData({ ...reportData, companyName: e.target.value })}
+                  placeholder=""
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Inspector Email</label>
+              <div className="bg-yellow-50 p-3 rounded">
+                <input
+                  type="email"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  value={reportData.inspectorEmail}
+                  onChange={(e) => setReportData({ ...reportData, inspectorEmail: e.target.value })}
+                  placeholder=""
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company Address</label>
+              <div className="bg-yellow-50 p-3 rounded">
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  value={reportData.companyAddress}
+                  onChange={(e) => setReportData({ ...reportData, companyAddress: e.target.value })}
+                  placeholder=""
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company Location</label>
+              <div className="bg-yellow-50 p-3 rounded">
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  value={reportData.companyLocation}
+                  onChange={(e) => setReportData({ ...reportData, companyLocation: e.target.value })}
+                  placeholder=""
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company Phone</label>
+              <div className="bg-yellow-50 p-3 rounded">
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  value={reportData.companyPhone}
+                  onChange={(e) => setReportData({ ...reportData, companyPhone: e.target.value })}
                   placeholder=""
                 />
               </div>

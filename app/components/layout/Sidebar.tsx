@@ -14,10 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
-  FileCheck,
+  Bell,
   Shield,
   Brain,
-  LogOut
+  LogOut,
+  BarChart3
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useUser } from '../../contexts/UserContext'
@@ -48,10 +49,10 @@ const navigation = [
     description: 'Virtual Building Authority'
   },
   { 
-    name: 'Field Reports', 
-    href: '/field-reports', 
-    icon: FileCheck,
-    description: 'Field Inspection Reports'
+    name: 'Notification Center', 
+    href: '/notifications', 
+    icon: Bell,
+    description: 'Alerts & Updates'
   },
   { 
     name: 'Organization', 
@@ -102,9 +103,15 @@ export default function Sidebar() {
   console.log('Profile:', profile)
   console.log('Is Admin:', isAdmin)
   
-  // Always show Architecture for now to test
+  // Always show Architecture and Performance for now to test
   const navItems = [
     ...navigation.slice(0, -2), // All items except settings and sign out
+    { 
+      name: 'Performance', 
+      href: '/performance', 
+      icon: BarChart3,
+      description: 'Performance Dashboard'
+    },
     { 
       name: 'Architecture', 
       href: '/architecture-analysis', 

@@ -13,6 +13,9 @@ interface ProjectInfo {
   licenseNumber: string;
   companyName: string;
   digitalSignature?: string;
+  buildingType: string;
+  squareFootage: string;
+  occupancyType: string;
 }
 
 export default function ProjectInformationPage() {
@@ -27,6 +30,9 @@ export default function ProjectInformationPage() {
     projectAddress: '',
     licenseNumber: '',
     companyName: '',
+    buildingType: '',
+    squareFootage: '',
+    occupancyType: '',
   });
 
   useEffect(() => {
@@ -203,6 +209,80 @@ export default function ProjectInformationPage() {
                 placeholder="Engineering Associates, Inc."
                 className="input-modern"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">
+                Building Type
+              </label>
+              <select
+                value={projectInfo.buildingType}
+                onChange={(e) => setProjectInfo({ ...projectInfo, buildingType: e.target.value })}
+                className="input-modern"
+              >
+                <option value="">Select Building Type</option>
+                <option value="Residential">Residential</option>
+                <option value="Commercial">Commercial</option>
+                <option value="Industrial">Industrial</option>
+                <option value="Mixed-Use">Mixed-Use</option>
+                <option value="Educational">Educational</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Hospitality">Hospitality</option>
+                <option value="Retail">Retail</option>
+                <option value="Office">Office</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">
+                Square Footage
+              </label>
+              <input
+                type="text"
+                value={projectInfo.squareFootage}
+                onChange={(e) => setProjectInfo({ ...projectInfo, squareFootage: e.target.value })}
+                placeholder="e.g., 25,000 sq ft"
+                className="input-modern"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-yellow-400 mb-1">
+                Occupancy Type
+              </label>
+              <select
+                value={projectInfo.occupancyType}
+                onChange={(e) => setProjectInfo({ ...projectInfo, occupancyType: e.target.value })}
+                className="input-modern"
+              >
+                <option value="">Select Occupancy Type</option>
+                <option value="A-1 Assembly">A-1 Assembly (Fixed Seating)</option>
+                <option value="A-2 Assembly">A-2 Assembly (Food/Drink)</option>
+                <option value="A-3 Assembly">A-3 Assembly (Worship/Recreation)</option>
+                <option value="A-4 Assembly">A-4 Assembly (Indoor Sports)</option>
+                <option value="A-5 Assembly">A-5 Assembly (Outdoor Activities)</option>
+                <option value="B Business">B Business</option>
+                <option value="E Educational">E Educational</option>
+                <option value="F-1 Factory">F-1 Factory (Moderate Hazard)</option>
+                <option value="F-2 Factory">F-2 Factory (Low Hazard)</option>
+                <option value="H-1 High Hazard">H-1 High Hazard (Detonation)</option>
+                <option value="H-2 High Hazard">H-2 High Hazard (Deflagration)</option>
+                <option value="H-3 High Hazard">H-3 High Hazard (Combustible)</option>
+                <option value="H-4 High Hazard">H-4 High Hazard (Health)</option>
+                <option value="H-5 High Hazard">H-5 High Hazard (Semiconductor)</option>
+                <option value="I-1 Institutional">I-1 Institutional (Supervised)</option>
+                <option value="I-2 Institutional">I-2 Institutional (Medical Care)</option>
+                <option value="I-3 Institutional">I-3 Institutional (Restrained)</option>
+                <option value="I-4 Institutional">I-4 Institutional (Day Care)</option>
+                <option value="M Mercantile">M Mercantile</option>
+                <option value="R-1 Residential">R-1 Residential (Transient)</option>
+                <option value="R-2 Residential">R-2 Residential (Multiple Units)</option>
+                <option value="R-3 Residential">R-3 Residential (1-2 Family)</option>
+                <option value="R-4 Residential">R-4 Residential (Care/Assisted)</option>
+                <option value="S-1 Storage">S-1 Storage (Moderate Hazard)</option>
+                <option value="S-2 Storage">S-2 Storage (Low Hazard)</option>
+                <option value="U Utility">U Utility/Miscellaneous</option>
+              </select>
             </div>
 
             <div className="md:col-span-2">

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, Save, Upload, FileImage, Building2, User, Phone, Mail, HardHat, ClipboardCheck, MapPin, Calendar, DollarSign, Briefcase
 } from 'lucide-react'
-import { db } from '@/lib/supabase-client'
+import { db } from '@/lib/db-client'
 
 interface ProjectInfoData {
   // Basic Info
@@ -48,6 +48,11 @@ interface ProjectInfoData {
   permitNumber: string
   contractNumber: string
   scopeOfWork: string
+
+  // Engineering fields
+  engineeringSeal: string | null
+  engineeringStandards: string[]
+  peerReviewRequired: boolean
 }
 
 export default function ProjectInformationTemplate() {
@@ -95,7 +100,12 @@ export default function ProjectInformationTemplate() {
     squareFootage: '',
     permitNumber: '',
     contractNumber: '',
-    scopeOfWork: ''
+    scopeOfWork: '',
+
+    // Engineering fields
+    engineeringSeal: null,
+    engineeringStandards: [],
+    peerReviewRequired: false
   })
   
   const [loading, setLoading] = useState(true)
@@ -107,7 +117,8 @@ export default function ProjectInformationTemplate() {
   const loadProjectInfo = async () => {
     try {
       setLoading(true)
-      // Load project info from Supabase
+
+      // Load basic project info
       const project: any = await db.vbaProjects.get(projectId)
       if (project) {
         setProjectInfo(prev => ({
@@ -120,6 +131,47 @@ export default function ProjectInformationTemplate() {
           completionDate: project.completion_date || ''
         }))
       }
+
+      // Load extended project information
+      const projectInfo = await db.projectInfo.get(projectId)
+      if (projectInfo) {
+        setProjectInfo(prev => ({
+          ...prev,
+          reference: projectInfo.reference || '',
+          attention: projectInfo.attention || '',
+          companyLogo: projectInfo.company_logo || null,
+          licenseNumber: projectInfo.license_number || '',
+          companyName: projectInfo.company_name || '',
+          digitalSignature: projectInfo.digital_signature || null,
+
+          siteSuperintendent: projectInfo.site_superintendent || prev.siteSuperintendent,
+          superintendentPhone: projectInfo.superintendent_phone || '',
+          superintendentEmail: projectInfo.superintendent_email || '',
+
+          consultant: projectInfo.consultant || '',
+          consultantCompany: projectInfo.consultant_company || '',
+          consultantPhone: projectInfo.consultant_phone || '',
+          consultantEmail: projectInfo.consultant_email || '',
+
+          inspector: projectInfo.inspector || prev.inspector,
+          inspectorCompany: projectInfo.inspector_company || '',
+          inspectorPhone: projectInfo.inspector_phone || '',
+          inspectorEmail: projectInfo.inspector_email || '',
+          inspectorLicense: projectInfo.inspector_license || '',
+
+          projectType: projectInfo.project_type || '',
+          projectSize: projectInfo.project_size || '',
+          projectValue: projectInfo.project_value || '',
+          buildingHeight: projectInfo.building_height || '',
+          numberOfUnits: projectInfo.number_of_units || '',
+          squareFootage: projectInfo.square_footage || '',
+          scopeOfWork: projectInfo.scope_of_work || '',
+
+          engineeringSeal: projectInfo.engineering_seal || null,
+          engineeringStandards: projectInfo.engineering_standards || [],
+          peerReviewRequired: projectInfo.peer_review_required || false
+        }))
+      }
     } catch (error) {
       console.error('Failed to load project info:', error)
     } finally {
@@ -128,14 +180,58 @@ export default function ProjectInformationTemplate() {
   }
 
   const handleSave = async () => {
-    // Log activity instead of saving to localStorage
-    await db.activityLogs.create({
-      action: 'updated_project_info',
-      entity_type: 'vba_project',
-      entity_id: projectId,
-      metadata: projectInfo
-    })
-    alert('Project information saved successfully!')
+    try {
+      // Save to project_information table
+      await db.projectInfo.upsert({
+        project_id: projectId,
+        reference: projectInfo.reference,
+        attention: projectInfo.attention,
+        company_logo: projectInfo.companyLogo,
+        license_number: projectInfo.licenseNumber,
+        company_name: projectInfo.companyName,
+        digital_signature: projectInfo.digitalSignature,
+
+        site_superintendent: projectInfo.siteSuperintendent,
+        superintendent_phone: projectInfo.superintendentPhone,
+        superintendent_email: projectInfo.superintendentEmail,
+
+        consultant: projectInfo.consultant,
+        consultant_company: projectInfo.consultantCompany,
+        consultant_phone: projectInfo.consultantPhone,
+        consultant_email: projectInfo.consultantEmail,
+
+        inspector: projectInfo.inspector,
+        inspector_company: projectInfo.inspectorCompany,
+        inspector_phone: projectInfo.inspectorPhone,
+        inspector_email: projectInfo.inspectorEmail,
+        inspector_license: projectInfo.inspectorLicense,
+
+        project_type: projectInfo.projectType,
+        project_size: projectInfo.projectSize,
+        project_value: projectInfo.projectValue,
+        building_height: projectInfo.buildingHeight,
+        number_of_units: projectInfo.numberOfUnits,
+        square_footage: projectInfo.squareFootage,
+        scope_of_work: projectInfo.scopeOfWork,
+
+        engineering_seal: projectInfo.engineeringSeal,
+        engineering_standards: projectInfo.engineeringStandards,
+        peer_review_required: projectInfo.peerReviewRequired
+      })
+
+      // Log activity
+      await db.activityLogs.create({
+        action: 'updated_project_info',
+        entity_type: 'vba_project',
+        entity_id: projectId,
+        metadata: projectInfo
+      })
+
+      alert('Project information saved successfully!')
+    } catch (error) {
+      console.error('Failed to save project information:', error)
+      alert('Failed to save project information. Please try again.')
+    }
   }
 
   const handleLogoUpload = () => {
@@ -165,6 +261,23 @@ export default function ProjectInformationTemplate() {
         const reader = new FileReader()
         reader.onload = (event) => {
           setProjectInfo({ ...projectInfo, digitalSignature: event.target?.result as string })
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+    input.click()
+  }
+
+  const handleSealUpload = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          setProjectInfo({ ...projectInfo, engineeringSeal: event.target?.result as string })
         }
         reader.readAsDataURL(file)
       }
@@ -654,6 +767,71 @@ export default function ProjectInformationTemplate() {
                   onChange={(e) => setProjectInfo({ ...projectInfo, scopeOfWork: e.target.value })}
                   placeholder="Detailed description of the project scope..."
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Engineering Section */}
+          <div className="mt-8 border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              Engineering Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Engineering Standards (one per line)
+                </label>
+                <textarea
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  value={projectInfo.engineeringStandards.join('\n')}
+                  onChange={(e) => setProjectInfo({
+                    ...projectInfo,
+                    engineeringStandards: e.target.value.split('\n').filter(s => s.trim())
+                  })}
+                  placeholder="AISC 360-16&#10;ACI 318-19&#10;IBC 2021&#10;ASCE 7-16"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Peer Review Required
+                </label>
+                <div className="flex items-center mt-2">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    checked={projectInfo.peerReviewRequired}
+                    onChange={(e) => setProjectInfo({ ...projectInfo, peerReviewRequired: e.target.checked })}
+                  />
+                  <label className="ml-2 block text-sm text-gray-900">
+                    This project requires peer review
+                  </label>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Engineering Seal
+                </label>
+                <div
+                  onClick={handleSealUpload}
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-indigo-500 transition-colors"
+                >
+                  {projectInfo.engineeringSeal ? (
+                    <img src={projectInfo.engineeringSeal} alt="Engineering Seal" className="mx-auto max-h-24" />
+                  ) : (
+                    <>
+                      <FileImage className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                      <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                        <Upload className="h-4 w-4 inline mr-2" />
+                        Upload Engineering Seal
+                      </button>
+                      <p className="text-xs text-gray-500 mt-2">Required for engineering reports</p>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -1,0 +1,204 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { MemoryRateLimiter, RateLimitConfigs } from './lib/rate-limiter';
+
+// Create rate limiters for different route types
+const rateLimiters = {
+  general: new MemoryRateLimiter(RateLimitConfigs.API_GENERAL),
+  auth: new MemoryRateLimiter(RateLimitConfigs.API_AUTH),
+  twofa: new MemoryRateLimiter(RateLimitConfigs.API_2FA),
+  upload: new MemoryRateLimiter(RateLimitConfigs.FILE_UPLOAD),
+  search: new MemoryRateLimiter(RateLimitConfigs.SEARCH_QUERY),
+  reports: new MemoryRateLimiter(RateLimitConfigs.REPORT_GENERATION),
+  database: new MemoryRateLimiter(RateLimitConfigs.DATABASE_WRITES),
+  email: new MemoryRateLimiter(RateLimitConfigs.EMAIL_SENDING),
+  sms: new MemoryRateLimiter(RateLimitConfigs.SMS_SENDING)
+};
+
+function getClientIP(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0] ||
+    request.headers.get('x-real-ip') ||
+    request.ip ||
+    'unknown'
+  );
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Apply rate limiting first
+  const rateLimitResult = await applyRateLimit(request);
+  if (rateLimitResult) {
+    return rateLimitResult;
+  }
+
+  // Continue with auth logic after rate limiting
+  return await handleAuth(request);
+}
+
+async function applyRateLimit(request: NextRequest): Promise<NextResponse | null> {
+  const { pathname } = request.nextUrl;
+  
+  // Skip rate limiting for static files and internal Next.js routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon') ||
+    pathname.includes('.') ||
+    pathname === '/sw.js'
+  ) {
+    return null;
+  }
+
+  // Determine rate limiter based on route
+  let limiterType = 'general';
+  
+  if (pathname.startsWith('/api/auth')) {
+    limiterType = 'auth';
+  } else if (pathname.includes('2fa') || pathname.includes('totp') || pathname.includes('sms')) {
+    limiterType = 'twofa';
+  } else if (pathname.includes('upload') || pathname.includes('file')) {
+    limiterType = 'upload';
+  } else if (pathname.includes('search') || pathname.includes('query')) {
+    limiterType = 'search';
+  } else if (pathname.includes('report') || pathname.includes('export')) {
+    limiterType = 'reports';
+  } else if (pathname.includes('email') || pathname.includes('notification')) {
+    limiterType = 'email';
+  } else if (pathname.includes('sms') || pathname.includes('phone')) {
+    limiterType = 'sms';
+  }
+
+  // Get client identifier
+  const clientIP = getClientIP(request);
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+  const identifier = `${clientIP}:${userAgent.substring(0, 50)}`;
+
+  try {
+    const limiter = rateLimiters[limiterType as keyof typeof rateLimiters];
+    const result = await limiter.checkLimit(identifier);
+
+    if (!result.allowed) {
+      // Log rate limit violation
+      console.warn(`Rate limit exceeded for ${identifier} on ${pathname} (type: ${limiterType})`);
+      
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded. Please try again later.',
+          type: limiterType,
+          retryAfter: Math.ceil((result.resetTime - Date.now()) / 1000)
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': String(RateLimitConfigs.API_GENERAL.maxRequests),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(Math.ceil(result.resetTime / 1000)),
+            'X-RateLimit-Type': limiterType,
+            'Retry-After': String(Math.ceil((result.resetTime - Date.now()) / 1000))
+          }
+        }
+      );
+    }
+
+    return null; // No rate limit hit, continue
+  } catch (error) {
+    console.error('Rate limiting error:', error);
+    return null; // Continue without rate limiting if there's an error
+  }
+}
+
+async function handleAuth(request: NextRequest): Promise<NextResponse> {
+  const pathname = request.nextUrl.pathname;
+
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    '/login',
+    '/auth/callback', 
+    '/reset-password',
+    '/api/auth',
+    '/api/system-metrics',
+    '/api/security-events',
+    '/_next',
+    '/favicon.ico',
+    '/manifest.json',
+    '/sw.js',
+  ];
+
+  // Check if the current route is public
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+
+  // For public routes, allow access
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
+
+  try {
+    // Simple cookie-based auth check for Edge Runtime compatibility
+    const accessToken = request.cookies.get('sb-access-token')?.value;
+    const refreshToken = request.cookies.get('sb-refresh-token')?.value;
+
+    // If no tokens, redirect to login
+    if (!accessToken && !refreshToken) {
+      const redirectUrl = new URL('/login', request.url);
+      redirectUrl.searchParams.set('redirectTo', pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // If authenticated user tries to access login, redirect to dashboard
+    if (pathname === '/login' && (accessToken || refreshToken)) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+
+    // Mobile detection and routing
+    const userAgent = request.headers.get('user-agent') || '';
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(userAgent);
+
+    if (isMobile && (accessToken || refreshToken)) {
+      // Allowed mobile paths for authenticated users
+      const allowedMobilePaths = [
+        '/mobile',
+        '/vba',
+        '/settings',
+        '/api',
+        '/_next',
+        '/auth',
+        '/field-reports',
+        '/projects',
+        '/submittals',
+        '/documents',
+        '/login',
+        '/reset-password'
+      ];
+
+      // If mobile user and not on an allowed mobile path, redirect to mobile page
+      if (!allowedMobilePaths.some(path => pathname.startsWith(path))) {
+        return NextResponse.redirect(new URL('/mobile', request.url));
+      }
+    }
+
+    // Allow access for authenticated users
+    return NextResponse.next();
+
+  } catch (error) {
+    console.error('Middleware error:', error);
+    // On error, redirect to login
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+}
+
+// Configure which routes the middleware should run on
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+  ],
+};

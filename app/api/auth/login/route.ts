@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { logAuthenticationAttempt } from '@/lib/auth-security-integration';
 
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
+    
+    // Get client IP and user agent for security monitoring
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
     
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -16,10 +21,15 @@ export async function POST(request: Request) {
     });
     
     if (error) {
+      // Log failed login attempt for security monitoring
+      await logAuthenticationAttempt(email, false, ip, userAgent);
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
     
     if (data.session) {
+      // Log successful login attempt for security monitoring
+      await logAuthenticationAttempt(email, true, ip, userAgent);
+      
       // Create response with cookies
       const response = NextResponse.json({ success: true, user: data.user });
       

@@ -146,6 +146,7 @@ import PageTitle from '@/components/PageTitle'
 import IntegrationsTab from './IntegrationsTab'
 import ActivityTab from './ActivityTab'
 import SupportTab from './SupportTab'
+import TwoFactorAuth from '@/components/TwoFactorAuth'
 
 interface UserProfile {
   name: string
@@ -1238,21 +1239,13 @@ export default function SettingsPage() {
                   <div>
                     <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Security Options</h3>
                     <div className="space-y-3">
-                      <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Shield className="h-5 w-5 text-gray-500" />
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">Two-Factor Authentication</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Add an extra layer of security</p>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={security.twoFactorAuth}
-                          onChange={(e) => setSecurity({ ...security, twoFactorAuth: e.target.checked })}
-                          className="h-5 w-5 text-sky-600 rounded focus:ring-sky-500"
+                      {/* Two-Factor Authentication Component */}
+                      <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <TwoFactorAuth 
+                          userId={userContext?.profile?.id || 'default-user'}
+                          userEmail={userContext?.profile?.email || 'user@example.com'}
                         />
-                      </label>
+                      </div>
                       <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                         <div className="flex items-center gap-3">
                           <Bell className="h-5 w-5 text-gray-500" />

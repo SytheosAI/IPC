@@ -3,6 +3,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import os from 'os';
 import fs from 'fs/promises';
+import { createClient } from '@supabase/supabase-js';
 
 const execAsync = promisify(exec);
 
@@ -23,8 +24,46 @@ export async function GET() {
         },
       });
     }
-    const securityEvents = [];
+    
+    // Initialize Supabase client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Fetch security events from database
+    const { data: dbEvents, error } = await supabase
+      .from('security_events')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(100);
+    
+    const securityEvents = dbEvents || [];
     const timestamp = new Date().toISOString();
+    
+    // Also include rate limiting events from activity logs
+    const { data: rateLimitEvents } = await supabase
+      .from('activity_logs')
+      .select('*')
+      .ilike('action', '%rate_limit%')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    
+    // Add rate limit violations as security events
+    if (rateLimitEvents) {
+      rateLimitEvents.forEach(event => {
+        securityEvents.push({
+          id: `rl_${event.id}`,
+          timestamp: event.created_at,
+          event_type: 'rate_limit_violation',
+          severity: 'medium',
+          description: `Rate limit exceeded: ${event.metadata?.endpoint || 'API'}`,
+          source_ip: event.metadata?.ip || 'unknown',
+          endpoint: event.metadata?.endpoint,
+          user_id: event.user_id,
+          status: 'active'
+        });
+      });
+    }
 
     // 1. Check active network connections (real system data)
     try {

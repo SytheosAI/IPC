@@ -27,6 +27,19 @@ interface FileItem {
   uploadedBy?: string
 }
 
+interface InspectionReport {
+  id: string
+  inspectionType: string
+  reportNumber: string
+  generatedDate: string
+  generatedBy: string
+  status: 'draft' | 'final'
+  checklistCompleted: boolean
+  photosAttached: number
+  signedOff: boolean
+  reportUrl?: string
+}
+
 interface InspectionEvent {
   id: string
   title: string
@@ -72,9 +85,15 @@ export default function VBAProjectDetailPage() {
   const [showCollaboration, setShowCollaboration] = useState(false)
   const [activeInspectionType, setActiveInspectionType] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [inspectionReports, setInspectionReports] = useState<InspectionReport[]>([])
+  const [checklistStatus, setChecklistStatus] = useState<Record<string, boolean>>({})
+  const [signatureStatus, setSignatureStatus] = useState<Record<string, boolean>>({})
+  const [projectInfo, setProjectInfo] = useState<any>(null)
 
   useEffect(() => {
     loadProjectDetails()
+    loadProjectInfo()
+    loadInspectionReports()
     
     // Check if mobile
     const checkMobile = () => {
@@ -184,6 +203,251 @@ export default function VBAProjectDetailPage() {
     setIsEditing(false)
   }
 
+  const loadProjectInfo = () => {
+    // Load project information from localStorage
+    const savedInfo = localStorage.getItem(`vba-project-info-${projectId}`)
+    if (savedInfo) {
+      setProjectInfo(JSON.parse(savedInfo))
+    }
+  }
+
+  const loadInspectionReports = () => {
+    // Load existing inspection reports from localStorage
+    const savedReports = localStorage.getItem(`vba-inspection-reports-${projectId}`)
+    if (savedReports) {
+      setInspectionReports(JSON.parse(savedReports))
+    }
+  }
+
+  const generateInspectionReport = (inspectionType: string) => {
+    // Check if all requirements are met
+    const hasChecklist = checklistStatus[inspectionType] || false
+    const hasPhotos = (inspectionPhotos[inspectionType] || []).length > 0
+    const hasSigned = signatureStatus[inspectionType] || false
+    
+    // Enhanced validation with specific messages
+    const validationErrors: string[] = []
+    if (!hasChecklist) validationErrors.push('Complete the inspection checklist')
+    if (!hasPhotos) validationErrors.push('Upload at least one inspection photo')
+    if (!hasSigned) validationErrors.push('Add digital sign-off')
+    
+    if (validationErrors.length > 0) {
+      alert(`Before generating the report, please:\n\n${validationErrors.map((err, i) => `${i + 1}. ${err}`).join('\n')}\n\nAll requirements must be completed for quality assurance.`)
+      return
+    }
+    
+    // Validate project information
+    if (!project?.projectName || !project?.address) {
+      alert('Project information is incomplete. Please ensure project name and address are filled in.')
+      return
+    }
+    
+    // Generate report
+    const reportNumber = `IR-${Date.now().toString().slice(-6)}`
+    const newReport: InspectionReport = {
+      id: Date.now().toString(),
+      inspectionType,
+      reportNumber,
+      generatedDate: new Date().toISOString(),
+      generatedBy: 'Current Inspector',
+      status: 'final',
+      checklistCompleted: hasChecklist,
+      photosAttached: (inspectionPhotos[inspectionType] || []).length,
+      signedOff: hasSigned
+    }
+    
+    const updatedReports = [...inspectionReports, newReport]
+    setInspectionReports(updatedReports)
+    localStorage.setItem(`vba-inspection-reports-${projectId}`, JSON.stringify(updatedReports))
+    
+    // Generate PDF report
+    generatePDFReport(newReport, inspectionType)
+    
+    alert(`Report ${reportNumber} generated successfully!`)
+  }
+
+  const generatePDFReport = async (report: InspectionReport, inspectionType: string) => {
+    // Import jsPDF dynamically
+    const { default: jsPDF } = await import('jspdf')
+    const doc = new jsPDF()
+    
+    // Get organization info from API/Database
+    let org: any = {}
+    try {
+      const orgResponse = await fetch('/api/organization')
+      if (orgResponse.ok) {
+        const orgData = await orgResponse.json()
+        if (orgData.data) {
+          // Map database fields to expected fields
+          org = {
+            companyName: orgData.data.company_name,
+            logoUrl: orgData.data.logo_url,
+            email: orgData.data.main_email,
+            phone: orgData.data.main_phone,
+            address: orgData.data.main_address ? 
+              `${orgData.data.main_address}${orgData.data.main_address_2 ? ' ' + orgData.data.main_address_2 : ''}` : '',
+            city: orgData.data.main_city,
+            state: orgData.data.main_state,
+            zip: orgData.data.main_zip
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch organization data:', e)
+    }
+    
+    // Get project info from localStorage
+    const projInfo = localStorage.getItem(`vba-project-info-${projectId}`)
+    const projectDetails = projInfo ? JSON.parse(projInfo) : {}
+    
+    // Add company logo in top right if available
+    if (org.logoUrl) {
+      try {
+        doc.addImage(org.logoUrl, 'PNG', 145, 10, 50, 25)
+      } catch (e) {
+        console.log('Logo could not be added')
+      }
+    }
+    
+    // Date at top left with ordinal suffix
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(0, 0, 0)
+    const date = new Date()
+    const day = date.getDate()
+    const ordinal = day % 10 === 1 && day !== 11 ? 'st' :
+                    day % 10 === 2 && day !== 12 ? 'nd' :
+                    day % 10 === 3 && day !== 13 ? 'rd' : 'th'
+    const currentDate = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' }).split(' ')
+    currentDate.splice(1, 0, `${day}${ordinal},`)
+    doc.text(currentDate.join(' '), 20, 25)
+    
+    // Project details
+    let yPos = 40
+    if (project?.projectName) {
+      doc.text(project.projectName, 20, yPos)
+      yPos += 7
+    }
+    if (project?.address) {
+      doc.text(project.address, 20, yPos)
+      yPos += 7
+      doc.text('Naples, FL', 20, yPos)
+      yPos += 14
+    }
+    
+    // Attention line
+    if (project?.owner) {
+      doc.setFont('helvetica', 'bold')
+      doc.text('Attn:', 20, yPos)
+      doc.setFont('helvetica', 'normal')
+      doc.text(project.owner, 45, yPos)
+      yPos += 14
+    }
+    
+    // RE: line
+    doc.setFont('helvetica', 'bold')
+    doc.text('RE:', 20, yPos)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`${inspectionType} Inspection Report`, 45, yPos)
+    yPos += 7
+    if (project?.projectName) {
+      doc.text(project.projectName, 45, yPos)
+      yPos += 7
+    }
+    if (project?.address) {
+      doc.text(project.address, 45, yPos)
+      yPos += 7
+      doc.text('Naples, FL', 45, yPos)
+      yPos += 21
+    }
+    
+    // Greeting and opening paragraph
+    const greeting = project?.owner ? `${project.owner}:` : 'Property Owner:'
+    doc.text(greeting, 20, yPos)
+    yPos += 14
+    
+    const openingText = `Subsequent to your request, a review of the existing conditions was conducted by ${org.companyName || 'our team'}`
+    const openingLines = doc.splitTextToSize(openingText + `, at the above referenced property. More specifically, the scope of this service assignment is to monitor and verify construction activities. The following inspection has been completed:`, 170)
+    doc.text(openingLines, 20, yPos)
+    yPos += openingLines.length * 6 + 14
+    
+    // Inspection Details
+    doc.setFont('helvetica', 'bold')
+    const underlinedText = `${project?.address || 'Project Location'} - ${inspectionType}`
+    doc.text(underlinedText, 20, yPos)
+    // Add underline
+    const textWidth = doc.getTextWidth(underlinedText)
+    doc.line(20, yPos + 1, 20 + textWidth, yPos + 1)
+    doc.setFont('helvetica', 'normal')
+    yPos += 7
+    
+    doc.text(`Inspection Complete: ${report.checklistCompleted ? 'Yes' : 'No'}`, 20, yPos)
+    yPos += 7
+    doc.text(`Photos Documented: ${report.photosAttached} photo(s)`, 20, yPos)
+    yPos += 7
+    doc.text(`Digital Sign-off: ${report.signedOff ? 'Completed' : 'Pending'}`, 20, yPos)
+    yPos += 14
+    
+    // Add project-specific details if available
+    if (projectDetails && Object.keys(projectDetails).length > 0) {
+      if (projectDetails.buildingType || projectDetails.squareFootage || projectDetails.occupancyType) {
+        doc.setFont('helvetica', 'bold')
+        doc.text('Project Details:', 20, yPos)
+        doc.setFont('helvetica', 'normal')
+        yPos += 7
+        
+        if (projectDetails.buildingType) {
+          doc.text(`Building Type: ${projectDetails.buildingType}`, 20, yPos)
+          yPos += 7
+        }
+        if (projectDetails.squareFootage) {
+          doc.text(`Square Footage: ${projectDetails.squareFootage}`, 20, yPos)
+          yPos += 7
+        }
+        if (projectDetails.occupancyType) {
+          doc.text(`Occupancy Type: ${projectDetails.occupancyType}`, 20, yPos)
+          yPos += 7
+        }
+      }
+    }
+    
+    // Professional closing
+    if (yPos < 220) yPos = 220
+    doc.text('Respectfully Submitted,', 20, yPos)
+    yPos += 20
+    
+    doc.text(report.generatedBy, 20, yPos)
+    yPos += 7
+    if (org.companyName) {
+      doc.text(org.companyName, 20, yPos)
+      yPos += 7
+    }
+    if (org.email) {
+      doc.text(org.email, 20, yPos)
+    }
+    
+    // Footer with company info
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    if (org.companyName) {
+      doc.text(org.companyName || '', 20, 280)
+      if (org.address || org.city) {
+        const fullAddress = `${org.address || ''} ${org.city || 'Naples'}, ${org.state || 'FL'} ${org.zip || ''}`
+        doc.text(fullAddress.trim(), 105, 280, { align: 'center' })
+      }
+      if (org.phone) {
+        doc.text(org.phone, 190, 280, { align: 'right' })
+      }
+    }
+    
+    // Page number
+    doc.setFontSize(9)
+    doc.text('Page 1 of 1', 105, 290, { align: 'center' })
+    
+    // Save the PDF
+    doc.save(`${report.reportNumber}_${inspectionType.replace(/\s+/g, '_')}.pdf`)
+  }
+
   const handleFileUpload = () => {
     // Create a file input element
     const input = document.createElement('input')
@@ -241,26 +505,42 @@ export default function VBAProjectDetailPage() {
       // Load report templates
       const reportItems: FileItem[] = [
         {
-          id: 'inspection-report',
-          name: 'Inspection Report Generator',
+          id: 'field-report',
+          name: 'Field Report',
           type: 'template',
-          size: 'PDF Generator',
+          size: 'Daily Site Report',
           uploadDate: new Date().toISOString(),
           uploadedBy: 'System'
         },
         {
           id: 'compliance-report',
-          name: 'Compliance Summary Report',
+          name: 'Compliance Report',
           type: 'template',
-          size: 'Compliance Overview',
+          size: 'Code Compliance',
           uploadDate: new Date().toISOString(),
           uploadedBy: 'System'
         },
         {
-          id: 'photo-report',
-          name: 'Photo Documentation Report',
+          id: 'safety-incident-report',
+          name: 'Safety/Incident Report',
           type: 'template',
-          size: 'Photo Gallery',
+          size: 'Safety Documentation',
+          uploadDate: new Date().toISOString(),
+          uploadedBy: 'System'
+        },
+        {
+          id: 'defect-report',
+          name: 'Material/Installation Defect Report',
+          type: 'template',
+          size: 'Defect Documentation',
+          uploadDate: new Date().toISOString(),
+          uploadedBy: 'System'
+        },
+        {
+          id: 'engineering-report',
+          name: 'Engineering Report',
+          type: 'template',
+          size: 'Engineering Analysis',
           uploadDate: new Date().toISOString(),
           uploadedBy: 'System'
         }
@@ -406,18 +686,20 @@ export default function VBAProjectDetailPage() {
         </div>
 
         <div className="card-modern hover-lift">
-          <div className="p-6 border-b border-glow flex items-center justify-between">
-            <h2 className="text-xl font-bold text-yellow-400 capitalize flex items-center gap-3">
+          <div className="p-6 border-b border-glow flex items-center justify-center">
+            <h2 className="text-xl font-bold text-yellow-400 capitalize flex items-center gap-3 justify-center">
               {getFolderIcon(activeFolder)}
-              {activeFolder === 'miscellaneous' ? 'Miscellaneous' : activeFolder === 'reports' ? 'Inspection Reports' : activeFolder}
+              {activeFolder === 'miscellaneous' ? 'Miscellaneous' : activeFolder === 'reports' ? 'Inspection Reports' : activeFolder === 'inspections' ? 'Inspections' : activeFolder}
             </h2>
-            <button
-              onClick={handleFileUpload}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Upload File
-            </button>
+            {activeFolder !== 'inspections' && activeFolder !== 'reports' && (
+              <button
+                onClick={handleFileUpload}
+                className="btn-primary flex items-center gap-2 ml-auto"
+              >
+                <Upload className="h-4 w-4" />
+                Upload File
+              </button>
+            )}
           </div>
 
           <div className="p-4">
@@ -437,6 +719,25 @@ export default function VBAProjectDetailPage() {
                         </div>
                         
                         <div className="mb-4 space-y-3">
+                          {/* Status indicators */}
+                          <div className="grid grid-cols-3 gap-2 p-3 bg-gray-800/50 rounded-lg">
+                            <div className="text-center">
+                              <div className={`text-sm ${checklistStatus[selectedInspection] ? 'text-green-400' : 'text-gray-400'}`}>
+                                {checklistStatus[selectedInspection] ? '✓' : '○'} Checklist
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className={`text-sm ${getInspectionPhotos(selectedInspection).length > 0 ? 'text-green-400' : 'text-gray-400'}`}>
+                                {getInspectionPhotos(selectedInspection).length > 0 ? '✓' : '○'} Photos
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <div className={`text-sm ${signatureStatus[selectedInspection] ? 'text-green-400' : 'text-gray-400'}`}>
+                                {signatureStatus[selectedInspection] ? '✓' : '○'} Sign-off
+                              </div>
+                            </div>
+                          </div>
+
                           <button
                             onClick={() => {
                               setActiveInspectionType(selectedInspection)
@@ -459,7 +760,7 @@ export default function VBAProjectDetailPage() {
                               className="btn-cyber flex items-center justify-center gap-2 text-sm"
                             >
                               <FileCheck className="h-4 w-4" />
-                              Checklist
+                              Checklist {checklistStatus[selectedInspection] && '✓'}
                             </button>
                             
                             <button
@@ -471,7 +772,7 @@ export default function VBAProjectDetailPage() {
                               className="btn-glass flex items-center justify-center gap-2 text-sm"
                             >
                               <Edit2 className="h-4 w-4" />
-                              Sign Off
+                              Sign Off {signatureStatus[selectedInspection] && '✓'}
                             </button>
                           </div>
                           
@@ -507,6 +808,15 @@ export default function VBAProjectDetailPage() {
                           >
                             <Upload className="h-4 w-4" />
                             Upload from Gallery
+                          </button>
+                          
+                          {/* Generate Report button */}
+                          <button
+                            onClick={() => generateInspectionReport(selectedInspection)}
+                            className="w-full btn-primary bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 flex items-center justify-center gap-2"
+                          >
+                            <FileText className="h-5 w-5" />
+                            Generate Report
                           </button>
                         </div>
 
@@ -545,49 +855,90 @@ export default function VBAProjectDetailPage() {
                       </div>
                 ) : (
                   // Show the list of inspections
-                  project?.selectedInspections && project.selectedInspections.length > 0 ? (
-                      <div className="space-y-4 mb-6">
-                        <h3 className="font-bold text-yellow-400 mb-3">Select an inspection to manage:</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {project.selectedInspections.map((inspection, index) => (
-                            <button
-                              key={index}
-                              onClick={() => setSelectedInspection(inspection)}
-                              className="card-modern hover-lift px-6 py-4 text-left transition-all flex items-center justify-between group"
-                            >
-                              <div>
-                                <p className="font-bold text-gray-100">{inspection}</p>
-                                <p className="text-xs text-yellow-400 mt-1">
-                                  {getInspectionPhotos(inspection).length} photos uploaded
-                                </p>
+                  <div>
+                    {project?.selectedInspections && project.selectedInspections.length > 0 ? (
+                        <div className="space-y-6">
+                          <div className="space-y-4">
+                            <h3 className="font-bold text-yellow-400 mb-3">Select an inspection to manage:</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {project.selectedInspections.map((inspection, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => setSelectedInspection(inspection)}
+                                  className="card-modern hover-lift px-6 py-4 text-left transition-all flex items-center justify-between group"
+                                >
+                                  <div>
+                                    <p className="font-bold text-gray-100">{inspection}</p>
+                                    <div className="flex gap-4 text-xs mt-1">
+                                      <span className="text-yellow-400">
+                                        {getInspectionPhotos(inspection).length} photos
+                                      </span>
+                                      {checklistStatus[inspection] && <span className="text-green-400">✓ Checklist</span>}
+                                      {signatureStatus[inspection] && <span className="text-green-400">✓ Signed</span>}
+                                    </div>
+                                  </div>
+                                  <ChevronRight className="h-5 w-5 text-yellow-400 group-hover:text-yellow-300" />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* Generated Reports Table */}
+                          {inspectionReports.length > 0 && (
+                            <div className="space-y-4">
+                              <h3 className="font-bold text-yellow-400">Generated Inspection Reports:</h3>
+                              <div className="card-glass overflow-hidden">
+                                <table className="w-full">
+                                  <thead className="bg-gray-800/50 border-b border-gray-700">
+                                    <tr>
+                                      <th className="text-left p-3 text-sm font-medium text-gray-300">Report #</th>
+                                      <th className="text-left p-3 text-sm font-medium text-gray-300">Inspection Type</th>
+                                      <th className="text-left p-3 text-sm font-medium text-gray-300">Date Generated</th>
+                                      <th className="text-left p-3 text-sm font-medium text-gray-300">Status</th>
+                                      <th className="text-center p-3 text-sm font-medium text-gray-300">Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {inspectionReports.map((report) => (
+                                      <tr key={report.id} className="border-b border-gray-700 hover:bg-gray-800/30">
+                                        <td className="p-3 text-sm text-gray-100 font-medium">{report.reportNumber}</td>
+                                        <td className="p-3 text-sm text-gray-300">{report.inspectionType}</td>
+                                        <td className="p-3 text-sm text-gray-300">
+                                          {new Date(report.generatedDate).toLocaleDateString()}
+                                        </td>
+                                        <td className="p-3">
+                                          <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-400">
+                                            {report.status}
+                                          </span>
+                                        </td>
+                                        <td className="p-3 text-center">
+                                          <button
+                                            onClick={() => generatePDFReport(report, report.inspectionType)}
+                                            className="text-yellow-400 hover:text-yellow-300 text-sm"
+                                          >
+                                            Download PDF
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
                               </div>
-                              <ChevronRight className="h-5 w-5 text-yellow-400 group-hover:text-yellow-300" />
-                            </button>
-                          ))}
+                            </div>
+                          )}
                         </div>
+                    ) : (
+                      <div className="card-glass p-8 text-center">
+                        <p className="text-yellow-400 text-lg mb-2">No inspections selected for this project</p>
+                        <p className="text-gray-300 text-sm">Please edit the project to add inspections</p>
                       </div>
-                  ) : (
-                    <div className="card-glass p-8 text-center">
-                      <p className="text-yellow-400 text-lg mb-2">No inspections selected for this project</p>
-                      <p className="text-gray-300 text-sm">Please edit the project to add inspections</p>
-                    </div>
-                  )
+                    )}
+                  </div>
                 )}
               </div>
             ) : activeFolder === 'templates' ? (
               <div className="space-y-4 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <button
-                    onClick={() => {
-                      window.location.href = `/vba/inspection-report/${projectId}`
-                    }}
-                    className="card-modern hover-lift px-6 py-4 text-left transition-all"
-                  >
-                    <div>
-                      <p className="font-bold text-yellow-400">Inspection Report</p>
-                      <p className="text-xs text-gray-300 mt-1">Generate PDF Report</p>
-                    </div>
-                  </button>
                   <button
                     onClick={() => {
                       alert('Executive Summary feature coming soon')
@@ -646,33 +997,93 @@ export default function VBAProjectDetailPage() {
                 </div>
               </div>
             ) : activeFolder === 'reports' ? (
-              <div className="space-y-2">
-                {folderContent.map((file) => (
-                  <div
-                    key={file.id}
-                    className="card-glass hover-lift flex items-center justify-between p-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-yellow-400" />
-                      <div>
-                        <p className="font-bold text-gray-100">{file.name}</p>
-                        <p className="text-sm text-yellow-400">
-                          {file.size} • Click to generate
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
+              <div className="space-y-6">
+                {/* Report Templates Section */}
+                <div>
+                  <h3 className="text-lg font-bold text-yellow-400 mb-3">Report Templates</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {folderContent.map((template) => (
                       <button
-                        onClick={() => handleFileAction('view', file)}
-                        className="btn-glass p-2"
-                        title="Generate Report"
+                        key={template.id}
+                        onClick={() => {
+                          if (template.id === 'field-report') {
+                            window.location.href = '/field-reports'
+                          } else if (template.id === 'compliance-report') {
+                            window.location.href = `/vba/project/${projectId}/templates/compliance-report`
+                          } else if (template.id === 'safety-incident-report') {
+                            window.location.href = `/vba/project/${projectId}/templates/safety-incident-report`
+                          } else if (template.id === 'defect-report') {
+                            window.location.href = `/vba/project/${projectId}/templates/material-defect-report`
+                          } else if (template.id === 'engineering-report') {
+                            window.location.href = `/vba/project/${projectId}/templates/engineering-report`
+                          } else {
+                            alert(`${template.name} feature coming soon!`)
+                          }
+                        }}
+                        className="card-glass hover-lift flex items-center justify-between p-4"
                       >
-                        <Eye className="h-4 w-4" />
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-yellow-400" />
+                          <div className="text-left">
+                            <p className="font-bold text-gray-100">{template.name}</p>
+                            <p className="text-sm text-yellow-400">{template.size}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-gray-400" />
                       </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Generated Inspection Reports Section */}
+                {inspectionReports.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-bold text-yellow-400 mb-3">Generated Inspection Reports</h3>
+                    <div className="card-glass overflow-hidden">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-glow">
+                            <th className="p-3 text-left text-yellow-400">Report #</th>
+                            <th className="p-3 text-left text-yellow-400">Inspection Type</th>
+                            <th className="p-3 text-left text-yellow-400">Date</th>
+                            <th className="p-3 text-left text-yellow-400">Generated By</th>
+                            <th className="p-3 text-left text-yellow-400">Status</th>
+                            <th className="p-3 text-center text-yellow-400">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {inspectionReports.map((report) => (
+                            <tr key={report.id} className="border-b border-glow/30">
+                              <td className="p-3 text-gray-100">{report.reportNumber}</td>
+                              <td className="p-3 text-gray-100">{report.inspectionType}</td>
+                              <td className="p-3 text-gray-100">
+                                {new Date(report.generatedDate).toLocaleDateString()}
+                              </td>
+                              <td className="p-3 text-gray-100">{report.generatedBy}</td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                  report.status === 'final' 
+                                    ? 'bg-green-500/20 text-green-400' 
+                                    : 'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                  {report.status}
+                                </span>
+                              </td>
+                              <td className="p-3 text-center">
+                                <button
+                                  onClick={() => generatePDFReport(report, report.inspectionType)}
+                                  className="text-yellow-400 hover:text-yellow-300 text-sm"
+                                >
+                                  Download PDF
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             ) : (
               <div className="space-y-2">
