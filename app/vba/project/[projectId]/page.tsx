@@ -505,10 +505,10 @@ export default function VBAProjectDetailPage() {
       // Load report templates
       const reportItems: FileItem[] = [
         {
-          id: 'field-report',
-          name: 'Field Report',
+          id: 'inspection-report',
+          name: 'Inspection Report',
           type: 'template',
-          size: 'Daily Site Report',
+          size: 'Inspection Documentation',
           uploadDate: new Date().toISOString(),
           uploadedBy: 'System'
         },
@@ -529,7 +529,7 @@ export default function VBAProjectDetailPage() {
           uploadedBy: 'System'
         },
         {
-          id: 'defect-report',
+          id: 'material-defect-report',
           name: 'Material/Installation Defect Report',
           type: 'template',
           size: 'Defect Documentation',
@@ -1006,16 +1006,16 @@ export default function VBAProjectDetailPage() {
                       <button
                         key={template.id}
                         onClick={() => {
-                          if (template.id === 'field-report') {
-                            window.location.href = '/field-reports'
+                          if (template.id === 'inspection-report') {
+                            router.push(`/vba/project/${projectId}/templates/inspection-report`)
                           } else if (template.id === 'compliance-report') {
-                            window.location.href = `/vba/project/${projectId}/templates/compliance-report`
+                            router.push(`/vba/project/${projectId}/templates/compliance-report`)
                           } else if (template.id === 'safety-incident-report') {
-                            window.location.href = `/vba/project/${projectId}/templates/safety-incident-report`
-                          } else if (template.id === 'defect-report') {
-                            window.location.href = `/vba/project/${projectId}/templates/material-defect-report`
+                            router.push(`/vba/project/${projectId}/templates/safety-incident-report`)
+                          } else if (template.id === 'material-defect-report') {
+                            router.push(`/vba/project/${projectId}/templates/material-defect-report`)
                           } else if (template.id === 'engineering-report') {
-                            window.location.href = `/vba/project/${projectId}/templates/engineering-report`
+                            router.push(`/vba/project/${projectId}/templates/engineering-report`)
                           } else {
                             alert(`${template.name} feature coming soon!`)
                           }
