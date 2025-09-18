@@ -186,10 +186,10 @@ export default function ProjectInformationTemplate() {
         project_id: projectId,
         reference: projectInfo.reference,
         attention: projectInfo.attention,
-        company_logo: projectInfo.companyLogo,
+        company_logo: projectInfo.companyLogo || undefined,
         license_number: projectInfo.licenseNumber,
         company_name: projectInfo.companyName,
-        digital_signature: projectInfo.digitalSignature,
+        digital_signature: projectInfo.digitalSignature || undefined,
 
         site_superintendent: projectInfo.siteSuperintendent,
         superintendent_phone: projectInfo.superintendentPhone,
@@ -214,7 +214,7 @@ export default function ProjectInformationTemplate() {
         square_footage: projectInfo.squareFootage,
         scope_of_work: projectInfo.scopeOfWork,
 
-        engineering_seal: projectInfo.engineeringSeal,
+        engineering_seal: projectInfo.engineeringSeal || undefined,
         engineering_standards: projectInfo.engineeringStandards,
         peer_review_required: projectInfo.peerReviewRequired
       })

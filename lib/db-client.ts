@@ -182,14 +182,14 @@ class DatabaseClient {
 
   // VBA Projects
   vbaProjects = {
-    async getAll(): Promise<VBAProject[]> {
+    getAll: async (): Promise<VBAProject[]> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('vba_projects').select('*')
       if (error) throw error
       return data || []
     },
 
-    async get(id: string): Promise<VBAProject | null> {
+    get: async (id: string): Promise<VBAProject | null> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('vba_projects').select('*').eq('id', id).single()
       if (error) {
@@ -199,21 +199,21 @@ class DatabaseClient {
       return data
     },
 
-    async create(project: Partial<VBAProject>): Promise<VBAProject> {
+    create: async (project: Partial<VBAProject>): Promise<VBAProject> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('vba_projects').insert(project).select().single()
       if (error) throw error
       return data
     },
 
-    async update(id: string, updates: Partial<VBAProject>): Promise<VBAProject> {
+    update: async (id: string, updates: Partial<VBAProject>): Promise<VBAProject> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('vba_projects').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single()
       if (error) throw error
       return data
     },
 
-    async delete(id: string): Promise<void> {
+    delete: async (id: string): Promise<void> => {
       const client = this.supabase || this.initializeServer()
       const { error } = await client.from('vba_projects').delete().eq('id', id)
       if (error) throw error
@@ -222,7 +222,7 @@ class DatabaseClient {
 
   // Project Information
   projectInfo = {
-    async get(projectId: string): Promise<ProjectInformation | null> {
+    get: async (projectId: string): Promise<ProjectInformation | null> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('project_information').select('*').eq('project_id', projectId).single()
       if (error) {
@@ -232,7 +232,7 @@ class DatabaseClient {
       return data
     },
 
-    async upsert(info: Partial<ProjectInformation>): Promise<ProjectInformation> {
+    upsert: async (info: Partial<ProjectInformation>): Promise<ProjectInformation> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('project_information').upsert(info).select().single()
       if (error) throw error
@@ -242,21 +242,21 @@ class DatabaseClient {
 
   // Inspection Reports
   inspectionReports = {
-    async getAll(): Promise<InspectionReport[]> {
+    getAll: async (): Promise<InspectionReport[]> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('inspection_reports').select('*')
       if (error) throw error
       return data || []
     },
 
-    async getByProject(projectId: string): Promise<InspectionReport[]> {
+    getByProject: async (projectId: string): Promise<InspectionReport[]> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('inspection_reports').select('*').eq('project_id', projectId)
       if (error) throw error
       return data || []
     },
 
-    async get(id: string): Promise<InspectionReport | null> {
+    get: async (id: string): Promise<InspectionReport | null> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('inspection_reports').select('*').eq('id', id).single()
       if (error) {
@@ -266,21 +266,21 @@ class DatabaseClient {
       return data
     },
 
-    async create(report: Partial<InspectionReport>): Promise<InspectionReport> {
+    create: async (report: Partial<InspectionReport>): Promise<InspectionReport> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('inspection_reports').insert(report).select().single()
       if (error) throw error
       return data
     },
 
-    async update(id: string, updates: Partial<InspectionReport>): Promise<InspectionReport> {
+    update: async (id: string, updates: Partial<InspectionReport>): Promise<InspectionReport> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('inspection_reports').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single()
       if (error) throw error
       return data
     },
 
-    async delete(id: string): Promise<void> {
+    delete: async (id: string): Promise<void> => {
       const client = this.supabase || this.initializeServer()
       const { error } = await client.from('inspection_reports').delete().eq('id', id)
       if (error) throw error
@@ -289,21 +289,21 @@ class DatabaseClient {
 
   // Inspection Photos
   inspections = {
-    async getPhotosByProject(projectId: string): Promise<InspectionPhoto[]> {
+    getPhotosByProject: async (projectId: string): Promise<InspectionPhoto[]> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('inspection_photos').select('*').eq('project_id', projectId)
       if (error) throw error
       return data || []
     },
 
-    async getPhotosByType(projectId: string, inspectionType: string): Promise<InspectionPhoto[]> {
+    getPhotosByType: async (projectId: string, inspectionType: string): Promise<InspectionPhoto[]> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('inspection_photos').select('*').eq('project_id', projectId).eq('category', inspectionType)
       if (error) throw error
       return data || []
     },
 
-    async savePhoto(photo: Partial<InspectionPhoto>): Promise<InspectionPhoto> {
+    savePhoto: async (photo: Partial<InspectionPhoto>): Promise<InspectionPhoto> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('inspection_photos').insert(photo).select().single()
       if (error) throw error
@@ -313,14 +313,14 @@ class DatabaseClient {
 
   // Activity Logs
   activityLogs = {
-    async create(log: Partial<ActivityLog>): Promise<ActivityLog> {
+    create: async (log: Partial<ActivityLog>): Promise<ActivityLog> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('activity_logs').insert(log).select().single()
       if (error) throw error
       return data
     },
 
-    async getRecent(limit: number = 50): Promise<ActivityLog[]> {
+    getRecent: async (limit: number = 50): Promise<ActivityLog[]> => {
       const client = this.supabase || this.initializeServer()
       const { data, error } = await client.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(limit)
       if (error) throw error

@@ -427,7 +427,7 @@ Claim Number: ${data.supplierNotification.claimNumber || 'Pending'}
           this.addLimitations()
 
           // Photos
-          if (data.includePhotos && data.photos && data.photos.length > 0) {
+          if (data.photos && data.photos.length > 0) {
             this.addPhotos(data)
           }
         }

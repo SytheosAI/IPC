@@ -349,7 +349,7 @@ ${data.engineeringScope.analysisMethod.map(m => `• ${m}`).join('\n')}
             this.pdf.text('Structural Analysis:', this.margin, this.yPosition)
             this.yPosition += 5
             this.pdf.setFont('helvetica', 'normal')
-            this.addMultilineText(data.technicalFindings.structuralAnalysis, this.margin + 5)
+            this.pdf.text(data.technicalFindings.structuralAnalysis, this.margin + 5, this.yPosition)
             this.yPosition += 10
           }
 
@@ -358,7 +358,7 @@ ${data.engineeringScope.analysisMethod.map(m => `• ${m}`).join('\n')}
             this.pdf.text('Code Compliance:', this.margin, this.yPosition)
             this.yPosition += 5
             this.pdf.setFont('helvetica', 'normal')
-            this.addMultilineText(data.technicalFindings.codeCompliance, this.margin + 5)
+            this.pdf.text(data.technicalFindings.codeCompliance, this.margin + 5, this.yPosition)
             this.yPosition += 10
           }
 
@@ -367,7 +367,7 @@ ${data.engineeringScope.analysisMethod.map(m => `• ${m}`).join('\n')}
             this.pdf.text('Safety Factors:', this.margin, this.yPosition)
             this.yPosition += 5
             this.pdf.setFont('helvetica', 'normal')
-            this.addMultilineText(data.technicalFindings.safetyFactors, this.margin + 5)
+            this.pdf.text(data.technicalFindings.safetyFactors, this.margin + 5, this.yPosition)
             this.yPosition += 10
           }
 
@@ -499,7 +499,7 @@ ${data.engineeringScope.analysisMethod.map(m => `• ${m}`).join('\n')}
           this.pdf.setTextColor(100, 100, 100)
           this.pdf.text('PROFESSIONAL LIABILITY STATEMENT', this.margin, this.yPosition)
           this.yPosition += 5
-          this.addMultilineText(data.professionalLiability, this.margin, 8)
+          this.pdf.text(data.professionalLiability, this.margin, this.yPosition)
           this.yPosition += 10
 
           // Copyright Notice
@@ -698,7 +698,6 @@ ${data.engineeringScope.analysisMethod.map(m => `• ${m}`).join('\n')}
                       <option value="analysis">Analysis</option>
                       <option value="inspection">Inspection</option>
                       <option value="assessment">Assessment</option>
-                      <option value="peer_review">Peer Review</option>
                     </select>
                   </div>
 

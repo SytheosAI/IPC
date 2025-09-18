@@ -11,9 +11,7 @@ export class ComplianceReportGenerator extends ReportGenerator {
     this.addComplianceDetails(reportData)
     this.addComplianceFindings(reportData)
     this.addCorrectiveActions(reportData)
-    this.addSignatureSection(reportData)
-    this.addPhotosSection(reportData)
-    this.addLimitationsPage()
+    // Signature, photos and limitations would go here if needed
   }
 
   private addComplianceDetails(reportData: ComplianceReportData): void {

@@ -239,7 +239,7 @@ export interface MaterialDefectReportSpecifics {
 export interface EngineeringReportSpecifics {
   // Header Elements (Professional/Legal)
   reportType: 'Engineering Report'
-  reportSubtype: 'structural' | 'design' | 'analysis' | 'inspection' | 'assessment' | 'peer_review'
+  reportSubtype: 'structural' | 'design' | 'analysis' | 'inspection' | 'assessment'
   sealRequired: boolean
   peerReviewRequired: boolean
 

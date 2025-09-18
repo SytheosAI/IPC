@@ -151,7 +151,7 @@ export class SecurityMonitor {
 
     // Suspicious 2FA activity
     if (event.event_type === 'failed_2fa') {
-      const recent2FAFailures = await this.getRecentEvents('failed_2fa', event.user_id, 30);
+      const recent2FAFailures = await this.getRecentEvents('failed_2fa', event.user_id || '', 30);
       if (recent2FAFailures.length >= this.alertThresholds.failed_2fa_attempts) {
         detectedThreats.push({
           pattern_id: 'compromised_2fa',
@@ -412,7 +412,7 @@ export class SecurityMonitor {
       };
 
       // Calculate metrics from events
-      events?.forEach(event => {
+      events?.forEach((event: any) => {
         const severity = event.metadata?.security_event?.severity || 'low';
         metrics.events_by_severity[severity]++;
       });

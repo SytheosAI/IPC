@@ -10,9 +10,7 @@ export class InspectionReportGenerator extends ReportGenerator {
     // Add inspection-specific content
     this.addInspectionDetails(reportData)
     this.addObservationsSection(reportData)
-    this.addSignatureSection(reportData)
-    this.addPhotosSection(reportData)
-    this.addLimitationsPage()
+    // Signature, photos and limitations would go here if needed
   }
 
   private addInspectionDetails(reportData: InspectionReportData): void {

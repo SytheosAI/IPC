@@ -113,7 +113,7 @@ export function useKeyboardShortcuts() {
         } else if (currentPath.includes('/projects')) {
           router.push('/submittals');
         } else {
-          toast.info('Navigate to a specific section to create new items');
+          toast('Navigate to a specific section to create new items');
         }
       },
       category: 'actions'
@@ -157,7 +157,7 @@ export function useKeyboardShortcuts() {
         if (exportButton) {
           exportButton.click();
         } else {
-          toast.info('Select items to export');
+          toast('Select items to export');
         }
       },
       category: 'actions'
@@ -315,12 +315,12 @@ function showShortcutsModal() {
 
   // Define shortcuts directly instead of using the hook
   const shortcuts: KeyboardShortcut[] = [
-    { key: '/', description: 'Search', category: 'Navigation' },
-    { key: 'Ctrl+K', description: 'Command palette', category: 'Navigation' },
-    { key: 'Ctrl+S', description: 'Save', category: 'General' },
-    { key: 'Ctrl+Z', description: 'Undo', category: 'General' },
-    { key: 'Ctrl+Y', description: 'Redo', category: 'General' },
-    { key: 'Escape', description: 'Close modal/cancel', category: 'General' },
+    { key: '/', description: 'Search', action: () => {}, category: 'navigation' },
+    { key: 'Ctrl+K', description: 'Command palette', action: () => {}, category: 'navigation' },
+    { key: 'Ctrl+S', description: 'Save', action: () => {}, category: 'system' },
+    { key: 'Ctrl+Z', description: 'Undo', action: () => {}, category: 'system' },
+    { key: 'Ctrl+Y', description: 'Redo', action: () => {}, category: 'system' },
+    { key: 'Escape', description: 'Close modal/cancel', action: () => {}, category: 'system' },
   ];
 
   const categories = shortcuts.reduce((acc, shortcut) => {
