@@ -652,7 +652,7 @@ export default function ComprehensiveReportFormExample() {
                     <div className="mb-8">
                       <FormProgress />
                       <div className="mt-4 flex justify-end">
-                        <AutoSaveIndicator showDetailedStatus />
+                        <AutoSaveIndicator />
                       </div>
                     </div>
 

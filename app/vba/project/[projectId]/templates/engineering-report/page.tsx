@@ -233,15 +233,15 @@ export default function EngineeringReportTemplate() {
           ...prev,
           companyName: extendedInfo.company_name || prev.companyName,
           logo: extendedInfo.company_logo || null,
-          inspectorName: extendedInfo.engineer || extendedInfo.inspector || '',
-          inspectorLicense: extendedInfo.engineer_license || extendedInfo.inspector_license || '',
-          inspectorEmail: extendedInfo.engineer_email || extendedInfo.inspector_email || '',
+          inspectorName: extendedInfo.inspector || '',
+          inspectorLicense: extendedInfo.inspector_license || '',
+          inspectorEmail: extendedInfo.inspector_email || '',
           digitalSignature: extendedInfo.digital_signature || null,
-          engineeringSeal: extendedInfo.engineering_seal || null,
+          engineeringSeal: null,
           engineer: {
             ...prev.engineer,
-            name: extendedInfo.engineer || prev.engineer.name,
-            licenseNumber: extendedInfo.engineer_license || prev.engineer.licenseNumber,
+            name: extendedInfo.inspector || prev.engineer.name,
+            licenseNumber: extendedInfo.inspector_license || prev.engineer.licenseNumber,
             firmName: extendedInfo.company_name || prev.engineer.firmName
           }
         }))
@@ -273,16 +273,6 @@ export default function EngineeringReportTemplate() {
 
         observations: reportData.observations,
         recommendations: reportData.recommendations,
-
-        // Engineering specific fields
-        engineering_report_type: reportData.reportSubtype,
-        engineering_standards: reportData.engineeringStandards.map(s => s.code),
-        calculations_attached: reportData.attachments.calculations,
-        drawings_attached: reportData.attachments.drawings,
-        professional_opinion: reportData.professionalOpinion.summary,
-        engineering_recommendations: reportData.engineeringRecommendations.map(r => r.recommendation).join('; '),
-        limitations_assumptions: reportData.limitationsAndDisclaimer,
-        seal_date: reportData.sealInformation.sealDate,
 
         status: 'draft',
         generated_by: reportData.engineer.name || 'System'

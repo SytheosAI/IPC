@@ -1241,9 +1241,8 @@ export default function SettingsPage() {
                     <div className="space-y-3">
                       {/* Two-Factor Authentication Component */}
                       <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                        <TwoFactorAuth 
-                          userId={userContext?.profile?.id || 'default-user'}
-                          userEmail={userContext?.profile?.email || 'user@example.com'}
+                        <TwoFactorAuth
+                          userId={userContext?.profile?.email || 'default-user'}
                         />
                       </div>
                       <label className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">

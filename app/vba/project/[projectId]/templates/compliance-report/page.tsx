@@ -207,18 +207,6 @@ export default function ComplianceReportTemplate() {
         observations: reportData.observations,
         recommendations: reportData.recommendations,
 
-        // Compliance specific fields
-        compliance_standard: reportData.complianceStandard,
-        regulatory_body: reportData.regulatoryBody,
-        compliance_status: reportData.complianceStatus,
-        audit_date: reportData.auditDate,
-        scope_of_work: reportData.scopeOfCompliance,
-        findings: reportData.complianceFindings.map(f => f.observations).join('; '),
-        violations: reportData.violations.map(v => v.description),
-        corrective_actions: reportData.correctiveActions.map(a => a.action).join('; '),
-        follow_up_required: reportData.followUpRequired,
-        next_review_date: reportData.nextReviewDate,
-
         status: 'draft',
         generated_by: reportData.inspectorName || 'System'
       })
@@ -429,17 +417,6 @@ Certification Required: ${data.certificationRequired ? 'Yes' : 'No'}
 
         observations: reportData.observations,
         recommendations: reportData.recommendations,
-
-        compliance_standard: reportData.complianceStandard,
-        regulatory_body: reportData.regulatoryBody,
-        compliance_status: reportData.complianceStatus,
-        audit_date: reportData.auditDate,
-        scope_of_work: reportData.scopeOfCompliance,
-        findings: reportData.complianceFindings.map(f => f.observations).join('; '),
-        violations: reportData.violations.map(v => v.description),
-        corrective_actions: reportData.correctiveActions.map(a => a.action).join('; '),
-        follow_up_required: reportData.followUpRequired,
-        next_review_date: reportData.nextReviewDate,
 
         status: 'final',
         generated_by: reportData.inspectorName || 'System',
@@ -702,7 +679,6 @@ Certification Required: ${data.certificationRequired ? 'Yes' : 'No'}
                       <option value="compliant">Compliant</option>
                       <option value="non_compliant">Non-Compliant</option>
                       <option value="partial">Partial Compliance</option>
-                      <option value="pending">Pending Review</option>
                     </select>
                   </div>
                 </div>

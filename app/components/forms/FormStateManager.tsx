@@ -191,7 +191,7 @@ export function FormStateProvider({
     }
   })
 
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>()
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const pendingChangesRef = useRef<Record<string, any>>({})
 
   // Online/Offline Detection

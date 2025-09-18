@@ -10,7 +10,7 @@ export interface ComplianceReportSpecifics {
   // Content Structure
   scopeOfCompliance: string
   regulatoryRequirements: string[]
-  complianceStatus: 'compliant' | 'non_compliant' | 'partial' | 'pending'
+  complianceStatus: 'compliant' | 'non_compliant' | 'partial'
 
   // Findings Section (unique formatting)
   complianceFindings: Array<{
