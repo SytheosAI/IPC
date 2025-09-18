@@ -3,10 +3,11 @@ import { db } from '@/lib/db-client'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const reports = await db.inspectionReports.getByProject(params.projectId)
+    const { projectId } = await params
+    const reports = await db.inspectionReports.getByProject(projectId)
     return NextResponse.json(reports)
   } catch (error) {
     console.error('Failed to fetch reports:', error)
@@ -16,15 +17,16 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
+    const { projectId } = await params
     const body = await request.json()
 
     // Ensure project_id is set and add metadata
     const reportData = {
       ...body,
-      project_id: params.projectId,
+      project_id: projectId,
       status: 'draft' as const,
       generated_by: body.generated_by || 'system',
       created_at: new Date().toISOString(),
@@ -39,7 +41,7 @@ export async function POST(
       entity_type: 'inspection_report',
       entity_id: report.id,
       metadata: {
-        project_id: params.projectId,
+        project_id: projectId,
         report_type: report.report_type,
         report_title: report.report_title
       }

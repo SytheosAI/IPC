@@ -383,7 +383,7 @@ function ReviewStep() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="text-sm font-medium text-blue-900 mb-2">Review Instructions</h3>
           <p className="text-sm text-blue-700">
-            Please review all the information you've entered. Once submitted, the report will be marked as final
+            Please review all the information you&apos;ve entered. Once submitted, the report will be marked as final
             and cannot be modified without creating a new revision.
           </p>
         </div>

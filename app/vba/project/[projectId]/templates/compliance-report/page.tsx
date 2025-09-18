@@ -796,7 +796,7 @@ Certification Required: ${data.certificationRequired ? 'Yes' : 'No'}
                     <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
                       <Shield className="h-8 w-8 text-blue-400 mx-auto mb-2" />
                       <p className="text-gray-500 text-sm">
-                        No regulatory requirements added. Click "Add Requirement" to define compliance criteria.
+                        No regulatory requirements added. Click &quot;Add Requirement&quot; to define compliance criteria.
                       </p>
                     </div>
                   )}

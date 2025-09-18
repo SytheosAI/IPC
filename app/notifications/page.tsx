@@ -302,7 +302,7 @@ export default function NotificationCenterPage() {
           <div className="text-center py-12">
             <Bell className="h-16 w-16 text-gray-500 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-400 mb-2">No notifications found</h3>
-            <p className="text-gray-500">You're all caught up!</p>
+            <p className="text-gray-500">You&apos;re all caught up!</p>
           </div>
         ) : (
           filteredNotifications.map((notification) => (

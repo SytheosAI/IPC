@@ -314,7 +314,7 @@ export default function TwoFactorAuth({ userId, onSettingsChange }: TwoFactorAut
             
             {/* Manual Entry */}
             <div className="p-4 bg-gray-700/50 rounded-lg mb-4">
-              <p className="text-sm text-gray-400 mb-2">Can't scan? Enter this key manually:</p>
+              <p className="text-sm text-gray-400 mb-2">Can&apos;t scan? Enter this key manually:</p>
               <div className="flex items-center gap-2 justify-center">
                 <code className="text-sm font-mono text-yellow-400 bg-gray-800 px-2 py-1 rounded">
                   {totpSetup.manualEntryKey}

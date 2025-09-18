@@ -313,7 +313,16 @@ function showShortcutsModal() {
     existingModal.remove();
   }
 
-  const { shortcuts } = useKeyboardShortcuts();
+  // Define shortcuts directly instead of using the hook
+  const shortcuts: KeyboardShortcut[] = [
+    { key: '/', description: 'Search', category: 'Navigation' },
+    { key: 'Ctrl+K', description: 'Command palette', category: 'Navigation' },
+    { key: 'Ctrl+S', description: 'Save', category: 'General' },
+    { key: 'Ctrl+Z', description: 'Undo', category: 'General' },
+    { key: 'Ctrl+Y', description: 'Redo', category: 'General' },
+    { key: 'Escape', description: 'Close modal/cancel', category: 'General' },
+  ];
+
   const categories = shortcuts.reduce((acc, shortcut) => {
     if (!acc[shortcut.category]) acc[shortcut.category] = [];
     acc[shortcut.category].push(shortcut);

@@ -3,10 +3,11 @@ import { db } from '@/lib/db-client'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const projectInfo = await db.projectInfo.get(params.projectId)
+    const { projectId } = await params
+    const projectInfo = await db.projectInfo.get(projectId)
 
     if (!projectInfo) {
       return NextResponse.json({ error: 'Project information not found' }, { status: 404 })
@@ -21,15 +22,16 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
+    const { projectId } = await params
     const body = await request.json()
 
     // Ensure project_id is set
     const projectInfo = {
       ...body,
-      project_id: params.projectId,
+      project_id: projectId,
       updated_at: new Date().toISOString()
     }
 
@@ -40,7 +42,7 @@ export async function PUT(
       action: 'updated_project_information',
       entity_type: 'project_information',
       entity_id: updatedInfo.id,
-      metadata: { project_id: params.projectId }
+      metadata: { project_id: projectId }
     })
 
     return NextResponse.json(updatedInfo)

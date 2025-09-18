@@ -79,12 +79,12 @@ export async function GET(request: NextRequest) {
 
     const securityMetrics = {
       eventsLast24h: securityEvents.data?.length || 0,
-      threatLevel: securityEvents.data?.length > 5 ? 'medium' : 'low',
+      threatLevel: (securityEvents.data?.length || 0) > 5 ? 'medium' : 'low',
       blockedIPs: Math.floor(Math.random() * 3),
-      suspiciousActivity: securityEvents.data?.filter(e => 
-        e.metadata?.security_event?.severity === 'high' || 
+      suspiciousActivity: securityEvents.data?.filter(e =>
+        e.metadata?.security_event?.severity === 'high' ||
         e.metadata?.security_event?.severity === 'critical'
-      ).length || 0
+      )?.length || 0
     };
 
     // Get rate limiting metrics
